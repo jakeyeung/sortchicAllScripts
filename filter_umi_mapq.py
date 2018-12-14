@@ -35,6 +35,12 @@ def get_end(read):
     else:
         return('R2')
 
+def coord_to_bin(coord, window = 1000):
+    '''
+    6598162 -> neraest 6598000 if window = 1000
+    '''
+    return(round(coord / window) * window)
+
 def main():
     parser = argparse.ArgumentParser(description='Bams need to be filtered by UMI and MAPQ before we do anything...')
     parser.add_argument('infile', metavar='INFILE',
@@ -61,8 +67,11 @@ def main():
     ARG_INPUTS = ['%s=%s' % (key, val) for key, val in args_dic.items()]  # for python3
     ARG_INPUTS = ' '.join(ARG_INPUTS)
 
+    chromos = [''.join(['chr', str(i + 1)]) for i in range(20)] + ['X', 'Y']
+    print(chromos)
     umi_dic = {}  # UMIs are 
-    umi_dic_pos = {}  # UMIs are 
+    umi_dic_pos = {}  # UMIs positions
+    umi_dic_bin = {}  # UMIs by bins, by chromosome
     badreads = 0
     badreadsumi = 0
     goodcounts = 0
@@ -76,32 +85,39 @@ def main():
                 # get UMI-Barcode
                 umibc = get_umibc(read)
                 chromo = read.reference_name
+                print(chromo)
                 pos = read.reference_start  # left most pos, 0-based
                 coord = ':'.join([chromo, str(pos)])
+                # get bin within 1kb
+                bin = coord_to_bin(pos)
                 end = get_end(read)  # Positive or Negative depends on fragment from paired end
                 if umibc not in umi_dic:
                     # initialize R1 and R2
                     umi_dic[umibc] = {'R1': 0, 'R2' : 0}  # keep track of reads, they are also indexes!
                     umi_dic_pos[umibc] = {'R1': [], 'R2' : []}  # keep track of positions
+                    umi_dic_bin[umibc] = {'R1': {}, 'R2': {}}  # track bins for UMI counting
+                    for c in chromos:
+                        for end in ['R1', 'R2']:
+                            umi_dic_bin[umibc][end][c] = set()
                 else:
                     # update umi_dics
-                    # if umibc already in dic, can be counted if R1 or R2 are zero, 
-                    # otherwise it's a badreadsumi
-                    if umi_dic[umibc][get_end(read)] > 1:  # > not >= b/c we added 1 alrdy
-                        umi_dic[umibc][get_end(read)] += 1
-                        umi_dic_pos[umibc][get_end(read)].append(coord)
+                    # if umibc counted in same bin in same end (R1 or R2) then it's bad
+                    if bin in umi_dic_bin[umibc][get_end(read)][chromo]:
+                        umi_dic_pos[umibc][get_end(read)].append(coord)  # record the bad read 
+                        umi_dic[umibc][get_end(read)] += 1  # record duplicate reads 
+                        # already in bin, then don't add it
                         badreadsumi += 1
                         continue
-                # reads here are unique and high quality, keep write them to outbam and move on
-                umi_dic[umibc][get_end(read)] += 1
-                umi_dic_pos[umibc][get_end(read)].append(coord)
+                # reads here are unique (within a window) and high quality, write them to outbam and move on
+                # umi_dic_pos[umibc][get_end(read)].append(coord)  # only append if it's a bad read 
+                umi_dic_bin[umibc][get_end(read)][chromo].add(bin)
                 goodcounts += 1
                 outbam.write(read)
     # sort and index bam
     pysam.sort('-o', args.outfilesorted, args.outfile)
     pysam.index(args.outfilesorted)
 
-    # Print arguments supplied by user
+    # Print arguments supplied by user. Ideally as log file because of the \n 
     if not args.quiet:
         if args.logfile is not None:
             sys.stdout = open(args.logfile, "w+")
