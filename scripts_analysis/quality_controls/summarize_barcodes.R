@@ -83,6 +83,16 @@ count.thres <- 10000
 jsub <- subset(dat, chip == jchip & counts > count.thres)
 dim(jsub)  # ~1033 samples at 10000 threshold
 
+
+outdir <- "outputs_R/barcode_summaries"
+dir.create(outdir)
 # write down summarizes files 
-write.table(dat, file = "outputs_R/barcode_summaries_all.txt", quote = FALSE, sep = "\t", row.names = FALSE)
-write.table(jsub, file = paste0("outputs_R/barcode_summaries_filtered.", count.thres, ".txt"), quote = FALSE, sep = "\t", row.names = FALSE)
+write.table(dat, file = file.path(outdir, "barcode_summaries_all.txt"), quote = FALSE, sep = "\t", row.names = FALSE)
+write.table(jsub, file = file.path(outdir, paste0("barcode_summaries_filtered.", count.thres, ".txt")), quote = FALSE, sep = "\t", row.names = FALSE)
+
+# make a summary per fbase (easier downstream processing)
+jsub.by.bam <- split(jsub, jsub$fbase)
+
+lapply(jsub.by.bam, function(jsubsplit){
+  write.table(jsubsplit, file = file.path(outdir, paste0("barcode_summary.", unique(jsubsplit$fbase), ".thres.", count.thres, ".txt")))
+})
