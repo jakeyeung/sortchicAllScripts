@@ -43,7 +43,7 @@ AddMetaToDat <- function(dattmp, inf){
   dattmp$biorep <- GetBioRep(inf)
   dattmp$techrep <- GetTechRep(inf)
   dattmp$experi <- GetExperiment(inf)
-  dattmp$fbase <- inf
+  dattmp$fbase <- strsplit(inf, "\\.")[[1]][[1]]
   return(dattmp)
 }
 
