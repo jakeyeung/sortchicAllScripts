@@ -94,5 +94,7 @@ write.table(jsub, file = file.path(outdir, paste0("barcode_summaries_filtered.",
 jsub.by.bam <- split(jsub, jsub$fbase)
 
 lapply(jsub.by.bam, function(jsubsplit){
-  write.table(jsubsplit, file = file.path(outdir, paste0("barcode_summary.", unique(jsubsplit$fbase), ".thres.", count.thres, ".txt")))
+  write.table(jsubsplit, file = 
+                file.path(outdir, 
+                          paste0("barcode_summary.", unique(jsubsplit$fbase), ".thres.", count.thres, ".txt")), quote = FALSE, sep = "\t")
 })
