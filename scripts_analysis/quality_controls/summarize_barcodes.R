@@ -85,3 +85,4 @@ dim(jsub)  # ~1033 samples at 10000 threshold
 
 # write down summarizes files 
 write.table(dat, file = "outputs_R/barcode_summaries_all.txt", quote = FALSE, sep = "\t", row.names = FALSE)
+write.table(jsub, file = paste0("outputs_R/barcode_summaries_filtered.", count.thres, ".txt"), quote = FALSE, sep = "\t", row.names = FALSE)
