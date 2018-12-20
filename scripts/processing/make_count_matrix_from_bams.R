@@ -68,12 +68,12 @@ cnames <- sapply(bamfiles, function(fullpath){
   # make full path
   bname <- basename(fullpath)
   # 8 letter UMI
-  bc <- str_match(fullpath, pattern = "[ACGT]{8}")
-  tissue <- GetTissue(fullpath)
-  chip <- GetChip(fullpath)
-  biorep <- GetBioRep(fullpath)
-  techrep <- GetTechRep(fullpath)
-  experi <- GetExperiment(fullpath)
+  bc <- str_match(bname, pattern = "[ACGT]{8}")
+  tissue <- GetTissue(bname)
+  chip <- GetChip(bname)
+  biorep <- GetBioRep(bname)
+  techrep <- GetTechRep(bname)
+  experi <- GetExperiment(bname)
   cname.new <- paste(chip, tissue, biorep, techrep, experi, bc, sep="-")
   return(cname.new)
 })
@@ -86,6 +86,9 @@ colnames(count.dat$counts) <- sapply(colnames(count.dat$counts), GetValueFromHas
 colnames(count.dat$stat) <- sapply(colnames(count.dat$stat), GetValueFromHash, name.hash)
 
 save(count.dat, file = outpath)
+# write count matrix as full textfile
+# outpath.noext <- sub("^([^.]*).*", "\\1", outpath)
+# write.table(as.matrix(count.dat$mat), file = matpath, quote=FALSE, sep="\t", row.names=TRUE, col.names=TRUE)
 
 print(Sys.time() - jstart)
 

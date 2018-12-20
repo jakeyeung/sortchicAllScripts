@@ -3,6 +3,15 @@
 # File: ~/projects/scChiC/scripts/quality_controls/summarize_barcodes.R
 # Summarize barcodes
 
+args <- commandArgs(trailingOnly=TRUE)
+
+print(args)
+count.thres <- as.numeric(args[[1]])
+
+if (is.na(count.thres)){
+  stop(paste("Count thres must be numeric", count.thres))
+}
+
 library(dplyr)
 library(ggplot2)
 library(stringr)
@@ -36,7 +45,7 @@ library(stringr)
 #   return(x)
 # }
 
-source("scripts/processing/Rfunctions/GetMetaData.R")
+source("scripts/Rfunctions/GetMetaData.R")
 
 AddMetaToDat <- function(dattmp, inf){
   # add meta data to columns of dat
@@ -80,7 +89,7 @@ ggplot(dat, aes(x = jrank, y = countsfrac, color = biorep)) +
 
 
 jchips=c("H3K27me3", "H3K4me1", "H3K4me3", "H3K9me3")
-count.thres <- 10000
+count.thres <- 0
 
 # find cutoff
 # jchip <- "H3K27me3"

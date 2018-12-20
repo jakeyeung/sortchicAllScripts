@@ -98,6 +98,8 @@ count.mat <- count.mat[which(!rownames(count.mat) %in% bad.peaks$peak), ]
 print("Dimensions after filtering...")
 print(dim(count.mat))
 
+# Remove cells with zero entries
+count.mat <- count.mat[, which(Matrix::colSums(count.mat) > 0)]
 
 # Run LDA on count matrix -------------------------------------------------
 

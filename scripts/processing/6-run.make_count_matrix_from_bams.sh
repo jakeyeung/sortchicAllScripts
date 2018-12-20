@@ -4,6 +4,11 @@
 # Make count matrix from bams using R 
 # 2018-12-19
 
+jmem='16G'
+jtime='1:00:00'
+
+jchip="H3K4me1"
+
 workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 cd $workdir
 
@@ -11,25 +16,30 @@ cd $workdir
 rs="scripts/processing/make_count_matrix_from_bams.R"
 peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
 
-jchip="H3K4me1"
+# get paths to bams
+bmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc/count_thres-0"
 
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 [[ ! -e $peakf ]] && echo "$peakf not found, exiting" && exit 1
 
-# get paths to bams
-bmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc"
 
-tmpf="/tmp/JY_${jchip}_bamlist.out"
+[[ ! -d $bmain ]] && echo "$bmain not found, exiting" && exit 1
 
+
+
+# now run Rscript
+outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats"
+outf="$outmain/PZ-BM-${jchip}.merged.NoCountThres.Robj"
+BNAME="$outmain/PZ-BM-${jchip}.merged.NoCountThres"
+
+tmpf="$outmain/JY_${jchip}_bamlist.out"
 [[ -e $tmpf ]] && echo "$tmpf must not already exist" && exit 1
-
 for b in $(ls -d $bmain/PZ*$jchip*/*.sorted.bam); do
     echo $b >> $tmpf
 done
-
 echo "Temp bam files found in $tmpf"
 
-# now run Rscript
-outf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats/PZ-BM-${jchip}.merged.mat"
+DBASE=$(dirname "${BNAME}")
+[[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
 
-Rscript $rs $tmpf $peakf $outf
+echo "cd $workdir; Rscript $rs $tmpf $peakf $outf" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err
