@@ -98,6 +98,8 @@ count.mat <- count.mat[which(!rownames(count.mat) %in% bad.peaks$peak), ]
 print("Dimensions after filtering...")
 print(dim(count.mat))
 
+# Remove cells with zero entries
+count.mat <- count.mat[, which(Matrix::colSums(count.mat) > 0)]
 
 # Run LDA on count matrix -------------------------------------------------
 
@@ -110,7 +112,7 @@ save(out.lda, file = outpath)
 # tune LDA 
 
 # topic.vec <- c(4, 9, 11, 14, 16, 18)
-optimal.topics <- FindTopicsNumber(t(as.matrix(count.mat)), topics=topic.vec, mc.cores = length(topic.vec), method="Gibbs", metrics=c("Arun2010", "CaoJuan2009", "Griffiths2004" "Deveaud2014"), control = list(seed=0))
+optimal.topics <- FindTopicsNumber(t(as.matrix(count.mat)), topics=topic.vec, mc.cores = length(topic.vec), method="Gibbs", metrics=c("Arun2010", "CaoJuan2009", "Griffiths2004", "Deveaud2014"), control = list(seed=0))
 FindTopicsNumber_plot(optimal.topics)
 
 save(optimal.topics, file = tunepath)
