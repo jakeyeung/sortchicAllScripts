@@ -7,34 +7,36 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 
-GetTissue <- function(inf){
-  # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> BM
-  x <- strsplit(inf, split = "-")[[1]][[2]]
-  return(x)
-}
-GetChip <- function(inf){
-  # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> H3K7me3
-  x <- strsplit(inf, split = "-")[[1]][[4]]
-  return(x)
-}
-GetBioRep <- function(inf){
-  # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> m1 -> 1
-  x <- strsplit(inf, split = "-")[[1]][[3]]
-  x <- strsplit(x, split = "m")[[1]][[2]]
-  return(x)
-}
-GetTechRep <- function(inf){
-  # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> S14-> 14
-  x <- stringr::str_match(inf, "_S[1-9]*.")[1, 1]
-  # remove first and last characters
-  x <- substr(x, start = 2, stop = nchar(x) - 1)
-  return(x)
-}
-GetExperiment <- function(inf){
-  # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> H2GV2BGX9
-  x <- strsplit(inf, split = "_")[[1]][[2]]
-  return(x)
-}
+# GetTissue <- function(inf){
+#   # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> BM
+#   x <- strsplit(inf, split = "-")[[1]][[2]]
+#   return(x)
+# }
+# GetChip <- function(inf){
+#   # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> H3K7me3
+#   x <- strsplit(inf, split = "-")[[1]][[4]]
+#   return(x)
+# }
+# GetBioRep <- function(inf){
+#   # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> m1 -> 1
+#   x <- strsplit(inf, split = "-")[[1]][[3]]
+#   x <- strsplit(x, split = "m")[[1]][[2]]
+#   return(x)
+# }
+# GetTechRep <- function(inf){
+#   # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> S14-> 14
+#   x <- stringr::str_match(inf, "_S[1-9]*.")[1, 1]
+#   # remove first and last characters
+#   x <- substr(x, start = 2, stop = nchar(x) - 1)
+#   return(x)
+# }
+# GetExperiment <- function(inf){
+#   # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> H2GV2BGX9
+#   x <- strsplit(inf, split = "_")[[1]][[2]]
+#   return(x)
+# }
+
+source("scripts/processing/Rfunctions/GetMetaData.R")
 
 AddMetaToDat <- function(dattmp, inf){
   # add meta data to columns of dat
@@ -48,6 +50,8 @@ AddMetaToDat <- function(dattmp, inf){
 }
 
 # Summarize barcodes ------------------------------------------------------
+
+print(paste("Current directory: ", getwd()))
 
 infiles <- list.files("data/barcode_summaries", pattern = "*bc_counts.txt", full.names = TRUE)
 
@@ -74,27 +78,33 @@ ggplot(dat, aes(x = jrank, y = countsfrac, color = biorep)) +
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_y_log10()
 
-# Let’s pick H3K27me3 -----------------------------------------------------
+
+jchips=c("H3K27me3", "H3K4me1", "H3K4me3", "H3K9me3")
+count.thres <- 10000
 
 # find cutoff
-jchip <- "H3K27me3"
-count.thres <- 10000
-# apply stringent threshold 
-jsub <- subset(dat, chip == jchip & counts > count.thres)
-dim(jsub)  # ~1033 samples at 10000 threshold
+# jchip <- "H3K27me3"
 
+for (jchip in jchips){
+  # apply stringent threshold 
+  jsub <- subset(dat, chip == jchip & counts > count.thres)
+  dim(jsub)  # ~1033 samples at 10000 threshold
+  
+  
+  outdir <- "outputs_R/barcode_summaries"
+  dir.create(outdir)
+  # write down summarizes files 
+  write.table(dat, file = file.path(outdir, paste0("barcode_summaries_all.", jchip, ".txt")), quote = FALSE, sep = "\t", row.names = FALSE)
+  write.table(jsub, file = file.path(outdir, paste0("barcode_summaries_filtered.", count.thres, ".chip.", jchip, ".txt")), quote = FALSE, sep = "\t", row.names = FALSE)
+  
+  # make a summary per fbase (easier downstream processing)
+  jsub.by.bam <- split(jsub, jsub$fbase)
+  
+  lapply(jsub.by.bam, function(jsubsplit){
+    write.table(jsubsplit, file = 
+                  file.path(outdir, 
+                            paste0("barcode_summary.", unique(jsubsplit$fbase), ".thres.", count.thres, ".chip.", jchip, ".txt")), quote = FALSE, sep = "\t", row.names=FALSE)
+  })
+  
+}
 
-outdir <- "outputs_R/barcode_summaries"
-dir.create(outdir)
-# write down summarizes files 
-write.table(dat, file = file.path(outdir, "barcode_summaries_all.txt"), quote = FALSE, sep = "\t", row.names = FALSE)
-write.table(jsub, file = file.path(outdir, paste0("barcode_summaries_filtered.", count.thres, ".chip.", jchip, ".txt")), quote = FALSE, sep = "\t", row.names = FALSE)
-
-# make a summary per fbase (easier downstream processing)
-jsub.by.bam <- split(jsub, jsub$fbase)
-
-lapply(jsub.by.bam, function(jsubsplit){
-  write.table(jsubsplit, file = 
-                file.path(outdir, 
-                          paste0("barcode_summary.", unique(jsubsplit$fbase), ".thres.", count.thres, ".chip.", jchip, ".txt")), quote = FALSE, sep = "\t", row.names=FALSE)
-})

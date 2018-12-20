@@ -8,7 +8,7 @@ workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 cd $workdir
 
 # rs="/home/hub_oudenaarden/jyeung/projects/scChiC/processing/make_count_matrix_from_bams.R"
-rs="processing/make_count_matrix_from_bams.R"
+rs="scripts/processing/make_count_matrix_from_bams.R"
 peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
 
 jchip="H3K4me1"

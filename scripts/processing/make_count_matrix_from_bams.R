@@ -13,7 +13,7 @@ library(stringr)
 library(hash)
 
 
-source("scripts/processing/Rfunctions/GetMetaData.R")
+source("scripts/Rfunctions/GetMetaData.R")
 
 GetValueFromHash <- function(key, jhash){
   val <- jhash[[key]]
@@ -75,11 +75,11 @@ cnames <- sapply(bamfiles, function(fullpath){
   techrep <- GetTechRep(fullpath)
   experi <- GetExperiment(fullpath)
   cname.new <- paste(chip, tissue, biorep, techrep, experi, bc, sep="-")
-  return(cname.enw)
+  return(cname.new)
 })
 
 # make hash to match old targets to new names
-name.hash <- hash(counts.dat$targets, cnames)
+name.hash <- hash(count.dat$targets, cnames)
 
 count.dat$targets <- sapply(count.dat$targets, GetValueFromHash, name.hash)
 colnames(count.dat$counts) <- sapply(colnames(count.dat$counts), GetValueFromHash, name.hash)
