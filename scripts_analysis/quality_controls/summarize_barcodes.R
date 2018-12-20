@@ -98,3 +98,4 @@ lapply(jsub.by.bam, function(jsubsplit){
                 file.path(outdir, 
                           paste0("barcode_summary.", unique(jsubsplit$fbase), ".thres.", count.thres, ".chip.", jchip, ".txt")), quote = FALSE, sep = "\t", row.names=FALSE)
 })
+
