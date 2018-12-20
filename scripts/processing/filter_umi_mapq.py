@@ -30,8 +30,8 @@ def get_umibc(read):
 def get_from_header(read, indx):
     '''
     Is:NS500414;RN:518;Fc:H2GV2BGX9;La:1;Ti:11101;CX:20509;CY:1067;Fi:N;CN:0;aa:CATTTT;aA:CATTTT;aI:35;LY:PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14;RX:CGC;RQ:GGG;BI:185;bc:GTCTGATT;BC:GTCTGATT;QT:GGKKKKKK;MX:NLAIII38 
-    -->> GTCTGATT for indx = 15
-    -->> CGC for indx = 12
+    -->> GTCTGATT for indx = 16
+    -->> CGC for indx = 13
     '''
     jsplit = read.query_name.split(";")[indx]
     return(jsplit.split(":")[1])
