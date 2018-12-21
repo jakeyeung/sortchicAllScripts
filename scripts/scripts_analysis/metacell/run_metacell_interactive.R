@@ -13,13 +13,12 @@ library(metacell)
 
 indat <- "/tmp/metacell_inputs/PZ-BM-H3K4me1.merged.NoCountThres.subset.mat"
 outdir <- "/tmp/metacell_outputs"
-varthres <- 0.001
-
 dir.create(outdir)
 
-if (is.na(varthres)){
-  stop(paste("Threshold must be numeric, found:"), args[[3]])
-}
+# varthres <- 0.001
+# if (is.na(varthres)){
+#   stop(paste("Threshold must be numeric, found:"), args[[3]])
+# }
 
 
 scdb_init(outdir, force_reinit=T)

@@ -9,11 +9,11 @@ args <- commandArgs(trailingOnly=TRUE)
 
 indat <- args[[1]]  # RData with counts.dat$counts as dense matrix 
 outdir <- args[[2]]
-varthres <- as.numeric(args[[3]])
+# varthres <- as.numeric(args[[3]])
 
-if (is.na(varthres)){
-  stop(paste("Threshold must be numeric, found:"), args[[3]])
-}
+# if (is.na(varthres)){
+#   stop(paste("Threshold must be numeric, found:"), args[[3]])
+# }
 
 
 scdb_init(outdir, force_reinit=T)
@@ -35,10 +35,17 @@ maxUMIs <- 10000000
 maxbinsums <- 10000
 
 figsdir <- file.path(outdir, "figs")
+scfigs_init(figsdir)
 
+print(paste("Importing from", indat))
 mcell_import_scmat_tsv(matname, fn=indat, dset_nm=jdset)
 mat = scdb_mat(matname)
+print("Original mat dims")
 print(dim(mat@mat))
+
+dat <- data.table::fread(indat)
+print("Original mat dim loading directly")
+print(dim(dat))
 
 # remove bad peaks
 binsums <- Matrix::rowSums(as.matrix(mat@mat))
@@ -46,32 +53,38 @@ emptybins <- names(which(binsums <= 1 | binsums > maxbinsums))
 mcell_mat_ignore_genes(new_mat_id=matname.filt.bins, mat_id=matname, ig_genes=emptybins)
 mat <- scdb_mat(matname.filt.bins)
 
+print("Dimensions after filtering bins")
+print(dim(mat@mat))
+
 # ignore bad cells
 cell_sizes <- Matrix::colSums(mat@mat)
 large_cells <- names(which(cell_sizes>maxUMIs))
 small_cells <- names(which(cell_sizes<minUMIs))
 
-print("Plot UMIs after")
+print("Plot UMIs after bin filt")
 mcell_plot_umis_per_cell(matname.filt.bins)
+
+print("Range of cell sizes")
+print(range(cell_sizes))
 
 mcell_mat_ignore_cells(new_mat_id=matname.filt.cells, mat_id=matname.filt.bins, ig_cells = c(small_cells, large_cells))
 mat <- scdb_mat(matname.filt.cells)
 
-print("Dimensions after filtering")
+print("Dimensions after filtering cells")
 print(dim(mat@mat))
 
 scfigs_init(figsdir)
 
-print("Plot UMIs after")
+print("Plot UMIs after cell bins")
 mcell_plot_umis_per_cell(matname.filt.cells)
 
 print("Add gene stat")
 mcell_add_gene_stat(gstat_id=matname.filt.cells, mat_id=matname.filt.cells, force=T)
-
-print("Filter varmean")
-mcell_gset_filter_varmean(gset_id=jgset, gstat_id=matname.filt.cells, T_vm=varthres, force_new=T)
-print("Filter cov")
-mcell_gset_filter_cov(gset_id = jgset, gstat_id=matname.filt.cells, T_tot=500, T_top3=2)
+# Dont filter because we already did peak calling. Need to filter by varmean
+print("Filter varmean with 0")
+mcell_gset_filter_varmean(gset_id=jgset, gstat_id=matname.filt.cells, T_vm=0, force_new=T)
+# print("Filter cov")
+# mcell_gset_filter_cov(gset_id = jgset, gstat_id=matname.filt.cells, T_tot=500, T_top3=2)
 print("Plot gstats")
 mcell_plot_gstats(gstat_id=matname.filt.cells, gset_id=jgset)
 
@@ -126,7 +139,7 @@ mc_hc = mcell_mc_hclust_confu(mc_id=jmc, graph_id=jgraph)
 
 mc_sup = mcell_mc_hierarchy(mc_id=jmc, mc_hc=mc_hc, T_gap=0.04)
 mcell_mc_plot_hierarchy(mc_id=jmc, 
-                   graph_id=igraph, 
+                   graph_id=jgraph, 
                     mc_order=mc_hc$order, 
                     sup_mc = mc_sup, 
                     width=2800, heigh=2000, min_nmc=2)
