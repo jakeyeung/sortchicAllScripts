@@ -14,7 +14,13 @@ cd $workdir
 
 # rs="/home/hub_oudenaarden/jyeung/projects/scChiC/processing/make_count_matrix_from_bams.R"
 rs="scripts/processing/make_count_matrix_from_bams.R"
-peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
+
+# peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
+# use merged peaks?
+# peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
+
+dist=25000
+peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.merge_${dist}.blacklistfilt.broadPeak"
 
 # get paths to bams
 bmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc/count_thres-0"
@@ -28,9 +34,11 @@ bmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc
 
 
 # now run Rscript
-outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats"
-outf="$outmain/PZ-BM-${jchip}.merged.NoCountThres.Robj"
-BNAME="$outmain/PZ-BM-${jchip}.merged.NoCountThres"
+outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats.merge_${dist}"
+outf="$outmain/PZ-BM-${jchip}.merged.NoCountThres.merge_${dist}.Robj"
+BNAME="$outmain/PZ-BM-${jchip}.merged.NoCountThres.merge_${dist}"
+
+[[ ! -d $outmain ]] && mkdir $outmain
 
 tmpf="$outmain/JY_${jchip}_bamlist.out"
 [[ -e $tmpf ]] && echo "$tmpf must not already exist" && exit 1
