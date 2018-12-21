@@ -12,7 +12,7 @@ bname=$(basename $inf)
 bname=${bname%.*}
 
 cutoff=0.3
-minlength=1500
+minlength=1111
 bname=$bname.$cutoff.$minlength.cutoff
 outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output"
 outdir=$outmain/$bname
