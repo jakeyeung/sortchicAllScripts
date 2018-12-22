@@ -5,10 +5,12 @@
 
 library(dplyr)
 library(ggplot2)
+library(Matrix)
 
 args <- commandArgs(trailingOnly=TRUE)
 
 source("scripts/Rfunctions/GetMetaData.R")
+source("scripts/Rfunctions/Aux.R")
 
 inf <- args[[1]]  # count matrix object from Rsubreads
 outdir <- args[[2]]
@@ -47,8 +49,8 @@ pdf(outpath, useDingbats=FALSE)
     geom_abline(slope = -0.5) + ggtitle("Includes some suspicious peaks")
   
   # plot cell sizes 
-  plot(density(colSums(count.mat)))
-  plot(hist(colSums(count.mat), breaks = 75))
+  plot(density(Matrix::colSums(count.mat)))
+  plot(hist(Matrix::colSums(count.mat), breaks = 75))
 
 dev.off()
 
