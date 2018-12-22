@@ -12,16 +12,16 @@ library(metacell)
 # indat <- args[[1]]  # RData with counts.dat$counts as dense matrix 
 # outdir <- args[[2]]
 # varthres <- as.numeric(args[[3]])
-  
-indat <- "/tmp/metacell_inputs/PZ-BM-H3K4me1.merged.NoCountThres.mat"
-outdir <- "/tmp/metacell_outputs.full"
-varthres <- 0.001
 
+indat <- "/tmp/metacell_inputs/PZ-BM-H3K4me1.merged.NoCountThres.subset.mat"
+outdir <- "/tmp/metacell_outputs"
+varthres <- 0.01
 dir.create(outdir)
 
-if (is.na(varthres)){
-  stop(paste("Threshold must be numeric, found:"), args[[3]])
-}
+# varthres <- 0.001
+# if (is.na(varthres)){
+#   stop(paste("Threshold must be numeric, found:"), args[[3]])
+# }
 
 
 scdb_init(outdir, force_reinit=T)
