@@ -3,6 +3,8 @@
 # File: ~/projects/scChiC/scripts/scripts_analysis/metacell/run_metacell_interactive.R
 # Get metacell working, then send to cluster
 
+rm(list=ls())
+
 library(metacell)
 # library(igraph)
 
@@ -10,9 +12,9 @@ library(metacell)
 # indat <- args[[1]]  # RData with counts.dat$counts as dense matrix 
 # outdir <- args[[2]]
 # varthres <- as.numeric(args[[3]])
-
-indat <- "/tmp/metacell_inputs/PZ-BM-H3K4me1.merged.NoCountThres.subset.mat"
-outdir <- "/tmp/metacell_outputs"
+  
+indat <- "/tmp/metacell_inputs/PZ-BM-H3K4me1.merged.NoCountThres.mat"
+outdir <- "/tmp/metacell_outputs.full"
 varthres <- 0.001
 
 dir.create(outdir)
@@ -76,12 +78,13 @@ mcell_plot_umis_per_cell(matname.filt.cells)
 print("Add gene stat")
 mcell_add_gene_stat(gstat_id=matname.filt.cells, mat_id=matname.filt.cells, force=T)
 
-mcell_plot_gstats(gstat_id=matname.filt.cells, gset_id=jgset)
 
-# print("Filter varmean")
-# mcell_gset_filter_varmean(gset_id=jgset, gstat_id=matname.filt.cells, T_vm=0.0001, force_new=T)
+print("Filter varmean")
+mcell_gset_filter_varmean(gset_id=jgset, gstat_id=matname.filt.cells, T_vm=0, force_new=T)
 # print("Filter cov")
-# mcell_gset_filter_cov(gset_id = jgset, gstat_id=matname.filt.cells, T_tot=500, T_top3=2)
+# mcell_gset_filter_cov(gset_id = jgset, gstat_id=matname.filt.cells, T_tot=99, T_top3=Inf)
+# mcell_plot_gstats(gstat_id=matname.filt.cells, gset_id=jgset)
+
 print("Plot gstats")
 mcell_plot_gstats(gstat_id=matname.filt.cells, gset_id=jgset)
 
@@ -142,3 +145,6 @@ mcell_mc_plot_hierarchy(mc_id=jmc,
                         mc_order=mc_hc$order, 
                         sup_mc = mc_sup, 
                         width=2800, heigh=2000, min_nmc=2)
+
+# mcell_mc2d_force_knn(mc2d_id=jproj,mc_id=jmc, graph_id=jgraph)
+# mcell_mc2d_plot(mc2d_id=jproj)
