@@ -14,6 +14,7 @@ library(ldatuning)
 print(paste("Work directory: ", getwd()))
 
 source("scripts/Rfunctions/ParseStrings.R")
+source("scripts/Rfunctions/Aux.R")
 
 args <- commandArgs(trailingOnly=TRUE)
 
@@ -45,19 +46,12 @@ plotpath <- file.path(outdir, "plots.meanfilt.pdf")
 outpath <- file.path(outdir, paste0("lda_out.meanfilt.K-", nclst, ".Robj"))
 tunepath <- file.path(outdir, paste0("lda_tuning.meanfilt.K-", nclst.str, ".Robj"))
 
-GetPeakSize <- function(coord){
-  # chr1:3005258-3006803 -> 1545
-  coord <- as.character(coord)
-  jstart <- as.numeric(strsplit(strsplit(coord, ":")[[1]][[2]], "-")[[1]][[1]])
-  jend <- as.numeric(strsplit(strsplit(coord, ":")[[1]][[2]], "-")[[1]][[2]])
-  return(jend - jstart)
-}
 
 # constants
 # countmax <- 100  # peaks with more than these counts are filtered out for suspicious 
 # this works for small peaks but probably needs to be increased for larger peaks?
 # meanmax <- 1  # peaks with more than these counts are filtered out for suspicious 
-cellmin <- 
+# cellmin <- 
 
 # Load counts -------------------------------------------------------------
 
