@@ -13,26 +13,37 @@ library(ldatuning)
 
 print(paste("Work directory: ", getwd()))
 
+source("scripts/Rfunctions/ParseStrings.R")
+
 args <- commandArgs(trailingOnly=TRUE)
+
+print("input args:")
+print(args)
 
 inpath <- args[[1]]
 outdir <- args[[2]]
-nclst.str <- args[[3]]
-nclst <- as.numeric(nclst.str)
-topic.str <- args[[4]]
-topic.vec <- strsplit(topic.str, ",")[[1]]
+nclst <- StrToNumeric(args[[3]])
+topic.vec <- StrToVector(args[[4]], delim = ",")
+tunemodels <- StrToBool(args[[5]])
+meanmax <- StrToNumeric(args[[6]])  # remove suspicious peaks 
+cellmin <- StrToNumeric(args[[7]])  # remove cells with low counts
+cellmax <- StrToNumeric(args[[8]])  # remove suspiciious cells 
 
 if (is.na(nclst)){
   stop(paste("nclst must be numeric, found", nclst.str))
 }
+if (is.na(meanmax)){
+  stop(paste("meanmax must be numeric, found", meanmax.str))
+}
+if (is.na(tunemodels)){
+  stop(paste("tunemodels must be TRUE or FALSE, found", tunemodels.str))
+}
 print(paste("Will iterate through", length(topic.vec), "Ks"))
 print(topic.vec)
 
-# outpath <- args[[2]]
-# tunepath <- args[[3]]
 plotpath <- file.path(outdir, "plots.meanfilt.pdf")
 outpath <- file.path(outdir, paste0("lda_out.meanfilt.K-", nclst, ".Robj"))
-tunepath <- file.path(outdir, paste0("lda_tuning.meanfilt.", nclst.str, ".Robj"))
+tunepath <- file.path(outdir, paste0("lda_tuning.meanfilt.K-", nclst.str, ".Robj"))
 
 GetPeakSize <- function(coord){
   # chr1:3005258-3006803 -> 1545
@@ -44,7 +55,9 @@ GetPeakSize <- function(coord){
 
 # constants
 # countmax <- 100  # peaks with more than these counts are filtered out for suspicious 
-meanmax <- 1  # peaks with more than these counts are filtered out for suspicious 
+# this works for small peaks but probably needs to be increased for larger peaks?
+# meanmax <- 1  # peaks with more than these counts are filtered out for suspicious 
+cellmin <- 
 
 # Load counts -------------------------------------------------------------
 
@@ -104,19 +117,27 @@ count.mat <- count.mat[, which(Matrix::colSums(count.mat) > 0)]
 # Run LDA on count matrix -------------------------------------------------
 
 # nclst <- 10
+print("Running LDA")
 out.lda <- LDA(x = t(as.matrix(count.mat)), k = nclst, method = "Gibbs", control=list(seed=0))
 
 # save output
+print("Saving LDA")
 save(out.lda, file = outpath)
+print("Time elapsed after LDA")
+print(Sys.time() - jstart)
 
 # tune LDA 
 
-# topic.vec <- c(4, 9, 11, 14, 16, 18)
-optimal.topics <- FindTopicsNumber(t(as.matrix(count.mat)), topics=topic.vec, mc.cores = length(topic.vec), method="Gibbs", metrics=c("Arun2010", "CaoJuan2009", "Griffiths2004", "Deveaud2014"), control = list(seed=0))
-FindTopicsNumber_plot(optimal.topics)
+if (tunemodels){
+    # topic.vec <- c(4, 9, 11, 14, 16, 18)
+    print("Running tuning")
+    optimal.topics <- FindTopicsNumber(t(as.matrix(count.mat)), topics=topic.vec, mc.cores = length(topic.vec), method="Gibbs", metrics=c("Arun2010", "CaoJuan2009", "Griffiths2004", "Deveaud2014"), control = list(seed=0))
+    FindTopicsNumber_plot(optimal.topics)
 
-save(optimal.topics, file = tunepath)
+    save(optimal.topics, file = tunepath)
+    print("Saving optimal topics")
+}
 
-
-
+print("Time elapsed after tuning")
 print(Sys.time() - jstart)
+
