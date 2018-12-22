@@ -49,7 +49,7 @@ if (ncol(regions.dat) == 9){
 } else if (ncol(regionsdat) == 15){
   colnames(regions.dat) <- c("Chr", "Start", "End", "pname", "score", "strand", "tStart", "tEnd", "rgb", "bCount", "bSizes", "bStarts", "signal", "mlogpval", "mlogqval")
 } else {
-  stop("Number of columns must be 9 or 15")
+  stop(paste("Number of columns must be 9 or 15, found", ncol(regions.dat)))
 }
 # GeneID as chromo:start-end
 GeneID <- paste(regions.dat$Chr, ":", regions.dat$Start, "-", regions.dat$End, sep='')

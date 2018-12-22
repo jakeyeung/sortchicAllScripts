@@ -43,3 +43,5 @@ DBASE=$(dirname "${BNAME}")
 [[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
 
 echo "cd $workdir; Rscript $rs $tmpf $peakf $outf" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err
+
+# Rscript $rs $tmpf $peakf $outf
