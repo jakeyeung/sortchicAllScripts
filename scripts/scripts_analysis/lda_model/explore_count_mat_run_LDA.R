@@ -66,7 +66,6 @@ plot(hist(colSums(count.mat), breaks = 75))
 # clean up bad cells
 cellmin.thres <- 2000
 cellmax.thres <- 27500
-
 smallcells.i <- Matrix::colSums(count.mat) < cellmin.thres
 bigcells.i <- Matrix::colSums(count.mat) > cellmax.thres
 
@@ -82,8 +81,6 @@ count.mat <- count.mat[, !as.logical(smallcells.i + bigcells.i)]
 print(dim(count.mat))
 
 # remove bad regions
-
-
 nclst <- 15
 out.lda <- LDA(x = t(as.matrix(count.mat)), k = nclst, method = "Gibbs")
-save(out.lda, file="outputs_R/lda_output/lda_outputs.meanfilt.merge_25000.Robj")
+save(out.lda, count.mat, file="outputs_R/lda_output/lda_outputs.meanfilt.merge_25000.Robj")
