@@ -1,0 +1,299 @@
+---
+title: "scChIC analysis with latent dirichlet allocation (LDA)"
+author: "Jake Yeung"
+date: '2018-12-17'
+output: html_document
+
+---
+
+# Introduction
+```{r init, echo=TRUE, warning=FALSE, message=FALSE}
+#  to make PDF presentation
+#   beamer_presentation:
+#     colortheme: default
+#     fonttheme: default
+#     incremental: no
+#     slide_level: 2
+#     template: /Users/yeung/.pandoc/template/rmd-template/default.tex
+#     theme: Madrid
+#     toc: no
+#     
+knitr::opts_chunk$set(fig.width=18, fig.height=10,
+                      echo=FALSE, warning=FALSE, message=FALSE)
+setwd("~/projects/scChIC")
+library(topicmodels)  # Gibbs sampling implementation of LDA
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(org.Mm.eg.db)
+library(ChIPseeker)
+library(GenomicRanges)
+library(rGREAT)
+library(dplyr)
+library(ggplot2)
+library(destiny)
+
+# helper functions
+
+SelectTopRegions <- function(beta.row, regions, method = "thres", method.val = 0.01){
+  # take betas (in log scale) and select top X fraction
+  # or do simple cutoff, set method = "cutoff"
+  if (method == "cutoff"){
+    return(regions[which(beta.row > method.val)])
+  } else if (method == "thres"){
+    return(regions[which(beta.row > quantile(beta.row, method.val))])
+  } else {
+    stop(paste("Method", method, "not yet implemented"))
+  }
+}
+
+ParseCoord <- function(x){
+  # chr7:103,796,583-103,857,605 -> chromo, start, end
+  out <- list()
+  out$chromo <- strsplit(x, split = ":")[[1]][[1]]
+  out$start <- strsplit(strsplit(x, split = ":")[[1]][[2]], split = "-")[[1]][[1]]
+  out$end <- strsplit(strsplit(x, split = ":")[[1]][[2]], split = "-")[[1]][[2]]
+  # remove commas
+  out <- lapply(out, function(x) gsub(",", "", x))
+  out$start <- as.numeric(gsub(",", "", out$start))
+  out$end <- as.numeric(gsub(",", "", out$end))
+  return(out)
+}
+
+# Load precomputed R objects to save time
+load("~/projects/scChiC/outputs_R/lda_input/count_matrix.PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.Robj", v=T)
+regions <- read.table("~/projects/scChiC/outputs_R/lda_input/PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14_peaks.gappedPeak")
+colnames(regions) <- c('seqnames', 'start', 'end')
+rownames(regions) <- paste(regions$seqnames, ':', regions$start, '-', regions$end, sep='')
+regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
+elementMetadata(regions.range)[["region_coord"]] <- rownames(regions)
+regions$peak <- rownames(regions)
+regions$peaksize <- regions$end - regions$start
+
+# annotate for pathway analysis
+regions.annotated <- as.data.frame(annotatePeak(regions.range, 
+                                         TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, annoDb='org.Mm.eg.db'))
+rownames(regions.annotated) <- regions.annotated$region_coord
+
+
+# Load pathway analysis output
+load("~/projects/scChiC/outputs_R/lda_output/enrichment.Robj", v=T)
+```
+
+## Probabilistic model for clustering the scChIC data (LDA)
+
+- Each cell as an mixture over latent factors.
+
+- Each latent factor is characterized by a distribution over genomic regions.
+
+- Goal: infer distribution of latent factors for each cell, and distribution of genomic regions for each latent factor. 
+
+- Parameters inferred by Gibbs sampling (there is a variational EM algorithm, but my simulations suggest VEM does poorly). 
+
+- number of latent factors K is fixed (selecting K a bit of an art, but can sweep across K to select best K by likelihood).
+
+## What can hopefully find in scChIC data?
+
+- Factorize the discrete count matrix directly. 
+
+- The weights of latent factors for each cell should give a soft clustering to the dataset.
+
+- The weights of genomic regions for each latent factor assigns a ranking of how much each factor likes a genomic region.
+
+- Downstream analysis of these 2 matrices should identify relationships between cells and across genomic regions. 
+
+## Applying LDA to scChIC data
+
+- Define genomic regions by finding broad peaks with MACS2 on `.bam` file merged across all cells.
+
+- Create count matrix of peaks across cells.
+
+- `TopicModels` package has an implementation of LDA that seems to work on our counts matrix.
+
+# Initial Exploration
+
+## Initial exploration of count matrix data
+
+- My initial analysis is from `/hpc/hub_oudenaarden/avo/scChiC/raw_demultiplexed/PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14`
+
+- Remove reads with MAPQ < 30 or with same UMI barcode mapped within same 1kb region
+
+- Run `MACS2` broad peaks with p-value cutoff < 0.01
+
+- Generate counts matrix across peaks and cells
+
+## Peak sizes are mostly less than 1kb (between 0.5 to 3 kb)
+
+```{r explore}
+
+dat.meanvar <- data.frame(Sum = Matrix::rowSums(count.mat), 
+                          Mean = Matrix::rowMeans(count.mat),
+                          Var = apply(count.mat, 1, var),
+                          peak = rownames(count.mat))
+dat.meanvar <- dat.meanvar %>%
+  mutate(CV = sqrt(Var) / Mean)
+
+
+# related to region size?
+dat.meanvar <- dat.meanvar %>%
+  dplyr::left_join(., subset(regions, select = c(peak, peaksize)))
+
+ggplot(dat.meanvar, aes(x = peaksize)) + geom_density() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_x_log10()
+```
+
+
+
+
+## Mean counts are low, but variance is mostly larger than mean
+
+```{r explore_meanvar}
+
+ggplot(dat.meanvar, aes(x = log2(Mean), y = log2(CV), size = peaksize)) + geom_point(alpha = 0.25) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_abline(slope = -0.5)
+
+```
+
+# LDA Model
+
+## Parameters to tweak for LDA
+
+- Number of clusters K (I swept across many Ks and chose K=10m highest loglikelihood)
+
+- `delta` and `alpha`: hyperparameter for Dirichlet distribution controlling the genomic region distribution over factors and factor distribution over cells, respectively (these are like pseudocounts to regularize low/zero counts). Initially took default values 0.1 and 50/K, respectively. 
+
+## Running LDA finds distribution across cells
+
+```{r lda, fig.height=5, fig.width=5}
+
+
+nclst <- 10  # sweeped K and found this to be highest loglikelihood... 
+# higher K not necessarily higher likelihood? Or need to penalize? 
+# maybe run ldatuning
+# https://cran.r-project.org/web/packages/ldatuning/vignettes/topics.html
+
+out.lda <- LDA(x = t(as.matrix(count.mat)), k = nclst, method = "Gibbs", control = list(seed = 0))  # Do Gibbs, not VEM!
+
+out.lda.pca <- prcomp(t(out.lda@gamma), center = TRUE, scale. = FALSE)
+
+jpeak <- "chr9:2999909-3001468"  # near Mir101c gene
+# jpeak <- "chr14:19415743-19419585"
+countvec <- count.mat[jpeak, ]
+# countvec <- Matrix::colSums(count.mat)
+rbPal <- colorRampPalette(c('lightgray', 'black'), bias = 5)
+#This adds a column of color values
+# based on the y values
+colvec <- rbPal(100)[as.numeric(cut(countvec,breaks = 100))]
+
+# par(pty="s")
+# dev.off()
+plot(out.lda.pca$rotation[, 1], out.lda.pca$rotation[, 2], pch = 20, xlab = "PC1", ylab = "PC2", main = paste0("Topic distributions\ncolored by counts in ", jpeak), col = colvec, cex = 1, asp = 0.35, cex.main = 0.75)
+
+# we can do something similar with the regions-to-factor weights
+
+# out.lda.betas.pca <- prcomp(out.lda@beta, center = TRUE, scale. = FALSE)
+# # add labels and find interesting regions
+# rownames(out.lda.betas.pca$rotation) <- out.lda@terms
+# plot(out.lda.betas.pca$rotation[, 1], out.lda.betas.pca$rotation[, 2])
+# head(sort(out.lda.betas.pca$rotation[, 1], decreasing = TRUE))
+```
+
+## We can do nondimensionality techniques on this matrix too
+
+I would be curious whether the cells in MetaCell are close in this latent factor space. Points colored as in PCA
+
+```{r DM, fig.height=5, fig.width=5}
+
+# jpeak <- "chr3:57403598-57404124"
+# jpeak <- "chr2:98662113-98662980"
+# jpeak <- "chr9:3025272-3025833"  # near Mir101c gene
+# jpeak <- "chr14:19415743-19419585"
+jpeak <- "chr9:2999909-3001468"  # near Mir101c gene relevant publication: https://www.nature.com/articles/srep36988
+colvec <- count.mat[jpeak, ]
+# colvec <- Matrix::colSums(count.mat) # check there isn't some bias with total counts. 
+out.lda.dm <- DiffusionMap(out.lda@gamma, k = 10, density_norm = TRUE, n_eigs = 10)
+plot.DiffusionMap(out.lda.dm, 1:2, col = colvec, main = paste('Color by read counts in region', jpeak), draw_legend = FALSE)
+```
+
+#  Downstream LDA Model
+
+## Assign genomic regions using cutoff
+
+- For each latent factor, assign genomic regions to it using a cutoff 
+
+```{r assign_region}
+# example for latent factor 8
+jcutoff <- -7.5
+clst <- 8  # to show as example, I use same cutoff for all factors
+
+x <- out.lda@beta[clst, ]
+# remove two smallest values
+x <- x[which(x != min(x))]
+x <- x[which(x != min(x))]
+plot(density(x[which(x != min(x))]), 
+     main = paste("Genomic Region Weights for Latent Factor", clst, "with cutoff of", jcutoff))
+abline(v = jcutoff)
+
+```
+
+## Annotate region to a gene, including distance to TSS
+
+```{r annotations}
+print(head(subset(regions.annotated, select = c(annotation, distanceToTSS, SYMBOL))))
+```
+
+## Run GREAT for pathway analysis
+
+
+```{r great_downstream}
+
+# topic 6: immune effector proess
+# topic 4: regulation of hematopoiesis by cytokines 
+# topic 3: inflammation mediated. Tcell activation. Cellular response to granulocyte macrophage ... 
+# topic 2: cytokine-cytokine interaction, immunological synapse formation??
+# topic 1: inflammation mediated chemokine, cytokine, interferon-gamma signaling, tcell activation, b cell activation
+
+jnames <- c("GO Biological Process", "MSigDB Immunologic Signatures", "PANTHER Pathway", 
+            "MSigDB Predicted Promoter Motifs", "MSigDB Pathway")
+
+out.tb.sub <- lapply(seq(nclst), function(i){
+  out.tb.sub <- lapply(jnames, function(jn){
+    return(out.tb.lst[[i]][[jn]] %>% arrange(Hyper_Raw_PValue))
+  })
+})
+# print out top 10 for one topic as example
+# MSigDB Pathway
+print(head(subset(out.tb.sub[[6]][[5]], select = c(name, Hyper_Adjp_BH)), n = 10))  # GO Terms maybe relevant to immune response for Topic 6
+```
+
+## Some topics have enrichment of immunologic signatures (BH Pval < 0.05)
+
+```{r downstream2}
+# MSigDB Immunologic Signatures
+# print(out.tb.sub[[7]][[2]]$name[1])
+# print(out.tb.sub[[7]][[2]]$name[2])
+# print(out.tb.sub[[7]][[2]]$name[3])
+print(head(subset(out.tb.sub[[7]][[2]], select = c(name, Hyper_Adjp_BH)), n = 4))
+
+```
+
+# Conclusions
+
+## Preliminary results
+
+- LDA can model the discrete counts data coming from scChiC as a probabilistic process (soft clustering)
+
+- Downstream dimensionality reduction of the factor loadings can reveal structure (does it match MetaCell outputs?)
+
+- Genomic regions identified (from peaks < 3kb) seem relevant to cell-type functions in bone marrow. 
+
+## Things to fine-tune if we want to go further
+
+- MACS2 peak-calling: making sure we call the right peaks and not miss something important.
+
+- Using the soft clustering more effectively or tuning cutoffs to binarize downstream analyses.
+
+- Consistently clustering different cell-types across histone marks.
+
+- Generating a 3D matrix of cell-type, regions, histone-marks to find relationships across histone marks.
+

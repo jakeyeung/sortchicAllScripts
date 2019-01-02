@@ -1,0 +1,222 @@
+---
+title: 'Comparing '
+author: "Jake Yeung"
+date: "2019-01-02"
+output: 
+  html_document
+---
+
+# Introduction
+```{r init, echo=TRUE, warning=FALSE, message=TRUE}
+knitr::opts_chunk$set(fig.width=18, fig.height=10,
+                      echo=TRUE, warning=FALSE, message=TRUE)
+setwd("~/projects/scChiC")
+source("scripts/Rfunctions/FitFunctions.R")
+library(dplyr)
+library(ggplot2)
+library(hash)
+library(umap)
+# library(destiny)
+library(princurve)
+# load count matrices, LDA output, pseudotimes, fits
+
+load("~/projects/scChiC/notebooks/notebook_objs/BM-H3K27me3.AvO_filt.Robj", v=T)
+load("~/projects/scChiC/notebooks/notebook_objs/lda_out.meanfilt.K-12.Robj", v=T)
+load("~/projects/scChiC/outputs_R/fit_output/glm_fits_100kb_windows_withOffset.Robj", v=T)  # glm.fits
+
+# summarize glm fits
+fits.sum <- lapply(glm.fits, function(x) return(data.frame(int = x$int,
+                                                           pseudo = x$pseudo,
+                                                           pval = x$pval)))
+jnames <- names(fits.sum)
+fits.sum <- bind_rows(fits.sum)
+fits.sum$region <- jnames
+fits.sum <- fits.sum %>%
+  arrange(pseudo, pval)
+
+
+load("~/Dropbox/scCHiC_figs/FIG4_BM/H3K27me3.datadir_mc_f.Rda", v=T)  # use metacell cluster IDs to color cells in LDA 
+
+# filter cells and peaks 
+count.mat <- count.dat$counts
+rownames(out.lda@gamma) <- out.lda@documents
+cells.keep <- out.lda@documents
+peaks.keep <- out.lda@terms
+cells.keep.i <- which(colnames(count.mat) %in% cells.keep)
+peaks.keep.i <- which(rownames(count.mat) %in% peaks.keep)
+count.mat <- count.mat[peaks.keep.i, cells.keep.i]
+
+
+# Use same coloring as MetaCell output so we can directly compare
+Q<-object@mc_fp
+mc_index<-object@mc
+# mc_colors <- sapply(object@mc, function(x) ifelse(x %in% c(5, 7), "#A9A9A9", "#000000"))
+mc_colors<-object@colors
+colhash <- hash(seq(length(mc_colors)), mc_colors)
+cellhash <- hash(names(mc_index), mc_index)
+
+
+# summarize glm fits
+fits.sum <- lapply(glm.fits, function(x) return(data.frame(int = x$int,
+                                                           pseudo = x$pseudo,
+                                                           pval = x$pval)))
+jnames <- names(fits.sum)
+fits.sum <- bind_rows(fits.sum)
+fits.sum$region <- jnames
+fits.sum <- fits.sum %>%
+  arrange(pval)
+
+
+```
+
+## Comparing MetaCell directly with LDA analysis 
+
+- Metacell shows interesting clusters across cells in H3K27me3
+
+- The cell clusters look like they transition from one stage to another stage (cluster 5 and 7 are the top right, they have high signal in Hox genes)
+
+- If we run LDA on this same count matrix, can we see this transition? Can we use this trajectory to model the counts as a function along this trajectory? This will allow us to find statistically significant windows?
+
+- Cluster 7 shows 
+
+# Results
+
+## PCA on LDA output (gamma matrix) shows some trajectory (PC1, PC2)
+
+```{r lda-compare}
+
+
+# rownames(out.lda@gamma) <- out.lda@documents
+# count.mat <- count.dat$counts
+# cells.keep <- out.lda@documents
+# peaks.keep <- out.lda@terms
+# cells.keep.i <- which(colnames(count.mat) %in% cells.keep)
+# peaks.keep.i <- which(rownames(count.mat) %in% peaks.keep)
+# count.mat <- count.mat[peaks.keep.i, cells.keep.i]
+counts.total <- Matrix::colSums(count.mat)
+
+out.lda.pca <- prcomp(t(out.lda@gamma), center = TRUE, scale. = FALSE)
+
+
+
+
+dat.pca <- as.data.frame(out.lda.pca$rotation) %>%
+  mutate(counts.total = counts.total)  # if you want to see if there's bias with library size
+
+
+rownames(dat.pca) <- colnames(count.mat)
+
+dat.pca$cluster <- sapply(rownames(dat.pca), function(x) cellhash[[x]])
+dat.pca$is.5.7 <- sapply(dat.pca$cluster, function(x) ifelse(x %in% c(5, 7), TRUE, FALSE))
+dat.pca$is.7 <- sapply(dat.pca$cluster, function(x) ifelse(x %in% c(7), TRUE, FALSE))
+dat.pca$is.5 <- sapply(dat.pca$cluster, function(x) ifelse(x %in% c(5), TRUE, FALSE))
+
+mc_colors_vec <- sapply(dat.pca$cluster, function(x) mc_colors[x])
+dat.pca$mc_colors <- mc_colors_vec
+
+# ggplot(dat.pca, aes(x = PC1, y = PC2, col = as.character(cluster))) + geom_point(alpha = 0.9)  +
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#   ggtitle(paste0("Color by metacell IDs"))
+
+ggplot(dat.pca, aes(x = PC1, y = PC2, col = mc_colors)) + geom_point(alpha = 0.9)  +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_identity() + 
+  ggtitle(paste0("Color by metacell IDs"))
+
+
+
+
+```
+
+## PC3 separates between two clusters that were similar in along PC1 and PC2
+
+```{r pc2_pc3}
+
+ggplot(dat.pca, aes(x = PC2, y = PC3, col = mc_colors)) + geom_point(alpha = 0.9)  +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_identity() + 
+  ggtitle(paste0("Color by metacell IDs"))
+
+```
+
+## Nonlinear dimensionality reduction captures both a trajectory and separate clusters
+
+```{r umap}
+
+custom.settings <- umap.defaults
+custom.settings$n_neighbors <- 20
+custom.settings$metric <- "pearson"
+custom.settings$n_components <- 2
+dat.umap <- umap(out.lda@gamma, config = custom.settings)
+rownames(dat.umap$layout) <- rownames(out.lda@gamma)
+clstvec <- sapply(rownames(out.lda@gamma), function(x) cellhash[[x]])
+is57 <- sapply(clstvec, function(x) ifelse(x %in% c(5, 7), "#A9A9A9", "#000000"))
+is7 <- sapply(clstvec, function(x) ifelse(x %in% c(7), "#A9A9A9", "#000000"))
+is5 <- sapply(clstvec, function(x) ifelse(x %in% c(5), "#A9A9A9", "#000000"))
+plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, col = mc_colors_vec)
+
+```
+
+## Analyze PCA1-2 trajectory using principal curve
+
+```{r plot_principal_curve}
+proj <- principal_curve(as.matrix(dat.pca[, c("PC1", "PC2")]))
+
+dat.pca.proj <- as.data.frame(proj$s)
+dat.pca.proj$lambda <- proj$lambda
+
+ggplot(dat.pca, aes(x = PC1, y = PC2, col = mc_colors)) + geom_point(alpha = 0.9)  +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_identity() +
+  ggtitle(paste0("Lambda is distance along trajectory. Colors are MetaCell ID")) +
+  geom_line(data = dat.pca.proj, inherit.aes = FALSE, aes(x = PC1, y = PC2, alpha = lambda))
+
+```
+
+
+## Model counts along trajectory using Poisson regression (GLM)
+
+
+Details: the log counts is a linear function of pseudotime, which is offset by the total counts in each cell (normalize for cells with high counts). Here I show regions with high counts at small pseudotime (decreasing along trajectory).
+
+```{r glm_output}
+print(head(fits.sum %>% filter(pseudo < 0)))
+```
+
+## Poisson regression model predicts signal at Hox genes decreases along trajectory
+
+It's a naive fitting with lots of details ignored, such as overdispersion, zero-inflation, shrinkage of estimates.
+
+```{r glm_show}
+
+jpeak <- "chr2:74660000-74760000"
+fits.again <- FitGlmRow(count.mat[jpeak, ], jpseudo, jsize, returnobj = TRUE)
+
+pred.x <- runif(100, min(jpseudo), max(jpseudo))
+jsizenew <- 10000  # just use one cell size for the prediction trend. When fitting, each cell has an offset that accounts for total counts. The trend you see is therefore a cell with 10000 counts. 
+newdat <- data.frame(pseudo = pred.x, size = jsizenew)
+pred.y <- exp(predict(fits.again, newdata = newdat))
+
+jdat.real <- data.frame(x = jpseudo, y = count.mat[jpeak, ], type = "real")
+jdat.pred <- data.frame(x = pred.x, y = pred.y, type = "pred")
+
+ggplot() + geom_point(data = jdat.real, aes(x = x, y = y), alpha=0.15) + 
+  geom_line(data = jdat.pred, aes(x = x, y = y)) + theme_bw() + ggtitle(jpeak) + 
+  xlab("Length along trajectory") + ylab("Counts")
+
+```
+
+
+# Conclusions
+
+## Conclusions
+
+- Analysis of count matrix using LDA recapitulates what we see with MetaCell
+
+- Naive modeling of count data along trajectory identifies regions with Hox genes decreasing along trajectory
+
+- At 100kb bins, probably MetaCell is doing better than LDA for analyzing relationships between cells. LDA may be more advantageous as you start to get very sparse matrices. 
+
+## Going further
+
+- Explore the transcriptome and histone marks data so we can see how we should link these datasets together. 
+
+- Model counts along trajectory using a proper noise model. Either a negative binomial for large bins or beta-binomial if we do very small bins.
+

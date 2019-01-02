@@ -1,4 +1,4 @@
-rm(list=ls())
+# rm(list=ls())
 setwd("~/Dropbox/scCHiC_figs/FIG4_BM/")
 
 xmin<-95.3e6
@@ -18,7 +18,7 @@ for (i in 1:ncol(Q)){
 }
 
 allgroup <- seq(11)
-ingroup <- c(7)  # 5 is most outer group, 7 is less  
+ingroup <- c(6)  # 5 is most outer group, 7 is less    # group 5 shows 0.6 fold change. group 7 shows 0.3 FC
 outgroup <- allgroup[!allgroup %in% ingroup]
 
 if (length(ingroup) > 1){
