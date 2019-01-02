@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 outputs_R
+*.html
+*.pdf
