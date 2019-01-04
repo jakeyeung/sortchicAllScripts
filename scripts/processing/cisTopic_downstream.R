@@ -23,8 +23,8 @@ outdir <- args[[2]]
 
 load(inf, v=T)  # cisTopicObject
 
-pdf(file.path(outdir, "best_model_and_binarize.pdf"))
 cisTopicObject <- selectModel(cisTopicObject)
+pdf(file.path(outdir, "best_model_and_binarize.pdf"))
 cisTopicObject <- getRegionsScores(cisTopicObject, method='NormTop', scale=TRUE)
 cisTopicObject <- binarizecisTopics(cisTopicObject, thrP=0.975, plot=TRUE)
 dev.off()
