@@ -24,27 +24,28 @@ print(args)
 inpath <- args[[1]]
 outdir <- args[[2]]
 nclst <- StrToNumeric(args[[3]])
-topic.vec <- StrToVector(args[[4]], delim = ",")
+topic.vec <- as.numeric(StrToVector(args[[4]], delim = ","))
 tunemodels <- StrToBool(args[[5]])
 meanmax <- StrToNumeric(args[[6]])  # remove suspicious peaks 
 cellmin <- StrToNumeric(args[[7]])  # remove cells with low counts
 cellmax <- StrToNumeric(args[[8]])  # remove suspiciious cells 
+binarizemat <- StrToBool(args[[9]])
 
 if (is.na(nclst)){
-  stop(paste("nclst must be numeric, found", nclst.str))
+  stop(paste("nclst must be numeric, found", nclst))
 }
 if (is.na(meanmax)){
-  stop(paste("meanmax must be numeric, found", meanmax.str))
+  stop(paste("meanmax must be numeric, found", meanmax))
 }
 if (is.na(tunemodels)){
-  stop(paste("tunemodels must be TRUE or FALSE, found", tunemodels.str))
+  stop(paste("tunemodels must be TRUE or FALSE, found", tunemodels))
 }
 print(paste("Will iterate through", length(topic.vec), "Ks"))
 print(topic.vec)
 
 plotpath <- file.path(outdir, "plots.meanfilt.pdf")
 outpath <- file.path(outdir, paste0("lda_out.meanfilt.K-", nclst, ".Robj"))
-tunepath <- file.path(outdir, paste0("lda_tuning.meanfilt.K-", nclst.str, ".Robj"))
+tunepath <- file.path(outdir, paste0("lda_tuning.meanfilt.K-", nclst, ".Robj"))
 
 
 # constants
@@ -53,11 +54,17 @@ tunepath <- file.path(outdir, paste0("lda_tuning.meanfilt.K-", nclst.str, ".Robj
 # meanmax <- 1  # peaks with more than these counts are filtered out for suspicious 
 # cellmin <- 
 
+# print args
+print("Args:")
+print(paste(inpath, outdir, nclst, topic.vec, tunemodels, cellmin, cellmax, binarizemat))
+
 # Load counts -------------------------------------------------------------
 
 load(inpath, v=T)
 
 count.mat <- count.dat$counts
+
+print(dim(count.mat))
 
 # Plot mean and variance --------------------------------------------------
 
@@ -98,21 +105,52 @@ print(head(bad.peaks$peak))
 print(paste("There are", nrow(bad.peaks), "peaks with more than", "counts. Removing them..."))
 
 # filter them out before running count.mat
-print("Dimensions before filtering...")
+print("Dimensions before filtering peaks...")
 print(dim(count.mat))
 
 count.mat <- count.mat[which(!rownames(count.mat) %in% bad.peaks$peak), ]
-print("Dimensions after filtering...")
+print("Dimensions after filtering peaks...")
 print(dim(count.mat))
 
+# remove peaks in chrM
+# M.peaks <- grep("chrM|chrY|chrX", dat.meanvar$peak, value=TRUE)
+M.peaks <- grep("chrM", dat.meanvar$peak, value=TRUE)
+
+count.mat <- count.mat[which(!rownames(count.mat) %in% M.peaks), ]
+print("Dimensions after filtering peaks X, Y, M chromos")
+print(dim(count.mat))
+
+
 # Remove cells with zero entries
-count.mat <- count.mat[, which(Matrix::colSums(count.mat) > 0)]
+print("Dimensions before filtering cells")
+print(dim(count.mat))
+count.mat <- count.mat[, which(Matrix::colSums(count.mat) > cellmin)]
+count.mat <- count.mat[, which(Matrix::colSums(count.mat) < cellmax)]
+print("Dimensions after filtering cells...")
+print(dim(count.mat))
 
 # Run LDA on count matrix -------------------------------------------------
 
 # nclst <- 10
 print("Running LDA")
-out.lda <- LDA(x = t(as.matrix(count.mat)), k = nclst, method = "Gibbs", control=list(seed=0))
+
+# binarize matrix
+if (binarizemat){
+  count.mat <- BinarizeMatrix(count.mat)
+}
+
+# print(head(count.mat[1:5, 1:5]))
+if (!tunemodels){
+  print("Running single LDA for topics:")
+  print(nclst)
+  out.lda <- LDA(x = t(as.matrix(count.mat)), k = nclst, method = "Gibbs", control=list(seed=0))
+} else {
+  print("Running multicore LDA for topics:")
+  print(topic.vec)
+  out.lda <- parallel::mclapply(topic.vec, function(nc){
+          LDA(x = t(as.matrix(count.mat)), k = nc, method = "Gibbs", control=list(seed=0))            
+  }, mc.cores = length(topic.vec))
+}
 
 # save output
 print("Saving LDA")
@@ -122,15 +160,15 @@ print(Sys.time() - jstart)
 
 # tune LDA 
 
-if (tunemodels){
-    # topic.vec <- c(4, 9, 11, 14, 16, 18)
-    print("Running tuning")
-    optimal.topics <- FindTopicsNumber(t(as.matrix(count.mat)), topics=topic.vec, mc.cores = length(topic.vec), method="Gibbs", metrics=c("Arun2010", "CaoJuan2009", "Griffiths2004", "Deveaud2014"), control = list(seed=0))
-    FindTopicsNumber_plot(optimal.topics)
-
-    save(optimal.topics, file = tunepath)
-    print("Saving optimal topics")
-}
+# if (tunemodels){
+#     # topic.vec <- c(4, 9, 11, 14, 16, 18)
+#     print("Running tuning")
+#     optimal.topics <- FindTopicsNumber(t(as.matrix(count.mat)), topics=topic.vec, mc.cores = length(topic.vec), method="Gibbs", metrics=c("Arun2010", "CaoJuan2009", "Griffiths2004", "Deveaud2014"), control = list(seed=0))
+#     FindTopicsNumber_plot(optimal.topics)
+# 
+#     save(optimal.topics, file = tunepath)
+#     print("Saving optimal topics")
+# }
 
 print("Time elapsed after tuning")
 print(Sys.time() - jstart)
