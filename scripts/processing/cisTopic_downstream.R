@@ -64,20 +64,20 @@ save(out.lst, file = file.path(outdir, paste0("out_list_umap_cells_regions", jdi
 # save(out.lst.regions, file = file.path(outdir, paste0("out_list_umap_regions", jdistmeth, ".", jmet, ".pdf")))
 
 # plot outputs
-outplot <- file.path(outdir, paste0("umap_across_variables.", jdistmeth, ".", jmet, ".pdf"))
-pdf(outplot, useDingbats=FALSE)
-par(mfrow=c(1,1), mar=c(1,1,1,1))
-for (i in 1:length(out.lst)){
-    x <- out.lst[[i]]
-    nn.jmindist <- vec.lst[[i]]
-    nn <- as.numeric(strsplit(nn.jmindist, ":")[[1]][[1]])
-    jmindist <- as.numeric(strsplit(nn.jmindist, ":")[[1]][[2]])
-    jmain <- paste("NN:", nn, "MinDist", jmindist)
-    plotFeatures(x, method='Umap', target='cell', topic_contr=jmet, topics = 1, colorBy=NULL, cex.legend = 0.8, factor.max=.75, dim=2, legend=TRUE)
-    plotFeatures(x, method='Umap', target='region', topic_contr=jmet, topics = 1, colorBy=NULL, cex.legend = 0.8, factor.max=.75, dim=2, legend=TRUE)
-    title(main = jmain, line = -1)
-}
-dev.off()
+# outplot <- file.path(outdir, paste0("umap_across_variables.", jdistmeth, ".", jmet, ".pdf"))
+# pdf(outplot, useDingbats=FALSE)
+# par(mfrow=c(1,1), mar=c(1,1,1,1))
+# for (i in 1:length(out.lst)){
+#     x <- out.lst[[i]]
+#     nn.jmindist <- vec.lst[[i]]
+#     nn <- as.numeric(strsplit(nn.jmindist, ":")[[1]][[1]])
+#     jmindist <- as.numeric(strsplit(nn.jmindist, ":")[[1]][[2]])
+#     jmain <- paste("NN:", nn, "MinDist", jmindist)
+#     plotFeatures(x, method='Umap', target='cell', topic_contr=jmet, topics = 1, colorBy=NULL, cex.legend = 0.8, factor.max=.75, dim=2, legend=TRUE)
+#     plotFeatures(x, method='Umap', target='region', topic_contr=jmet, topics = 1, colorBy=NULL, cex.legend = 0.8, factor.max=.75, dim=2, legend=TRUE)
+#     title(main = jmain, line = -1)
+# }
+# dev.off()
 
 # run GREAT
 cisTopicObject <- annotateRegions(cisTopicObject, txdb=TxDb.Mmusculus.UCSC.mm10.knownGene, annoDb='org.Mm.eg.db')

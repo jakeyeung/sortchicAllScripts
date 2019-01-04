@@ -14,7 +14,7 @@ outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/lda_analysis.h
 
 # need 25 cores here
 nthreads=1
-jmem='16G'
+jmem='32G'
 jtime='12:00:00'
 BNAME=$outdir/cistopic_downstream
 DBASE=$(dirname "${BNAME}")

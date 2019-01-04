@@ -15,7 +15,7 @@ rs="scripts/processing/run_LDA_model.R"
 
 inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats/PZ-BM-H3K27me3.merged.NoCountThres.Robj"
 
-dist="1000_NoM_binarize"
+dist="1000_NoM_binarize_fewerTopics"
 meanmax="1"
 cellmin="1000"
 cellmax="50000"
@@ -34,10 +34,10 @@ outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/lda_analysis.h
 [[ ! -d $outdir ]] && echo "$outdir not found, exiting" && exit 1
 
 K=20
-topics="10,15,20,25,30,40,50"
+topics="5,7,12"
 tunemodels="TRUE"
 binarize="TRUE"
-ncores=7
+ncores=3
 
 bname=$(basename $inf)
 bname=${bname%%.*}.CountThres0.K-${K}
