@@ -7,12 +7,13 @@
 jmem='10G'
 jtime='3:00:00'
 
-inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_rep_merged/BM_H3K4me1_merged.bam"
+# inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_rep_merged/BM_H3K4me1_merged.bam"
+inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_rep_merged/BM_H3K27me3_merged.bam"
 bname=$(basename $inf)
 bname=${bname%.*}
 
 cutoff=0.3
-minlength=1500
+minlength=1000  # seems to work well at 1k?
 bname=$bname.$cutoff.$minlength.cutoff
 outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output"
 outdir=$outmain/$bname

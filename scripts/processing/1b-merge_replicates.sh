@@ -6,7 +6,8 @@
 # 2018-12-18
 
 dmain="/hpc/hub_oudenaarden/jyeung/data/histone-mods"
-mark="H3K4me1"
+# mark="H3K4me1"
+mark="H3K27me3"
 
 [[ ! -d $dmain ]] && echo "$dmain not found, exiting" && exit 1
 

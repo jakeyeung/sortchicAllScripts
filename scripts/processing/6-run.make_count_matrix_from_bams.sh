@@ -7,14 +7,16 @@
 jmem='16G'
 jtime='1:00:00'
 
-jchip="H3K4me1"
+# jchip="H3K4me1"
+jchip="H3K27me3"
 
 workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 cd $workdir
 
 # rs="/home/hub_oudenaarden/jyeung/projects/scChiC/processing/make_count_matrix_from_bams.R"
 rs="scripts/processing/make_count_matrix_from_bams.R"
-peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
+# peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
+peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_${jchip}_merged.0.3.1000.cutoff/BM_${jchip}_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
 
 # get paths to bams
 bmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc/count_thres-0"
