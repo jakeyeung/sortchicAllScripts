@@ -6,4 +6,6 @@
 
 indir="t2:/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/lda_analysis.h3k27me3.broadpeaks/lda_outputs.meanfilt_1.merge_1000_NoM_binarize.cellmin_1000.cellmax_50000"
 
-outdir=""
+outdir="/tmp"
+
+scp -r $indir $outdir
