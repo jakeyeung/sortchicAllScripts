@@ -154,7 +154,7 @@ if (!tunemodels){
 
 # save output
 print("Saving LDA")
-save(out.lda, file = outpath)
+save(out.lda, count.mat, file = outpath)
 print("Time elapsed after LDA")
 print(Sys.time() - jstart)
 
