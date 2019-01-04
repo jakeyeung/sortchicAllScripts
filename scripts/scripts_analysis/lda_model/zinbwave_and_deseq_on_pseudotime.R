@@ -109,7 +109,7 @@ colData <- data.frame(rname = colnames(count.mat), pseudo = jpseudo, row.names =
 
 jcount.mat <- count.mat
 rownames(jcount.mat) <- NULL
-obj <- SummarizedExperiment(assays = list(counts = jcount.mat),
+obj <- SummarizedExperiment(assays = list(counts = as.matrix(jcount.mat)),
                             rowRanges = rowRanges, colData = colData)
 
 jstart <- Sys.time()
