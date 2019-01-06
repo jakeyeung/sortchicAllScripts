@@ -16,3 +16,31 @@ BinarizeMatrix <- function(x){
   xbin <- Matrix::Matrix(x, sparse = TRUE, nrow = nrow(x), ncol = ncol(x))
   return(xbin)
 }
+
+ParseCoord <- function(x){
+  # chr7:103,796,583-103,857,605 -> chromo, start, end
+  out <- list()
+  out$chromo <- strsplit(x, split = ":")[[1]][[1]]
+  out$start <- strsplit(strsplit(x, split = ":")[[1]][[2]], split = "-")[[1]][[1]]
+  out$end <- strsplit(strsplit(x, split = ":")[[1]][[2]], split = "-")[[1]][[2]]
+  # remove commas
+  out <- lapply(out, function(x) gsub(",", "", x))
+  out$start <- as.numeric(gsub(",", "", out$start))
+  out$end <- as.numeric(gsub(",", "", out$end))
+  return(out)
+}
+
+GetChromo <- function(x){
+  # chrY:90799295-90803056 -> chrY
+  return(strsplit(x, ":")[[1]][[1]])
+}
+
+GetStart <- function(x){
+  # chrY:90799295-90803056 -> 90799295
+  return(strsplit(strsplit(x, ":")[[1]][[2]], "-")[[1]][[1]])
+}
+
+GetEnd <- function(x){
+  # chrY:90799295-90803056 -> 90799295
+  return(strsplit(strsplit(x, ":")[[1]][[2]], "-")[[1]][[2]])
+}
