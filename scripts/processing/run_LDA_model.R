@@ -30,6 +30,7 @@ meanmax <- StrToNumeric(args[[6]])  # remove suspicious peaks
 cellmin <- StrToNumeric(args[[7]])  # remove cells with low counts
 cellmax <- StrToNumeric(args[[8]])  # remove suspiciious cells 
 binarizemat <- StrToBool(args[[9]])
+projname <- args[[10]]
 
 if (is.na(nclst)){
   stop(paste("nclst must be numeric, found", nclst))
@@ -43,10 +44,9 @@ if (is.na(tunemodels)){
 print(paste("Will iterate through", length(topic.vec), "Ks"))
 print(topic.vec)
 
-plotpath <- file.path(outdir, "plots.meanfilt.pdf")
-outpath <- file.path(outdir, paste0("lda_out.meanfilt.K-", nclst, ".Robj"))
-tunepath <- file.path(outdir, paste0("lda_tuning.meanfilt.K-", nclst, ".Robj"))
-
+plotpath <- file.path(outdir, paste0("plots_meanfilt.", projname, ".pdf"))
+outpath <- file.path(outdir, paste0("lda_out_meanfilt.", projname, ".Robj"))
+# tunepath <- file.path(outdir, paste0("lda_tuning.meanfilt.K-", nclst, ".Robj"))
 
 # constants
 # countmax <- 100  # peaks with more than these counts are filtered out for suspicious 
