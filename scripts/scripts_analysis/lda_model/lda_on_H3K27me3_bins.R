@@ -19,14 +19,14 @@ source("scripts/Rfunctions/FitFunctions.R")
 
 # Load data ---------------------------------------------------------------
 
-# load("/private/tmp/lda_output/BM-H3K27me3.AvO_filt.Robj", v=T)
+load("/private/tmp/lda_output/BM-H3K27me3.AvO_filt.Robj", v=T)
 # load("/private/tmp/lda_output/lda_out.meanfilt.K-12.Robj", v=T)
 
-load("/private/tmp/lda_output/lda_outputs.meanfilt_1.merge_1000.cellmin_1000.cellmax_50000/lda_out.meanfilt.K-12.Robj")
-load("/private/tmp/lda_output/PZ-BM-H3K27me3.merged.NoCountThres.Robj", v=T)
-
-# load("/private/tmp/lda_output/lda_outputs.meanfilt_1.merge_1000_NoXYM.cellmin_1000.cellmax_50000/lda_out.meanfilt.K-12.Robj", v=T)
+# load("/private/tmp/lda_output/lda_outputs.meanfilt_1.merge_1000.cellmin_1000.cellmax_50000/lda_out.meanfilt.K-12.Robj")
 # load("/private/tmp/lda_output/PZ-BM-H3K27me3.merged.NoCountThres.Robj", v=T)
+
+load("/private/tmp/lda_output/lda_outputs.meanfilt_1.merge_1000_NoXYM.cellmin_1000.cellmax_50000/lda_out.meanfilt.K-12.Robj", v=T)
+load("/private/tmp/lda_output/PZ-BM-H3K27me3.merged.NoCountThres.Robj", v=T)
 
 count.mat <- count.dat$counts
 
@@ -98,23 +98,32 @@ ggplot(dat.pca, aes(x = PC3, y = PC4, size = peak.counts, col = peak.counts)) + 
   ggtitle(paste0("Color by sum of top ", topn, " peaks from PC1 beta loadings"))
 
 # do UMAP
+
+nn <- 20
+jmetric <- 'pearson2'
+jmindist <- 0.001
 custom.settings <- umap.defaults
-custom.settings$n_neighbors <- 10
-custom.settings$metric <- "pearson2"
+custom.settings$n_neighbors <- nn
+custom.settings$metric <- jmetric
+custom.settings$min_dist <- jmindist
+
 dat.umap <- umap(out.lda@gamma, config = custom.settings)
+# dat.umap <- umap(as.matrix(count.mat), config = custom.settings)
 rownames(dat.umap$layout) <- rownames(out.lda@gamma)
 
 rbPal <- colorRampPalette(c('black','yellow'))
 jcol.rgb <- rbPal(20)[as.numeric(cut(jcol,breaks = 20))]
 
-plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, col = jcol.rgb)
+jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
+plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, col = jcol.rgb, main = jmain)
+
 
 # do diffusion 
-
-out.lda.dm <- DiffusionMap(out.lda@gamma, k = 12, n_eigs = 3)
-plot(out.lda.dm, 1:2, col = jcol)  # colors from beta matrix
-plot(out.lda.dm, 1:3, col = jcol)  # colors from beta matrix
-plot(out.lda.dm, 2:3, col = jcol)  # colors from beta matrix
+# 
+# out.lda.dm <- DiffusionMap(out.lda@gamma, k = 12, n_eigs = 3)
+# plot(out.lda.dm, 1:2, col = jcol)  # colors from beta matrix
+# plot(out.lda.dm, 1:3, col = jcol)  # colors from beta matrix
+# plot(out.lda.dm, 2:3, col = jcol)  # colors from beta matrix
 
 
 # Run pseudotime and plot Hox genes ---------------------------------------
