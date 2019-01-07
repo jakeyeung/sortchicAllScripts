@@ -77,7 +77,7 @@ out.tb.lst <- mclapply(out.great.lst, function(out.great){
   return(out.tb)
 }, mc.cores = ncores)
 
-save(out.lda, topic.regions, out.great.lst, out.tb.lst, file = outpath)
+save(topic.regions, regions.range, out.great.lst, out.tb.lst, file = outpath)
 
 print(Sys.time() - jstart)
 print("Done successfully")
