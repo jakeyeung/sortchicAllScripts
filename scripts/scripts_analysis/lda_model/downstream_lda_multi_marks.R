@@ -21,9 +21,9 @@ source("scripts/Rfunctions/Aux.R")
 
 pcut <- 0.3
 jdist <- 1000
-jchip <- "H3K4me1"
 jchip <- "H3K9me3"
 jchip <- "H3K4me3"
+jchip <- "H3K4me1"
 jchip <- "H3K27me3"
 load(paste0('/private/tmp/lda_output.systematic.', pcut, '.', jdist, '/lda_out_meanfilt.PZ-BM-', jchip, '.CountThres0.K-5_7_10_12_15_20_25_30.Robj'), v=T)
 
@@ -52,8 +52,8 @@ Kvec <- sapply(out.lda.lst, function(x) x@k)
 best.K <- Kvec[which.max(sapply(out.lda.lst, function(x) x@loglikelihood))]
 
 # plot loglikelihood
-par(mfrow=c(1,1), mar=c(1,1,1,1))
-plot(Kvec, sapply(out.lda.lst, function(x) x@loglikelihood))
+par(mfrow=c(1, 1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+plot(Kvec, sapply(out.lda.lst, function(x) x@loglikelihood), 'o')
 
 # plot likelihood 
 

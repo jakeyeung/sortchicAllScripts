@@ -25,6 +25,14 @@ SelectTopRegions <- function(beta.row, regions, method = "thres", method.val = 0
   }
 }
 
+GetCountMatFromLDA <- function(out.lda){
+  # https://stackoverflow.com/questions/20004493/convert-simple-triplet-matrixslam-to-sparse-matrixmatrix-in-r
+  count.mat <- Matrix::sparseMatrix(i=out.lda@wordassignments$i, 
+                                  j=out.lda@wordassignments$j, 
+                                  x=out.lda@wordassignments$v, 
+                                  dims=c(out.lda@wordassignments$nrow, out.lda@wordassignments$ncol))
+  return(count.mat)
+}
 
 
 .modelMatSelection <- function(
