@@ -4,7 +4,7 @@
 #  
 # 2018-12-29
 
-jmem='64G'
+jmem='96G'
 jtime='24:00:00'
 
 workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
@@ -15,7 +15,7 @@ rs="scripts/processing/run_LDA_model.R"
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 
 marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
-pvalcutoff="0.5"
+pvalcutoff="0.3"
 mindist="1000"
 
 for mark in $marks; do
