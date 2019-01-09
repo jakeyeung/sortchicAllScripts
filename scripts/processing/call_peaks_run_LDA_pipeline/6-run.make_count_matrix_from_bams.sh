@@ -19,7 +19,7 @@ rs="scripts/processing/make_count_matrix_from_bams.R"
 
 for jchip in $marks; do
     # peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
-    peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_${jchip}_merged.${pvalcutoff}.${mindist}.cutoff/BM_${jchip}_merged.${pvalcutoff}.${mindist}.cutoff_peaks.blacklistfilt.broadPeak"
+    # peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_${jchip}_merged.${pvalcutoff}.${mindist}.cutoff/BM_${jchip}_merged.${pvalcutoff}.${mindist}.cutoff_peaks.blacklistfilt.broadPeak"
 
     # get paths to bams
     bmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc/count_thres-0"
@@ -28,7 +28,7 @@ for jchip in $marks; do
     [[ ! -d $bmain ]] && echo "$bmain not found, exiting" && exit 1
 
     # now run Rscript
-    outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats.${pvalcutoff}.${mindist}"
+    outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/count_mat_from_hiddenDomains/count_mats.${pvalcutoff}.${mindist}"
     [[ ! -d $outmain ]] && mkdir $outmain
     outf="$outmain/PZ-BM-${jchip}.merged.NoCountThres.Robj"
     BNAME="$outmain/PZ-BM-${jchip}.merged.NoCountThres"
