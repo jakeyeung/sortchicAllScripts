@@ -93,6 +93,8 @@ def main():
             writebamdic[bc].close()
             pysam.sort('-o', sorteddic[bc], unsorteddic[bc])
             pysam.index(sorteddic[bc])
+        # clean up 
+        for bc in barcodes:
             os.remove(unsorteddic[bc])
 
 if __name__ == '__main__':
