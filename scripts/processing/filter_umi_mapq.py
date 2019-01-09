@@ -85,6 +85,8 @@ def main():
                         help='bc indx to get from header')
     parser.add_argument('--dumpfile', '-d', metavar='DUMPBAM', default = None,
                         help='bam output of UMI duplicates')
+    parser.add_argument('--genome', '-g', metavar='mm or hs', default = 'mm',
+                        help='Genome is mm or hs to define chromosomes')
     args = parser.parse_args()
 
     # store command line arguments for reproducibility
@@ -95,7 +97,8 @@ def main():
     ARG_INPUTS = ['%s=%s' % (key, val) for key, val in args_dic.items()]  # for python3
     ARG_INPUTS = ' '.join(ARG_INPUTS)
 
-    chromos = [''.join(['chr', str(i + 1)]) for i in range(20)] + ['chrX', 'chrY', 'chrM']
+    # chromos = [''.join(['chr', str(i + 1)]) for i in range(20)] + ['chrX', 'chrY', 'chrM']
+    chromos = [''.join(['chr', str(i + 1)]) for i in range(22)] + ['chrX', 'chrY', 'chrM']
     chromos_set = set(chromos)
     bad_chromos = set()
     print(chromos)
