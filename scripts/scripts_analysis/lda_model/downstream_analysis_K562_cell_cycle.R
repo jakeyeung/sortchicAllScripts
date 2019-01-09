@@ -146,5 +146,85 @@ print(x.match)
 
 # Do GREAT analysis -------------------------------------------------------
 
+library(GenomicRanges)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(org.Hs.eg.db)
+
+library(ChIPseeker)
+library(rGREAT)
+library(JFuncs)
+library(gwascat)
+
+# library(rtracklayer)
+
+top.thres <- 0.98
+# need to assign cutoff for each peak for each topic
+topic.regions <- lapply(seq(best.K), function(clst){
+  return(SelectTopRegions(tmResult$terms[clst, ], colnames(tmResult$terms), method = "thres", method.val = top.thres))
+})
+regions <- data.frame(seqnames = sapply(colnames(tmResult$terms), GetChromo),
+                      start = sapply(colnames(tmResult$terms), GetStart),
+                      end = sapply(colnames(tmResult$terms), GetEnd))
+regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
+
+# annotate after HG19
+regions.annotated <- as.data.frame(annotatePeak(regions.range, 
+                                                TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, 
+                                                annoDb='org.Hs.eg.db'))
+rownames(regions.annotated) <- regions.annotated$region_coord
+
+ncores <- 1
+
+# liftover regions from Hg38 to Hg19
+# https://bioconductor.org/packages/release/workflows/vignettes/liftOver/inst/doc/liftov.html
+path <- system.file(package="liftOver", "extdata", "hg38ToHg19.over.chain")
+ch <- rtracklayer::import.chain(path)
+
+seqlevelsStyle(gr.in) = "UCSC"
+regions.range.19 = unlist(rtracklayer::liftOver(regions.range, ch))
+regions.range.19$hg38peak <- names(regions.range.19)
+
+# annotate regions with hg19
+# annotate after HG19
+i <- 1
+# gr.in <- regions.range.19[topic.regions[[i]], ]
+# gr.in <- subset(regions.range.19, hg38peak %in% topic.regions[[i]])
+regions.annotated.19 <- as.data.frame(annotatePeak(unname(regions.range.19), 
+                                                TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, 
+                                                annoDb='org.Hs.eg.db'))
+# regions.annotated.19$hg38peak <- names(regions.range.19)
+# 
+# print(i)
+# print(head(gr.in))
+gr.in <- subset(regions.range.19, hg38peak %in% topic.regions[[i]])
+out.great <- submitGreatJob(unname(gr.in), species="hg19", request_interval = 10)
+out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great),
+                              request_interval = 300)
 
 
+if (ncores == 1){
+  out.great.lst <- lapply(seq(best.K), function(i){
+    gr.in <- regions.range[topic.regions[[i]], ]
+    print(i)
+    print(head(gr.in))
+    out.great <- submitGreatJob(gr.in, species="hg19", request_interval = 700)
+    return(out.great)
+  })
+  out.tb.lst <- lapply(out.great.lst, function(out.great){
+    out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great),
+                                  request_interval = 300)
+    return(out.tb)
+  })
+} else {
+  print(paste("Running great multicore", ncores))
+  out.great.lst <- mclapply(seq(best.K), function(i){
+    gr.in <- regions.range[topic.regions[[i]], ]
+    out.great <- submitGreatJob(gr.in, species="hg19", request_interval = 700)
+    return(out.great)
+  }, mc.cores = ncores)
+  out.tb.lst <- mclapply(out.great.lst, function(out.great){
+    out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great), 
+                                  request_interval = 300)
+    return(out.tb)
+  }, mc.cores = ncores)
+}

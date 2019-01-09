@@ -62,53 +62,45 @@ regions <- data.frame(seqnames = sapply(colnames(tmResult$terms), GetChromo),
                       start = sapply(colnames(tmResult$terms), GetStart),
                       end = sapply(colnames(tmResult$terms), GetEnd))
 regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
-regions.annotated <- as.data.frame(annotatePeak(regions.range, 
-                                                TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, 
-                                                annoDb='org.Hs.eg.db'))
-rownames(regions.annotated) <- regions.annotated$region_coord
 
-# submit fake greatjob to initialize the database?
-
-
-InitGreatTest <- function(){
-    great.test = tryCatch({
-        i <- 1
-        gr.in <- regions.range[topic.regions[[i]], ]
-        out.great.tmp <- submitGreatJob(gr.in, species="hg19")
-    }, error = function(e) {
-        print("Error on submit Great job, dont know why")
-    })
-}
+# convert hg38 to hg19 before annotating
+# https://bioconductor.org/packages/release/workflows/vignettes/liftOver/inst/doc/liftov.html
+path <- system.file(package="liftOver", "extdata", "hg38ToHg19.over.chain")
+ch <- rtracklayer::import.chain(path)
+seqlevelsStyle(gr.in) = "UCSC"
+regions.range.19 = unlist(rtracklayer::liftOver(regions.range, ch))
+regions.range.19$hg38peak <- names(regions.range.19)
+# regions.annotated.19 <- as.data.frame(annotatePeak(unname(regions.range.19), 
+#                                                    TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, 
+#                                                    annoDb='org.Hs.eg.db'))
 
 if (ncores == 1){
   print(paste("Running great single core", ncores))
   out.great.lst <- lapply(seq(best.K), function(i){
-    tmp <- InitGreatTest()
-    gr.in <- regions.range[topic.regions[[i]], ]
-    out.great <- submitGreatJob(gr.in, species="hg19", request_interval = 700)
+    gr.in <- subset(regions.range.19, hg38peak %in% topic.regions[[i]])
+    out.great <- submitGreatJob(unname(gr.in), species="hg19", request_interval = 100)
     return(out.great)
   })
   out.tb.lst <- lapply(out.great.lst, function(out.great){
     out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great), 
-                                  request_interval = 300)
+                                  request_interval = 100)
     return(out.tb)
   })
 } else {
   print(paste("Running great multicore", ncores))
   out.great.lst <- mclapply(seq(best.K), function(i){
-    tmp <- InitGreatTest()
-    gr.in <- regions.range[topic.regions[[i]], ]
-    out.great <- submitGreatJob(gr.in, species="hg19", request_interval = 700)
+    gr.in <- subset(regions.range.19, hg38peak %in% topic.regions[[i]])
+    out.great <- submitGreatJob(unname(gr.in), species="hg19", request_interval = 100)
     return(out.great)
   }, mc.cores = ncores)
   out.tb.lst <- mclapply(out.great.lst, function(out.great){
     out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great), 
-                                  request_interval = 300)
+                                  request_interval = 100)
     return(out.tb)
   }, mc.cores = ncores)
 }
 
-save(topic.regions, regions.range, out.great.lst, out.tb.lst, out.lda, file = outpath)
+save(topic.regions, regions.range.19, out.great.lst, out.tb.lst, out.lda, file = outpath)
 
 print(Sys.time() - jstart)
 print("Done successfully")
