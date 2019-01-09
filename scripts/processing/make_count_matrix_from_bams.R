@@ -50,7 +50,9 @@ if (ncol(regions.dat) == 9){
   colnames(regions.dat) <- c("Chr", "Start", "End", "pname", "score", "strand", "tStart", "tEnd", "rgb", "bCount", "bSizes", "bStarts", "signal", "mlogpval", "mlogqval")
 } else if (ncol(regions.dat) == 4){
   # handle hidden domains output
-  colnames(regions.dat) <- c("Chr", "Start", "End", "pname")
+  # add strand column, default "+"
+  regions.dat$strand <- "+"
+  colnames(regions.dat) <- c("Chr", "Start", "End", "pname", "strand")
 } else {
   stop(paste("Number of columns must be 9 or 15, found", ncol(regions.dat)))
 }
