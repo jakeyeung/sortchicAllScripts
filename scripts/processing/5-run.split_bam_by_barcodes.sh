@@ -8,7 +8,7 @@ jmem='4G'
 jtime='0:30:00'
 
 jscript="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/split_bam_by_barcodes.py"
-bname="PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14"
+# bname="PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14"
 inmain="/hpc/hub_oudenaarden/jyeung/data/histone-mods"
 bcmain="/home/hub_oudenaarden/jyeung/projects/scChiC/outputs_R/barcode_summaries"
 
