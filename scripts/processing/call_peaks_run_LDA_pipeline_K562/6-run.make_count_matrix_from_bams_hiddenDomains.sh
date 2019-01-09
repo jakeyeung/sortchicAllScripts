@@ -1,14 +1,14 @@
 #!/bin/sh
 # Jake Yeung
-# 6-run.make_count_matrix_from_bams.sh
+# 4-run.make_count_matrix_from_bams.sh
 # Make count matrix from bams using R 
-# 2018-12-19
+# 2019-01-08
 
 jmem='16G'
 jtime='1:00:00'
 
-marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
-pvalcutoff="0.3"
+cell="K562"
+marks="H3K27me3 H3K4me3"
 mindist="1000"
 
 workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
@@ -18,24 +18,23 @@ rs="scripts/processing/make_count_matrix_from_bams.R"
 
 
 for jchip in $marks; do
-    # peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_H3K4me1_merged.0.3.1000.cutoff/BM_H3K4me1_merged.0.3.1000.cutoff_peaks.blacklistfilt.broadPeak"
-    # peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_macs2_output/BM_${jchip}_merged.${pvalcutoff}.${mindist}.cutoff/BM_${jchip}_merged.${pvalcutoff}.${mindist}.cutoff_peaks.blacklistfilt.broadPeak"
+    peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/hiddenDomains_output_${cell}/${cell}_${jchip}_merged.${mindist}.cutoff/${cell}_${jchip}_merged.${mindist}.cutoff_analysis.blacklistfilt.bed"
 
     # get paths to bams
-    bmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc/count_thres-0"
+    bmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc_${cell}/count_thres-0"
 
     [[ ! -e $peakf ]] && echo "$peakf not found, exiting" && exit 1
     [[ ! -d $bmain ]] && echo "$bmain not found, exiting" && exit 1
 
     # now run Rscript
-    outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/count_mat_from_hiddenDomains/count_mats.${pvalcutoff}.${mindist}"
+    outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/count_mat_${cell}/count_mats.hiddenDomains.${mindist}"
     [[ ! -d $outmain ]] && mkdir $outmain
-    outf="$outmain/PZ-BM-${jchip}.merged.NoCountThres.Robj"
-    BNAME="$outmain/PZ-BM-${jchip}.merged.NoCountThres"
+    outf="$outmain/PZ-${cell}-${jchip}.merged.hiddenDomains.NoCountThres.Robj"
+    BNAME="$outmain/PZ-${cell}-${jchip}.merged.hiddenDomains.NoCountThres"
     tmpf="$outmain/JY_${jchip}_bamlist.out"
 
     [[ -e $tmpf ]] && echo "$tmpf already exists, skipping $jchip" && continue
-    for b in $(ls -d $bmain/PZ*$jchip*/*.sorted.bam); do
+    for b in $(ls -d $bmain/PZ-${cell}-*${jchip}*/*.sorted.bam); do
         echo $b >> $tmpf
     done
     echo "Temp bam files found in $tmpf"

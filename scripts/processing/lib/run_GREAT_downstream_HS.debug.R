@@ -1,7 +1,8 @@
 # Jake Yeung
 # run_GREAT_downstream.R
 # Analyze LDA downstream using GREAT 
-# 2019-01-06
+# use Human Genome
+# 2019-01-09
 
 jstart <- Sys.time()
 
@@ -10,8 +11,9 @@ library(dplyr)
 library(ggplot2)
 library(umap)
 library(GenomicRanges)
-library(TxDb.Mmusculus.UCSC.mm10.knownGene)
-library(org.Mm.eg.db)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(org.Hs.eg.db)
+
 library(ChIPseeker)
 library(rGREAT)
 library(JFuncs)
@@ -21,7 +23,7 @@ source("scripts/Rfunctions/Aux.R")
 
 # ARGS
 
-args <- commandArgs(trailingOnly=TRUE)
+# args <- commandArgs(trailingOnly=TRUE)
 
 inf <- args[[1]]
 outpath <- args[[2]]
@@ -61,21 +63,51 @@ regions <- data.frame(seqnames = sapply(colnames(tmResult$terms), GetChromo),
                       end = sapply(colnames(tmResult$terms), GetEnd))
 regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
 regions.annotated <- as.data.frame(annotatePeak(regions.range, 
-                                                TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, 
-                                                annoDb='org.Mm.eg.db'))
+                                                TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, 
+                                                annoDb='org.Hs.eg.db'))
 rownames(regions.annotated) <- regions.annotated$region_coord
 
-print(paste("Running great multicore", ncores))
-out.great.lst <- mclapply(seq(best.K), function(i){
+# submit fake greatjob to initialize the database?
+great.test = tryCatch({
+    i <- 1
+    gr.in <- regions.range[topic.regions[[i]], ]
+    out.great.tmp <- submitGreatJob(gr.in, species="hg19")
+}, error = function(e) {
+    print("Error on submit Great job, dont know why")
+})
+
+if (ncores == 1){
+  print(paste("Running great single core", ncores))
+  i <- 1
   gr.in <- regions.range[topic.regions[[i]], ]
-  out.great <- submitGreatJob(gr.in, species="mm10", request_interval = 700)
-  return(out.great)
-}, mc.cores = ncores)
-out.tb.lst <- mclapply(out.great.lst, function(out.great){
-  out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great), 
-                                request_interval = 300)
-  return(out.tb)
-}, mc.cores = ncores)
+  print("Submitting great job")
+  out.great <- submitGreatJob(gr.in, species="hg19")
+  print("Done great job")
+  # out.great.lst <- lapply(seq(best.K), function(i){
+  #   gr.in <- regions.range[topic.regions[[i]], ]
+  #   print(i)
+  #   print(head(gr.in))
+  #   out.great <- submitGreatJob(gr.in, species="hg19", request_interval = 700)
+  #   return(out.great)
+  # })
+  # out.tb.lst <- lapply(out.great.lst, function(out.great){
+  #   out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great), 
+  #                                 request_interval = 300)
+  #   return(out.tb)
+  # })
+} else {
+  print(paste("Running great multicore", ncores))
+  out.great.lst <- mclapply(seq(best.K), function(i){
+    gr.in <- regions.range[topic.regions[[i]], ]
+    out.great <- submitGreatJob(gr.in, species="hg19", request_interval = 700)
+    return(out.great)
+  }, mc.cores = ncores)
+  out.tb.lst <- mclapply(out.great.lst, function(out.great){
+    out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great), 
+                                  request_interval = 300)
+    return(out.tb)
+  }, mc.cores = ncores)
+}
 
 save(topic.regions, regions.range, out.great.lst, out.tb.lst, out.lda, file = outpath)
 
