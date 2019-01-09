@@ -12,6 +12,7 @@ library(SummarizedExperiment)
 library(GenomicRanges)
 library(ggplot2)
 library(Seurat)
+library(umap)
 # library(velocyto.R)
 
 # Load from Dropbox -------------------------------------------------------
@@ -51,8 +52,18 @@ abline(a = 0, b = -0.5)
 sobj <- CreateSeuratObject(countmat, project = "PZ-BM-Celseq2", normalization.method="LogNormalize")
 sobj <- FindVariableGenes(sobj)
 
+
 genes.keep <- sobj@var.genes
+genes.erdr1 <- grep("Erdr1|Mid1", rownames(countmat), value = TRUE)
 print(paste("Keeping", length(genes.keep), "genes"))
+
+# plot original genes and show variable genes
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+plot(xmean, xvar, pch = 20, col = rgb(red = 1, green = 0, blue = 0, alpha = 0.1))
+text(xmean, xvar, labels = sapply(names(xmean), function(x) ifelse(x %in% genes.keep, x, "")))
+# text(xmean, xvar, labels = sapply(names(xmean), function(x) ifelse(x %in% genes.erdr1, x, "")))
+abline(a = 0, b = -0.5)
+
 
 sumexp <- sumexp[genes.keep, ]
 
@@ -61,4 +72,34 @@ assayNames(sumexp)[1] <- "counts"
 zinb <- zinbwave(sumexp, K = 2, epsilon=length(genes.keep))
 
 W <- reducedDim(zinb)
+
+nn <- 15
+# jmetric <- 'pearson2'
+# jmetric <- 'euclidean'
+jmetric <- 'cosine'
+jmindist <- 0.1
+custom.settings <- umap.defaults
+custom.settings$n_neighbors <- nn
+custom.settings$metric <- jmetric
+custom.settings$min_dist <- jmindist
+
+W.umap <- umap(W, config = custom.settings)
+
+dat.W <- data.frame(W, umap1 = W.umap$layout[, 1], umap2 = W.umap$layout[, 2])
+
+ggplot(dat.W, aes(x = W1, y = W2)) + geom_point() + theme_classic()
+ggplot(dat.W, aes(x = umap1, y = umap2)) + geom_point() + theme_classic()
+
+# do UMAP directly on the matrix, use cosine
+
+umap.out <- umap(assays(sumexp)[[1]], config = custom.settings)
+
+dat.umap <- data.frame(umap1 = umap.out$layout[, 1], umap2 = umap.out$layout[, 2])
+
+ggplot(dat.umap, aes(x = umap1, y = umap2)) + geom_point() + theme_classic()
+
+
+
+# Find clusters -----------------------------------------------------------
+
 

@@ -23,10 +23,10 @@ jdist <- 1000L
 jmean <- 1
 jmin <- 100L
 jmax <- 500000L
-jchip <- "H3K4me3"
-jchip <- "H3K27me3"
-jchip <- "H3K9me3"
 jchip <- "H3K4me1"
+jchip <- "H3K27me3"
+jchip <- "H3K4me3"
+jchip <- "H3K9me3"
 
 jdir <- paste0('/tmp/ldaAnalysisBroadpeaks_', pcut, '_', jdist, '/lda_outputs.meanfilt_', jmean, '.cellmin_', jmin, '.cellmax_', jmax)
 inf <- file.path(jdir, paste0('lda_out_meanfilt.PZ-BM-', jchip, '.CountThres0.K-5_7_10_12_15_20_25_30.Robj'))
@@ -71,6 +71,7 @@ plot(Kvec, sapply(out.lda.lst, function(x) x@loglikelihood), 'o')
 # plot likelihood 
 
 kchoose <- best.K
+# kchoose <- 10
 out.lda <- out.lda.lst[[which(Kvec == kchoose)]]
 
 tmResult <- posterior(out.lda)
@@ -97,10 +98,14 @@ jcol.counts <- ColorsByCounts(jcounts, nbreaks = 100)
 par(mfrow=c(1,1), mar=c(1,1,1,1))
 plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = jmain, pty = 's', col = jcol.counts)
 
+dm.out <- destiny::DiffusionMap(data = tmResult$topics)
+
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+plot(dm.out, 1:3)  # colors from beta matrix
 
 # color by gamma
 
-jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma)
+jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, c("lightblue", "blue", "darkblue"))
 
 nb.col <- 5
 nb.row <- ceiling(best.K / nb.col)
@@ -109,7 +114,7 @@ mapply(function(jcol.rgb, jtopic){
   plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.75)
 }, jcol.rgbs, seq(kchoose))
 
-(x <- terms(out.lda, 6000))
+(x <- terms(out.lda, 1000))
  
 # Hox genes?
 hoxa <- "chr16:52"
@@ -128,6 +133,7 @@ print(x.match)
 
 # Look at GREAT output ----------------------------------------------------
 
+# inf.GREAT <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K27me3.CountThres0.K-10_15_20_25.GREAT.Robj"
 load(inf.GREAT, v=T)
 
 jtop <- 1
@@ -135,7 +141,8 @@ jontos <- unique(unlist(lapply(out.tb.lst, function(x) names(x))))
 cutoff <- 0.05
 foldchange <- 1.5
 
-ontology <- jontos[[14]]
+# ontology <- jontos[[14]]
+ontology <- jontos[[11]]
 order.by <- "Hyper_Fold_Enrichment"
 jdecreasing <- TRUE
 top <- 5
