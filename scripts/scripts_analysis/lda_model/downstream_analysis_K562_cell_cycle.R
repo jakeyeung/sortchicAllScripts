@@ -37,10 +37,15 @@ ExtractCellCycle <- function(x){
 # inf <- "/private/tmp/lda_out_meanfilt.PZ-BM-H3K9me3.CountThres0.K-5_7_10_12_15_20_25_30.Robj"
 # inf <- "/private/tmp/lda_out_meanfilt.PZ-BM-H3K27me3.CountThres0.K-5_7_10_12_15_20_25_30.Robj"
 # inf <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K4me3.CountThres0.K-10_15_20_25.Robj"
-inf <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K27me3.CountThres0.K-10_15_20_25.Robj"
+# inf <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K27me3.CountThres0.K-10_15_20_25.Robj"
+
+# inf <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K4me3.CountThres0.K-10_15_20_25.binarizeTrue.Robj"
+# inf.GREAT <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K4me3.CountThres0.K-10_15_20_25.GREAT.Robj"
+
+inf <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K27me3.CountThres0.K-10_15_20_25.binarizeTrue.Robj"
+inf.GREAT <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K27me3.CountThres0.K-10_15_20_25.GREAT.Robj"
 
 load(inf, v=T)
-
 
 
 # get count.mat
@@ -78,7 +83,10 @@ out.lda <- out.lda.lst[[which(Kvec == kchoose)]]
 cellnames <- unname(out.lda@documents)
 cellcycles <- sapply(cellnames, function(x) strsplit(x, "_")[[1]][[1]], USE.NAMES = FALSE)
 print(unique(cellcycles))
-colhash <- hash(c("G1", "G2M", "S"), c("red", "blue", "orange"))
+
+phasenames <- c("G1", "G2M", "S")
+phasecols <- c("red", "blue", "black")
+colhash <- hash(phasenames, phasecols)
 jcol.phase <- sapply(cellcycles, function(x) colhash[[x]], USE.NAMES = FALSE)
 
 tmResult <- posterior(out.lda)
@@ -87,7 +95,7 @@ nn <- 5
 # jmetric <- 'pearson'
 # jmetric <- 'cosine'
 jmetric <- 'euclidean'
-jmindist <- 0.0001
+jmindist <- 0.5
 custom.settings <- umap.defaults
 custom.settings$n_neighbors <- nn
 custom.settings$metric <- jmetric
@@ -102,12 +110,17 @@ jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
 jcounts <- Matrix::colSums(count.mat)
 jcol.counts <- ColorsByCounts(jcounts, nbreaks = 100)
 
-par(mfrow=c(1,1), mar=c(1,1,1,1))
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1))
 plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = jmain, pty = 's', col = jcol.phase)
+legend(2, -4, legend=phasenames, col=phasecols, pch = 20)
 
 dat.pca <- prcomp(tmResult$topics, center = TRUE, scale. = TRUE)
 
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
 plot(dat.pca$x[, 1], dat.pca$x[, 2], col = jcol.phase, pch = 20)
+# plot(dat.pca$x[, 2], dat.pca$x[, 3], col = jcol.phase, pch = 20)
+# plot(dat.pca$x[, 3], dat.pca$x[, 4], col = jcol.phase, pch = 20)
+# plot(dat.pca$x[, 4], dat.pca$x[, 5], col = jcol.phase, pch = 20)
 # color by gamma
 
 jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma)
@@ -144,87 +157,39 @@ x.match <- lapply(greplst, function(grepstr) grep(grepstr, x, value = TRUE))
 print(x.match)
 
 
-# Do GREAT analysis -------------------------------------------------------
+# Load GREAT --------------------------------------------------------------
 
-library(GenomicRanges)
-library(TxDb.Hsapiens.UCSC.hg19.knownGene)
-library(org.Hs.eg.db)
+load(inf.GREAT, v=T)
 
-library(ChIPseeker)
-library(rGREAT)
-library(JFuncs)
-library(gwascat)
+jontos <- unique(unlist(lapply(out.tb.lst, function(x) names(x))))
+cutoff <- 0.05
+foldchange <- 1.5
 
-# library(rtracklayer)
+ontology <- jontos[[2]]
+order.by <- "Hyper_Fold_Enrichment"
+jdecreasing <- TRUE
+top <- 3
 
-top.thres <- 0.98
-# need to assign cutoff for each peak for each topic
-topic.regions <- lapply(seq(best.K), function(clst){
-  return(SelectTopRegions(tmResult$terms[clst, ], colnames(tmResult$terms), method = "thres", method.val = top.thres))
-})
-regions <- data.frame(seqnames = sapply(colnames(tmResult$terms), GetChromo),
-                      start = sapply(colnames(tmResult$terms), GetStart),
-                      end = sapply(colnames(tmResult$terms), GetEnd))
-regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
+# dotplot from cisTopics
+topics <- which(lapply(1:length(out.tb.lst), function(i) !is.null(out.tb.lst[[i]][[ontology]])) == TRUE)
+GOdata <- lapply(topics, function(i) out.tb.lst[[i]][[ontology]])
+GOdata <- lapply(1:length(GOdata), function(i) GOdata[[i]][order(GOdata[[i]][order.by], decreasing = jdecreasing),])
+# where is cell cycle
+GOdata.long <- bind_rows(GOdata)
+subset(GOdata.long, grepl("cycle", name)) %>% filter(Hyper_Raw_PValue < 0.05) %>% arrange(Hyper_Raw_PValue)
 
-# annotate after HG19
-regions.annotated <- as.data.frame(annotatePeak(regions.range, 
-                                                TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, 
-                                                annoDb='org.Hs.eg.db'))
-rownames(regions.annotated) <- regions.annotated$region_coord
+GOdata <- lapply(1:length(GOdata), function(i) GOdata[[i]][1:top,])
 
-ncores <- 1
-
-# liftover regions from Hg38 to Hg19
-# https://bioconductor.org/packages/release/workflows/vignettes/liftOver/inst/doc/liftov.html
-path <- system.file(package="liftOver", "extdata", "hg38ToHg19.over.chain")
-ch <- rtracklayer::import.chain(path)
-
-seqlevelsStyle(gr.in) = "UCSC"
-regions.range.19 = unlist(rtracklayer::liftOver(regions.range, ch))
-regions.range.19$hg38peak <- names(regions.range.19)
-
-# annotate regions with hg19
-# annotate after HG19
-i <- 1
-# gr.in <- regions.range.19[topic.regions[[i]], ]
-# gr.in <- subset(regions.range.19, hg38peak %in% topic.regions[[i]])
-regions.annotated.19 <- as.data.frame(annotatePeak(unname(regions.range.19), 
-                                                TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, 
-                                                annoDb='org.Hs.eg.db'))
-# regions.annotated.19$hg38peak <- names(regions.range.19)
-# 
-# print(i)
-# print(head(gr.in))
-gr.in <- subset(regions.range.19, hg38peak %in% topic.regions[[i]])
-out.great <- submitGreatJob(unname(gr.in), species="hg19", request_interval = 10)
-out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great),
-                              request_interval = 300)
-
-
-if (ncores == 1){
-  out.great.lst <- lapply(seq(best.K), function(i){
-    gr.in <- regions.range[topic.regions[[i]], ]
-    print(i)
-    print(head(gr.in))
-    out.great <- submitGreatJob(gr.in, species="hg19", request_interval = 700)
-    return(out.great)
-  })
-  out.tb.lst <- lapply(out.great.lst, function(out.great){
-    out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great),
-                                  request_interval = 300)
-    return(out.tb)
-  })
-} else {
-  print(paste("Running great multicore", ncores))
-  out.great.lst <- mclapply(seq(best.K), function(i){
-    gr.in <- regions.range[topic.regions[[i]], ]
-    out.great <- submitGreatJob(gr.in, species="hg19", request_interval = 700)
-    return(out.great)
-  }, mc.cores = ncores)
-  out.tb.lst <- mclapply(out.great.lst, function(out.great){
-    out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great), 
-                                  request_interval = 300)
-    return(out.tb)
-  }, mc.cores = ncores)
+# annotate each GOdata by topic number
+for (i in topics){
+  GOdata[[i]]$topic <- i
 }
+
+GOdata <- dplyr::bind_rows(GOdata) %>%
+  mutate(topic = factor(topic, levels = sort(unique(topic))))
+
+ggplot(GOdata, aes(x = topic, y = name, size = Hyper_Fold_Enrichment, color = -log10(Hyper_Adjp_BH))) + 
+  geom_point() + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.minor = element_blank(), axis.text=element_text(size=6)) + 
+  xlab("") + ylab("")
+

@@ -3,6 +3,8 @@
 # File: ~/projects/scChiC/scripts/scripts_analysis/lda_model/downstream_lda_multi_marks_different_params.R
 # Run LDA on different parameters
 
+rm(list=ls()) 
+
 library(topicmodels)
 library(dplyr)
 library(ggplot2)
@@ -24,9 +26,9 @@ jmean <- 1
 jmin <- 100L
 jmax <- 500000L
 jchip <- "H3K4me1"
-jchip <- "H3K27me3"
 jchip <- "H3K4me3"
 jchip <- "H3K9me3"
+jchip <- "H3K27me3"
 
 jdir <- paste0('/tmp/ldaAnalysisBroadpeaks_', pcut, '_', jdist, '/lda_outputs.meanfilt_', jmean, '.cellmin_', jmin, '.cellmax_', jmax)
 inf <- file.path(jdir, paste0('lda_out_meanfilt.PZ-BM-', jchip, '.CountThres0.K-5_7_10_12_15_20_25_30.Robj'))
@@ -45,6 +47,7 @@ print(1 - Matrix::nnzero(count.mat) / length(count.mat))
 # load('/private/tmp/lda_output.systematic.0.3.1000/lda_out_meanfilt.PZ-BM-H3K4me1.CountThres0.K-5_7_10_12_15_20_25_30.Robj', v=T)
 # load('/private/tmp/lda_output.systematic.0.3.1000/lda_out_meanfilt.PZ-BM-H3K4me3.CountThres0.K-5_7_10_12_15_20_25_30.Robj', v=T)
 
+# load("/tmp/ldaAnalysisHiddenDomains_1000/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.TRUE/lda_out_meanfilt.PZ-BM-H3K27me3.CountThres0.K-5_7_10_12_15_20_25_30.Robj", v=T)
 
 # Plot outputs ------------------------------------------------------------
 
@@ -105,7 +108,7 @@ plot(dm.out, 1:3)  # colors from beta matrix
 
 # color by gamma
 
-jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, c("lightblue", "blue", "darkblue"))
+jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, tmResult$topics, c("lightblue", "blue", "darkblue"))
 
 nb.col <- 5
 nb.row <- ceiling(best.K / nb.col)

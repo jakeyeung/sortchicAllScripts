@@ -1,5 +1,5 @@
 # rm(list=ls())
-setwd("~/Dropbox/scCHiC_figs/FIG4_BM/")
+# setwd("~/Dropbox/scCHiC_figs/FIG4_BM/")
 
 xmin<-95.3e6
 xmax<-97.3e6
@@ -7,7 +7,7 @@ ymin=-0.1
 ymax=.5
 chr<-'c11_'
 
-load("H3K27me3.datadir_mc_f.Rda")
+load("~/Dropbox/scCHiC_figs/FIG4_BM/H3K27me3.datadir_mc_f.Rda")
 Q<-object@mc_fp
 mc_index<-object@mc
 mc_colors<-object@colors
@@ -18,7 +18,7 @@ for (i in 1:ncol(Q)){
 }
 
 allgroup <- seq(11)
-ingroup <- c(6)  # 5 is most outer group, 7 is less    # group 5 shows 0.6 fold change. group 7 shows 0.3 FC
+ingroup <- c(5,7)  # 5 is most outer group, 7 is less    # group 5 shows 0.6 fold change. group 7 shows 0.3 FC
 outgroup <- allgroup[!allgroup %in% ingroup]
 
 if (length(ingroup) > 1){
@@ -44,7 +44,7 @@ right<-x0+100000
 Qchr<-Q[grep('c6_',rownames(Q)),]
 Qchr<-Qchr[(Qchr$coord>left & Qchr$coord<right),]
 Qchr<-Qchr[!is.na(Qchr$coord),]
-points(log2(Qchr[,1]),log2(Qchr[,2]),pch=16,cex=1,col='red')
+points(log2(Qchr[,1]),log2(Qchr[,2]),pch=16,cex=1,col='pink')
 
 #HoxB chr11 midpoint 96.3 Mb
 x0<-96300000

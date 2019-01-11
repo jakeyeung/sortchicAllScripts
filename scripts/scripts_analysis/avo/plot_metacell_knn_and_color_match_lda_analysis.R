@@ -54,14 +54,11 @@ MakeNewCellName <- function(oldname, replhash, cellhash, add.m = TRUE){
 # Cell names --------------------------------------------------------------
 
 barcodes <- read.table("data/barcode_summaries/barcodes/maya_384NLA.bc", col.names = "Barcodes", stringsAsFactors = FALSE)
-
 cellhash <- hash(rownames(barcodes), unlist(barcodes))
 cellhash.bc <- hash(unlist(barcodes), paste("cell", rownames(barcodes), sep = ""))
 
 
 # Plot KNN and note the colors --------------------------------------------
-
-
 
 dropboxdir <- "~/Dropbox/scChIC_figs/FIG4_BM"
 

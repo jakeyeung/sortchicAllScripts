@@ -1,7 +1,8 @@
 # color by loadings on Kvec
-ColorsByGamma <- function(topic, cols.vec = c("pink", "red", "darkred")){
+ColorsByGamma <- function(topic, topics.mat, cols.vec = c("pink", "red", "darkred")){
   # jcol <- out.lda@gamma[, topic]
-  jcol <- tmResult$topics[, topic]
+  # jcol <- tmResult$topics[, topic]
+  jcol <- topics.mat[, topic]
   colorPal <- grDevices::colorRampPalette(cols.vec)
   jcol.rgb <- colorPal(200)[as.numeric(cut(jcol,breaks = 200))]
   return(jcol.rgb)
