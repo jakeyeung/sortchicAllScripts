@@ -15,7 +15,7 @@ library(TxDb.Mmusculus.UCSC.mm10.knownGene)
 library(org.Mm.eg.db)
 library(ChIPseeker)
 library(rGREAT)
-
+library(hash)
 
 source("scripts/Rfunctions/MetricsLDA.R")
 source("scripts/Rfunctions/AuxLDA.R")
@@ -70,7 +70,8 @@ GetGOData <- function(out.tb.lst, ontology, jdecreasing=TRUE, order.by="Hyper_Fo
 
 
 
-outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/LDA_outputs/"
+outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/LDA_outputs/test"
+dir.create(outdir)
 
 
 jchip <- "H3K9me3"
@@ -80,7 +81,7 @@ jchip <- "H3K4me1"
 
 # do all
 jchips <- c("H3K27me3", "H3K4me1", "H3K9me3", "H3K4me3")
-# jchips <- c("H3K4me3")
+# jchips <- c("H3K4me3", "H3K4me1")
   for (jchip in jchips){
   
   jdist <- 1000L
@@ -246,15 +247,29 @@ jchips <- c("H3K27me3", "H3K4me1", "H3K9me3", "H3K4me3")
   # Plotting everything now ----------------------------------------------------------------
   
 
-  # UMAP settings 
-  nn <- 5
-  jmetric <- 'euclidean'
-  # jmetric <- 'cosine'
-  jmindist <- 0.1
-  custom.settings <- umap.defaults
-  custom.settings$n_neighbors <- nn
-  custom.settings$metric <- jmetric
-  custom.settings$min_dist <- jmindist
+  # # UMAP settings 
+  # nn <- 5
+  # jmetric <- 'euclidean'
+  # # jmetric <- 'cosine'
+  # jmindist <- 0.1
+  # custom.settings <- umap.defaults
+  # custom.settings$n_neighbors <- nn
+  # custom.settings$metric <- jmetric
+  # custom.settings$min_dist <- jmindist
+
+  nn=5
+  nnterms=15
+  jmetric='euclidean' 
+  jmindist=0.1
+  custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist)
+  custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)
+  # # use different settings for peak weights for H3K4me1 and H3K4me3 for some reason
+  # if (jchip %in% c("H3K4me1", "H3K4me3")){
+  #   custom.settings.terms <- GetUmapSettings(nn=15, jmetric='euclidean', jmindist=0.01)
+  # } else {
+  #   custom.settings.terms <- custom.settings
+  # }
+  
 
   dat.umap <- umap(topics.mat, config = custom.settings)
   rownames(dat.umap$layout) <- rownames(topics.mat)
@@ -297,7 +312,8 @@ jchips <- c("H3K27me3", "H3K4me1", "H3K9me3", "H3K4me3")
     ggtitle(paste("Median counts in MetaCell for ", genes.keep.str))
   
   # plot peaks soft clustering weights. Should be about K clusters visually. Overlaps are probably peaks that are important in multiple clusters
-  dat.umap.terms <- umap(terms.mat, config = custom.settings)
+
+  dat.umap.terms <- umap(terms.mat, config = custom.settings.terms)
   # downsample rows for plotting purposes
   downsamp.i <- sample(seq(nrow(dat.umap.terms$layout)), size = round(0.1 * nrow(dat.umap.terms$layout)), replace = FALSE)
   jcol.rgb.terms <- lapply(seq(kchoose), ColorsByGamma, terms.mat[downsamp.i, ], c("pink", "red", "darkred"))

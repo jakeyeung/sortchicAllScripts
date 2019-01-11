@@ -1,3 +1,15 @@
+GetUmapSettings <- function(nn, jmetric, jmindist){
+  # nn <- 5
+  # jmetric <- 'euclidean'
+  # # jmetric <- 'cosine'
+  # jmindist <- 0.1
+  custom.settings <- umap.defaults
+  custom.settings$n_neighbors <- nn
+  custom.settings$metric <- jmetric
+  custom.settings$min_dist <- jmindist
+  return(custom.settings)
+}
+
 # color by loadings on Kvec
 ColorsByGamma <- function(topic, topics.mat, cols.vec = c("pink", "red", "darkred")){
   # jcol <- out.lda@gamma[, topic]
