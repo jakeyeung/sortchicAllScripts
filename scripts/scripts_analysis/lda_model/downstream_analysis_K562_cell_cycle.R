@@ -46,37 +46,27 @@ inf <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K27me3.CountThres0.K-10
 inf.GREAT <- "/private/tmp/K562_LDA/lda_out_meanfilt.PZ-K562-H3K27me3.CountThres0.K-10_15_20_25.GREAT.Robj"
 
 load(inf, v=T)
-
+load(inf.GREAT, v=T)
 
 # get count.mat
 # count.mat <- GetCountMatFromLDA(out.lda[[1]])
 
 print(1 - Matrix::nnzero(count.mat) / length(count.mat))
 
-out.lda.lst <- out.lda
-
-# we did multicore, so which one to choose?
-Kvec <- sapply(out.lda.lst, function(x) x@k)
-
-# plot best fit?
-# result <- CalculateMetrics(out.lda.lst, Kvec)
-
-# print(result)
-
-# FindTopicsNumber_plot(result)
-
-best.K <- Kvec[which.max(sapply(out.lda.lst, function(x) x@loglikelihood))]
-
-# plot loglikelihood
-par(mfrow=c(1, 1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-plot(Kvec, sapply(out.lda.lst, function(x) x@loglikelihood), 'o')
-
-# plot likelihood 
-
-# kchoose <- best.K
-kchoose <- 20
-out.lda <- out.lda.lst[[which(Kvec == kchoose)]]
-
+if (length(out.lda) > 1){
+  out.lda.lst <- out.lda
+  # we did multicore, so which one to choose?
+  Kvec <- sapply(out.lda.lst, function(x) x@k)
+  best.K <- Kvec[which.max(sapply(out.lda.lst, function(x) x@loglikelihood))]
+  # plot loglikelihood
+  par(mfrow=c(1, 1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+  plot(Kvec, sapply(out.lda.lst, function(x) x@loglikelihood), 'o')
+  kchoose <- best.K
+  # kchoose <- 20
+  out.lda <- out.lda.lst[[which(Kvec == kchoose)]]
+} else {
+  kchosose <- out.lda@k
+}
 
 # Get cell cycle info -----------------------------------------------------
 
@@ -89,20 +79,23 @@ phasecols <- c("red", "blue", "black")
 colhash <- hash(phasenames, phasecols)
 jcol.phase <- sapply(cellcycles, function(x) colhash[[x]], USE.NAMES = FALSE)
 
-tmResult <- posterior(out.lda)
+tm.result <- posterior(out.lda)
 
-nn <- 5
+nn <- 4
+nn.terms <- 15
 # jmetric <- 'pearson'
 # jmetric <- 'cosine'
 jmetric <- 'euclidean'
 jmindist <- 0.5
-custom.settings <- umap.defaults
-custom.settings$n_neighbors <- nn
-custom.settings$metric <- jmetric
-custom.settings$min_dist <- jmindist
+custom.settings <- GetUmapSettings(nn, jmetric, jmindist)
+custom.settings.terms <- GetUmapSettings(nn.terms, jmetric, jmindist)
+# custom.settings <- umap.defaults
+# custom.settings$n_neighbors <- nn
+# custom.settings$metric <- jmetric
+# custom.settings$min_dist <- jmindist
 
-dat.umap <- umap(tmResult$topics, config = custom.settings)
-rownames(dat.umap$layout) <- rownames(tmResult$topics)
+dat.umap <- umap(tm.result$topics, config = custom.settings)
+rownames(dat.umap$layout) <- rownames(tm.result$topics)
 
 jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
 
@@ -114,7 +107,7 @@ par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1))
 plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = jmain, pty = 's', col = jcol.phase)
 legend(2, -4, legend=phasenames, col=phasecols, pch = 20)
 
-dat.pca <- prcomp(tmResult$topics, center = TRUE, scale. = TRUE)
+dat.pca <- prcomp(tm.result$topics, center = TRUE, scale. = TRUE)
 
 par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
 plot(dat.pca$x[, 1], dat.pca$x[, 2], col = jcol.phase, pch = 20)
@@ -123,19 +116,47 @@ plot(dat.pca$x[, 1], dat.pca$x[, 2], col = jcol.phase, pch = 20)
 # plot(dat.pca$x[, 4], dat.pca$x[, 5], col = jcol.phase, pch = 20)
 # color by gamma
 
-jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma)
+jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, tm.result$topics)
 
 nb.col <- 5
-nb.row <- ceiling(best.K / nb.col)
+nb.row <- ceiling(kchoose / nb.col)
 par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
 mapply(function(jcol.rgb, jtopic){
   plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.75)
 }, jcol.rgbs, seq(kchoose))
 
+# plot terms
+top.regions <- unique(unlist(topic.regions))  # topic.regions defined by threshold, 98 or 96th percentile of top weights in each column of the betas matrix
+terms.mat <- t(tm.result$terms)[top.regions, ]
+
+dat.umap.terms <- umap(terms.mat, config = custom.settings.terms)
+# downsample rows for plotting purposes
+downsamp.i <- sample(seq(nrow(dat.umap.terms$layout)), size = round(0.1 * nrow(dat.umap.terms$layout)), replace = FALSE)
+jcol.rgb.terms <- lapply(seq(kchoose), ColorsByGamma, terms.mat[downsamp.i, ], c("pink", "red", "darkred"))
+
+par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
+mapply(function(jcol.rgb.term, jtopic){
+  plot(dat.umap.terms$layout[downsamp.i, 1], dat.umap.terms$layout[downsamp.i, 2], 
+       col = jcol.rgb.term, pch = 20, asp = 0.75,
+       main = paste("Peak Weights, T", jtopic))
+}, jcol.rgb.terms, seq(kchoose))
+
+# terms mat
+dat.umap.terms <- umap(terms.mat, config = custom.settings.terms)
+# downsample rows for plotting purposes
+downsamp.i <- sample(seq(nrow(dat.umap.terms$layout)), size = round(0.1 * nrow(dat.umap.terms$layout)), replace = FALSE)
+jcol.rgb.terms <- lapply(seq(kchoose), ColorsByGamma, terms.mat[downsamp.i, ], c("pink", "red", "darkred"))
+
+par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
+mapply(function(jcol.rgb.term, jtopic){
+  plot(dat.umap.terms$layout[downsamp.i, 1], dat.umap.terms$layout[downsamp.i, 2], 
+       col = jcol.rgb.term, pch = 20, asp = 0.75,
+       main = paste("Peak Weights, T", jtopic))
+}, jcol.rgb.terms, seq(kchoose))
 
 # Destiny ------------------------------------------------------------------
 
-dm.out <- destiny::DiffusionMap(data = tmResult$topics)
+dm.out <- destiny::DiffusionMap(data = tm.result$topics)
 
 par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
 plot(dm.out, 1:2, col = jcol.phase)  # colors from beta matrix
@@ -159,7 +180,6 @@ print(x.match)
 
 # Load GREAT --------------------------------------------------------------
 
-load(inf.GREAT, v=T)
 
 jontos <- unique(unlist(lapply(out.tb.lst, function(x) names(x))))
 cutoff <- 0.05
