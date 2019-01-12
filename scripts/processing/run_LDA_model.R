@@ -143,12 +143,12 @@ if (binarizemat){
 if (!tunemodels){
   print("Running single LDA for topics:")
   print(nclst)
-  out.lda <- LDA(x = t(as.matrix(count.mat)), k = nclst, method = "Gibbs", control=list(seed=0))
+  out.lda <- LDA(x = t(count.mat), k = nclst, method = "Gibbs", control=list(seed=0))
 } else {
   print("Running multicore LDA for topics:")
   print(topic.vec)
   out.lda <- parallel::mclapply(topic.vec, function(nc){
-          LDA(x = t(as.matrix(count.mat)), k = nc, method = "Gibbs", control=list(seed=0))            
+          LDA(x = t(count.mat), k = nc, method = "Gibbs", control=list(seed=0))            
   }, mc.cores = length(topic.vec))
 }
 
