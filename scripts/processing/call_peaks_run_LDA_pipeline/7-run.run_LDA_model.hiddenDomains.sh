@@ -15,7 +15,6 @@ rs="scripts/processing/run_LDA_model.R"
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 
 marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
-pvalcutoff="0.3"
 mindist="1000"
 cell="BM"
 
@@ -25,6 +24,8 @@ topics="15,20,25,30,35"
 topicsName=`echo $topics | sed 's/,/_/g'`
 tunemodels="TRUE"
 binarize="FALSE"
+cellmin="1000"
+cellmax="50000"
 
 for mark in $marks; do
     inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}/PZ-${cell}-${mark}.merged.NoCountThres.hiddenDomains.Robj"
@@ -33,8 +34,6 @@ for mark in $marks; do
     # cellmin="1000"
     # cellmax="50000"
     # relax assumptions to capture more H3K4me3 and H3K9me3 cells?
-    cellmin="100"
-    cellmax="500000"
     outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisHiddenDomains_${mindist}/lda_outputs.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}"
     [[ ! -d $outdir ]] && mkdir -p $outdir
 
