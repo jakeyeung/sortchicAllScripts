@@ -22,13 +22,16 @@ jmeanfilt=1
 jcellmin=100
 jcellmax=500000
 meth="hiddenDomains"
-binarize="TRUE"
+binarize="FALSE"
 cell="K562"
 
 # maindir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysis${meth}_${jdist}/lda_outputs.meanfilt_${jmeanfilt}.cellmin_${jcellmin}.cellmax_${jcellmax}.binarize.${binarize}"
 
 maindir="/hpc/hub_oudenaarden/jyeung/data/scChiC/LDA_out_${cell}/ldaAnalysishiddenDomains_${jdist}/lda_outputs.hiddenDomains.meanfilt_${jmeanfilt}.cellmin_${jcellmin}.cellmax_${jcellmax}.binarize.${binarize}"
 [[ ! -d $maindir ]] && echo "$maindir not found, exiting" && exit 1
+
+chainpath="/hpc/hub_oudenaarden/jyeung/data/databases/chainfiles/hg38ToHg19.over.chain"
+[[ ! -e $chainpath ]] && echo "$chainpath not found, exiting" && exit 1
 
 outdir=$maindir/downstream
 [[ ! -d $outdir ]] && mkdir $outdir
@@ -41,7 +44,7 @@ for inf in $(ls -d $maindir/*.Robj); do
     BNAME=$outdir/$bname2.GREATjob
     DBASE=$(dirname "${BNAME}")
     [[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
-    echo "cd $wd; Rscript $rs $inf $outf $ncores" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -pe threaded $ncores -m beas -M j.yeung@hubrecht.eu
+    echo "cd $wd; Rscript $rs $inf $outf $ncores $chainpath" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -pe threaded $ncores -m beas -M j.yeung@hubrecht.eu
     # echo "cd $wd; Rscript $rs $inf $outf $ncores"
     # cd $wd; Rscript $rs $inf $outf $ncores
     # exit 0

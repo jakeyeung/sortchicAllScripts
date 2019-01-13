@@ -26,7 +26,8 @@ args <- commandArgs(trailingOnly=TRUE)
 inf <- args[[1]]
 outpath <- args[[2]]
 ncores <- StrToNumeric(args[[3]])
-top.thres <- 0.98
+top.thres <- StrToNumeric(args[[4]])
+# top.thres <- 0.98  is sensible?
 
 load(inf, v=T)
 
@@ -63,21 +64,22 @@ regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
 regions.annotated <- as.data.frame(annotatePeak(regions.range, 
                                                 TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, 
                                                 annoDb='org.Mm.eg.db'))
-rownames(regions.annotated) <- regions.annotated$region_coord
+# rownames(regions.annotated) <- regions.annotated$region_coord
+regions.annotated$region_coord <- names(regions.range)
 
 print(paste("Running great multicore", ncores))
 out.great.lst <- mclapply(seq(best.K), function(i){
   gr.in <- regions.range[topic.regions[[i]], ]
-  out.great <- submitGreatJob(gr.in, species="mm10", request_interval = 700)
+  out.great <- submitGreatJob(gr.in, species="mm10", request_interval = 30)
   return(out.great)
 }, mc.cores = ncores)
 out.tb.lst <- mclapply(out.great.lst, function(out.great){
   out.tb <- getEnrichmentTables(out.great, ontology=availableOntologies(out.great), 
-                                request_interval = 300)
+                                request_interval = 30)
   return(out.tb)
 }, mc.cores = ncores)
 
-save(topic.regions, regions.range, out.great.lst, out.tb.lst, out.lda, file = outpath)
+save(topic.regions, regions.annotated, out.great.lst, out.tb.lst, out.lda, file = outpath)
 
 print(Sys.time() - jstart)
 print("Done successfully")

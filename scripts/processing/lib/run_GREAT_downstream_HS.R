@@ -28,7 +28,10 @@ args <- commandArgs(trailingOnly=TRUE)
 inf <- args[[1]]
 outpath <- args[[2]]
 ncores <- StrToNumeric(args[[3]])
+chainpath <- args[[4]]
 top.thres <- 0.98
+
+assertthat::assert_that(file.exists(chainpath))
 
 load(inf, v=T)
 
@@ -65,9 +68,11 @@ regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
 
 # convert hg38 to hg19 before annotating
 # https://bioconductor.org/packages/release/workflows/vignettes/liftOver/inst/doc/liftov.html
-path <- system.file(package="liftOver", "extdata", "hg38ToHg19.over.chain")
-ch <- rtracklayer::import.chain(path)
-seqlevelsStyle(gr.in) = "UCSC"
+# path <- system.file(package="liftOver", "extdata", "hg38ToHg19.over.chain")  # this outputs empty string?
+# path <- "/hpc/hub_oudenaarden/jyeung/data/databases/chainfiles/hg38ToHg19.over.chain.gz"
+
+ch <- rtracklayer::import.chain(chainpath)
+seqlevelsStyle(regions.range) = "UCSC"
 regions.range.19 = unlist(rtracklayer::liftOver(regions.range, ch))
 regions.range.19$hg38peak <- names(regions.range.19)
 # regions.annotated.19 <- as.data.frame(annotatePeak(unname(regions.range.19), 
