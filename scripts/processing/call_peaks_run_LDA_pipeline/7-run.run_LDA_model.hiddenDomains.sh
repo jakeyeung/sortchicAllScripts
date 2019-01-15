@@ -4,8 +4,12 @@
 #  
 # 2018-12-29
 
-jmem='96G'
-jtime='24:00:00'
+# if not binarize
+# jmem='96G'
+# jtime='8:00:00'
+# if binarize
+jmem='24G'
+jtime='6:00:00'
 
 workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 
@@ -23,10 +27,11 @@ ncores=5
 topics="15,20,25,30,35"
 topicsName=`echo $topics | sed 's/,/_/g'`
 tunemodels="TRUE"
-binarize="FALSE"
-cellmin="1000"
-cellmax="50000"
+binarize="TRUE"
+cellmin="100"
+cellmax="500000"
 
+marks="H3K27me3"
 for mark in $marks; do
     inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}/PZ-${cell}-${mark}.merged.NoCountThres.hiddenDomains.Robj"
     # meanmax="0.15"  # about 0.32 for pvalcutoff 0.5, 0.15 for pvalcutoff 0.3

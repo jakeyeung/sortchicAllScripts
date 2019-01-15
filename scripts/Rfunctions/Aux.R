@@ -14,6 +14,9 @@ BinarizeMatrix <- function(x){
   # https://stackoverflow.com/questions/14526429/turn-a-count-matrix-into-a-binary-existence-matrix
   xbin <- as.numeric(as.matrix(x) > 0)
   xbin <- Matrix::Matrix(xbin, sparse = TRUE, nrow = nrow(x), ncol = ncol(x))
+  # get back the column and row names
+  rownames(xbin) <- rownames(x)
+  colnames(xbin) <- colnames(x)
   return(xbin)
 }
 

@@ -51,6 +51,13 @@ kchoose <- best.K
 out.lda <- out.lda.lst[[which(Kvec == kchoose)]]
 tmResult <- posterior(out.lda)
 
+# if (is.null(colnames(tmResult$terms))){
+#   colnames(tmResult$terms) <- rownames(count.mat)
+# }
+# if (is.null(rownames(tmResult$topics))){
+#   rownames(tmResult$topics) <- colnames(count.mat)
+# }
+
 # Run GREAT --------------------------------------------------------------
 
 # need to assign cutoff for each peak for each topic

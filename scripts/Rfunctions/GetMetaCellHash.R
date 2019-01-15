@@ -5,7 +5,7 @@
 
 GetReplHash <- function(experinames.m, biorep, jhash){
   # get replicate names from each mouse
-  gstr <- paste0('-BM-', m)
+  gstr <- paste0('-BM-', biorep)  # add m?
   samps <- grep(gstr, experinames.m, value = TRUE)
   replval.old <- as.numeric(sapply(samps, function(x){
     xtmp <- strsplit(x, "-")[[1]][[4]]
@@ -13,9 +13,9 @@ GetReplHash <- function(experinames.m, biorep, jhash){
   }))
   replval.new <- paste("rep", rank(replval.old), sep = "")
   for (i in seq(length(samps))){
-    replhash[samps[i]] <- replval.new[i]
+    jhash[samps[i]] <- replval.new[i]
   }
-  return(replhash)
+  return(jhash)
 }
 
 MakeNewExperiName <- function(old.name, replhash){

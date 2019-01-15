@@ -137,6 +137,7 @@ print("Running LDA")
 # binarize matrix
 if (binarizemat){
   count.mat <- BinarizeMatrix(count.mat)
+  print(paste('Max count after binarizing', max(count.mat)))
 }
 
 # print(head(count.mat[1:5, 1:5]))
