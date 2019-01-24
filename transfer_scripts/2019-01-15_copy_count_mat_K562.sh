@@ -4,9 +4,11 @@
 #  
 # 2019-01-15
 
-inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/count_mat_K562/count_mats.hiddenDomains.1000"
+# inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/count_mat_K562/count_mats.hiddenDomains.1000"
 
-outdir="/tmp/count_mat_K562"
+inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/count_mat_K562/count_mats.hiddenDomains.1000_round2"
+
+outdir="/tmp/count_mat_K562_round2"
 [[ ! -d $outdir ]] && mkdir $outdir
 
 cd $outdir

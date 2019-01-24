@@ -68,8 +68,6 @@ GetGOData <- function(out.tb.lst, ontology, jdecreasing=TRUE, order.by="Hyper_Fo
 # Parameters to get files -------------------------------------------------
 
 
-
-
 outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/LDA_outputs/test"
 dir.create(outdir)
 
@@ -220,7 +218,7 @@ jchips <- c("H3K27me3", "H3K4me1", "H3K9me3", "H3K4me3")
   jcounts <- Matrix::colSums(count.mat[row.i, cells.common])
   jcounts.norm <- jcounts / jcounts.total
   # jcounts.norm <- jcounts.total
-  jcol.counts <- ColorsByCounts(jcounts.norm, nbreaks = 100, colvec = c("lightblue", "blue", "darkblue"))
+  jcol.counts <- ColorsByCounts(jcounts.norm, nbreaks = 100, colvec = c("lightblue", "darkblue"))
   hoxcounts.hash <- hash(jcounts.norm, names(jcounts))
   
   
@@ -284,7 +282,8 @@ jchips <- c("H3K27me3", "H3K4me1", "H3K9me3", "H3K4me3")
   plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = "Color by MetaCell", col = cells.rgb, asp = 1, xlab = "UMAP Dim 1", ylab = "UMAP Dim 2")
   
   # plot topics soft clustering weights
-  jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, topics.mat, c("lightblue", "blue", "darkblue"))
+  # jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, topics.mat, c("lightblue", "blue", "darkblue"))
+  jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, topics.mat, c("lightblue", "darkblue"))
   nb.col <- 5
   nb.row <- ceiling(kchoose / nb.col)
   par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
@@ -305,11 +304,13 @@ jchips <- c("H3K27me3", "H3K4me1", "H3K9me3", "H3K4me3")
   out.dat$mc <- sapply(out.dat$cellname, AssignHash, cells.clstr.hash)
   out.dat$hoxcounts <- jcounts.norm
   # Total sum needs to be normalized? What does metacell say here?
+  print(
   out.dat %>%
     group_by(mc) %>%
     summarize(hoxcounts.median = median(hoxcounts)) %>%
     ggplot() + geom_bar(aes(x = as.character(mc), y = hoxcounts.median), stat = "identity") + 
     ggtitle(paste("Median counts in MetaCell for ", genes.keep.str))
+  )
   
   # plot peaks soft clustering weights. Should be about K clusters visually. Overlaps are probably peaks that are important in multiple clusters
 

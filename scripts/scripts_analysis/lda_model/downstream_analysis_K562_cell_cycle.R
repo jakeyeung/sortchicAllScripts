@@ -65,7 +65,8 @@ if (length(out.lda) > 1){
   # kchoose <- 20
   out.lda <- out.lda.lst[[which(Kvec == kchoose)]]
 } else {
-  kchosose <- out.lda@k
+  # kchosose <- out.lda@k
+  kchoose <- out.lda@k
 }
 
 # Get cell cycle info -----------------------------------------------------

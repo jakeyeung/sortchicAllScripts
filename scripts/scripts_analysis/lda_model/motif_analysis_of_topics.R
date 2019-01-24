@@ -46,8 +46,15 @@ jchips <- c("H3K27me3", "H3K4me1", "H3K4me3", "H3K9me3")
 
 for (jchip in jchips){
   print(jchip)
-  load(paste0("/private/tmp/ldaAnalysisHiddenDomains_1000/lda_outputs.meanfilt_1.cellmin_1000.cellmax_50000.binarize.FALSE/lda_out_meanfilt.PZ-BM-", jchip, ".CountThres0.K-15_20_25_30_35.Robj"), v=T)
-  load(paste0("/private/tmp/ldaAnalysisHiddenDomains_1000/lda_outputs.meanfilt_1.cellmin_1000.cellmax_50000.binarize.FALSE/downstream/lda_out_meanfilt.PZ-BM-", jchip, ".CountThres0.K-15_20_25_30_35.GREAT.0.96.Robj"), v=T)
+  load(paste0("/private/tmp/ldaAnalysisHiddenDomains_1000/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.FALSE/lda_out_meanfilt.PZ-BM-", jchip, ".CountThres0.K-15_20_25_30_35.Robj"), v=T)
+  load(paste0("/private/tmp/ldaAnalysisHiddenDomains_1000/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.FALSE/downstream/lda_out_meanfilt.PZ-BM-", jchip, ".CountThres0.K-15_20_25_30_35.GREAT.0.96.Robj"), v=T)
+  
+  outf <- paste0("~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/motif_enrichment_tables.", jchip, ".rds")
+  
+  if (file.exists(outf)){
+    print(paste("Skipping", jchip))
+    next()
+  }
   
   db.inf <- "/Users/yeung/projects/scChiC/data/motifs/mm10__refseq-r80__10kb_up_and_down_tss.mc9nr.feather"
   
@@ -63,8 +70,11 @@ for (jchip in jchips){
   # jtop <- 1
   
   etables <- lapply(topic.regions, GetEnrichment, regions.annotated, db.inf)
-  saveRDS(etables, paste0("~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/motif_enrichment_tables.", jchip, ".rds"))
   
-  # lapply(etables, function(x) print(head(subset(x, select = c(motif, AUC, TF_highConf)))))
+  if (!file.exists(outf)){
+    saveRDS(etables, outf)
+    write.table(etables[[12]], file = paste0("~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/motif_enrichment_tables_12_.", jchip, ".txt"), quote = FALSE, sep = "\t")
+  }
+  lapply(etables, function(x) print(head(subset(x, select = c(motif, AUC, TF_highConf)))))
   
 }
