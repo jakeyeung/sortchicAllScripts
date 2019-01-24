@@ -65,7 +65,7 @@ GetMCObjects <- function(inf){
   mc_index<-object@mc
   # mc_colors <- sapply(object@mc, function(x) ifelse(x %in% c(5, 7), "#A9A9A9", "#000000"))
   mc_colors<-object@colors
-  return(list("mc_index" = mc_index, "mc_colors" = mc_colors, "Q" = Q))
+  return(list("mc_index" = mc_index, "mc_colors" = mc_colors, "Q" = Q, "exprs" = object@mc_fp))
 }
 
 GetQLong <- function(inf){

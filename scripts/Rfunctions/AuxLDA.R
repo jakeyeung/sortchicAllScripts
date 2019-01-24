@@ -1,4 +1,37 @@
-GetUmapSettings <- function(nn, jmetric, jmindist){
+GetVar <- function(tm.result, regions.annotated){
+  mat.norm <- t(tm.result$topics %*% tm.result$terms)
+  # find peaks with largest range
+  maxmin <- sort(apply(mat.norm, 1, function(jcol) mad(jcol)), decreasing = TRUE)
+  # what are the sizes?
+  peak.size <- sapply(names(maxmin), function(x) ParseCoord(x)$end - ParseCoord(x)$start)
+  # normalize maxmin by peaksize
+  maxmin.norm <- maxmin / peak.size
+  dat.var <- data.frame(Var = maxmin, peak.size = peak.size, coord = names(maxmin))
+  regions.annotated <- dplyr::left_join(regions.annotated, dat.var, by = c("region_coord"="coord"))
+  return(regions.annotated)
+}
+
+ChooseBestLDA <- function(out.lda){
+  # pick best k
+  if (length(out.lda) > 1){
+    out.lda.lst <- out.lda
+    # we did multicore, so which one to choose?
+    Kvec <- sapply(out.lda.lst, function(x) x@k)
+    best.K <- Kvec[which.max(sapply(out.lda.lst, function(x) x@loglikelihood))]
+    # plot loglikelihood
+    par(mfrow=c(1, 1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+    plot(Kvec, sapply(out.lda.lst, function(x) x@loglikelihood), 'o')
+    kchoose <- best.K
+    out.lda <- out.lda.lst[[which(Kvec == kchoose)]]
+    print(paste("Likelihood: ", out.lda@loglikelihood))
+  } else {
+    kchoose <- out.lda@k
+  }
+  return(out.lda)
+}
+
+
+GetUmapSettings <- function(nn, jmetric, jmindist, seed=123){
   # nn <- 5
   # jmetric <- 'euclidean'
   # # jmetric <- 'cosine'
@@ -7,6 +40,7 @@ GetUmapSettings <- function(nn, jmetric, jmindist){
   custom.settings$n_neighbors <- nn
   custom.settings$metric <- jmetric
   custom.settings$min_dist <- jmindist
+  custom.settings$random_state <- seed
   return(custom.settings)
 }
 

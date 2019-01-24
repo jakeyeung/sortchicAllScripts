@@ -1,3 +1,45 @@
+GetBins <- function(jchromo, midpt, jname, Q, winsize = 100000L){
+  jleft <- midpt - winsize / 2
+  jright <- midpt + winsize / 2
+  Qsub <- subset(Q, chromo == jchromo & coord > jleft & coord < jright)
+  Qsub$name <- jname
+  return(as.data.frame(Qsub))
+}
+
+Vectorize(AssignHash <- function(x, jhash, null.fill = NA){
+  # assign hash key to hash value, handle NULLs
+  # null.fill = "original", returns original value x into jhash
+  x.mapped <- jhash[[as.character(x)]]
+  if (is.null(x.mapped)){
+    if (is.na(null.fill)){
+      x.mapped <- null.fill
+    } else if (as.character(null.fill) == "original"){
+      x.mapped <- x
+    } else {
+      x.mapped <- null.fill
+    }
+  }
+  return(x.mapped)
+}, vectorize.args = "x")
+
+GetGOData <- function(out.tb.lst, ontology, jdecreasing=TRUE, order.by="Hyper_Fold_Enrichment"){
+  topics <- which(lapply(1:length(out.tb.lst), function(i) !is.null(out.tb.lst[[i]][[ontology]])) == TRUE)
+  GOdata <- lapply(topics, function(i) out.tb.lst[[i]][[ontology]])
+  GOdata <- lapply(1:length(GOdata), function(i) GOdata[[i]][order(GOdata[[i]][order.by], 
+                                                                   decreasing = jdecreasing),])
+  GOdata <- lapply(1:length(GOdata), function(i) GOdata[[i]][1:top,])
+  
+  # annotate each GOdata by topic number
+  for (i in topics){
+    GOdata[[i]]$topic <- i
+  }
+  GOdata <- dplyr::bind_rows(GOdata) %>%
+    mutate(topic = factor(topic, levels = sort(unique(topic))),
+           onto = ontology)
+  return(GOdata)
+}
+
+
 GetPeakSize <- function(coord){
   # chr1:3005258-3006803 -> 1545
   jstart <- as.numeric(strsplit(strsplit(coord, ":")[[1]][[2]], "-")[[1]][[1]])
