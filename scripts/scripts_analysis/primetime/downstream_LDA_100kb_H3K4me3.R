@@ -18,6 +18,7 @@ library(rGREAT)
 library(hash)
 library(JFuncs)
 library(umap)
+library(ggrepel)
 
 library(igraph)  # louvain
 
@@ -144,17 +145,25 @@ topics.mat.named$cell <- rownames(topics.mat.named)
 dat.umap.long <- data.frame(umap1 = dat.umap$layout[, 1], umap2 = dat.umap$layout[, 2], cell = rownames(dat.umap$layout))
 dat.umap.long <- left_join(dat.umap.long, topics.mat.named)
 
-# plot topic12 
-jtopic <- 12
+# plot topic1
+jtopic <- 1
 jcol.rgb <- jcol.rgbs[[jtopic]]
 par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
 # make it pretty
-m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `1`)) + geom_point() + 
+
+m <- ggplot(dat.umap.long, aes_string(x = "umap1", y = "umap2", color = paste0("`", jtopic, "`"))) + geom_point() + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
 print(m)
 
+# m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `1`)) + geom_point() + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+#   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
+# print(m)
+
 # plot top hits for topic 12
+
+# m <- ggplot(top.peaks.annotated %>% filter(topic == jtopic), aes(x = term, y = -)) + geom_point()
 print(subset(top.peaks.annotated, topic == 1), n = 50)
 
 jgene <- c("Tgm2", "Mmrn1", "Trim48", "Pdzk1ip1", "Mllt3", "Mecom")
@@ -191,8 +200,22 @@ clstr <- hash(g.out$names, g.out$membership)
 dat.umap.long$louvain <- sapply(dat.umap.long$cell, function(x) clstr[[x]])
 
 # plot umap with louvain 
-m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = as.character(louvain))) + geom_point() + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# rearrange louvain so that top cells are first, followed by the rest
+jclst <- 3
+clstrs.orig <- as.character(sort(unique(as.numeric(dat.umap.long$louvain))))
+# swap jclst with first element
+clstrs.new <- clstrs.orig
+clstrs.new[c(1, which(clstrs.new == jclst))] <- clstrs.new[c(which(clstrs.new == jclst), 1)]
+remap.clstr <- hash(clstrs.orig, clstrs.new)
+
+# clstr.remapped <- clstr
+# hash::values(clstr.remapped) <- sapply(as.character(hash::values(clstr.remapped)), function(x) remap.clstr[[x]])
+
+dat.umap.long$louvain <- sapply(as.character(dat.umap.long$louvain), function(x) remap.clstr[[x]])
+dat.umap.long$louvain <- factor(as.character(dat.umap.long$louvain), levels = clstrs.orig)  # 1 to N
+m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_brewer(palette = "Spectral")
 print(m.louvain)
 
 # plot graph with edges?
@@ -224,7 +247,8 @@ jpeaks <- grep("chr7", rownames(mat.norm), value = TRUE)
 x <- as.data.frame(mat.norm[jpeaks, ])
 x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)), 
                      coord = rep(rownames(x), ncol(x)), stringsAsFactors = FALSE)
-x.long$louvain <- sapply(x.long$cell, function(x) clstr[[x]])
+x.long$louvain.orig <- sapply(x.long$cell, function(x) clstr[[x]])
+x.long$louvain <- sapply(as.character(x.long$louvain.orig), function(x) remap.clstr[[x]])
 x.long$exprs <- x.long$exprs * 10^6
 
 # get data for chromo 11
@@ -232,8 +256,11 @@ jpeaks11 <- grep("chr11", rownames(mat.norm), value = TRUE)
 x11 <- as.data.frame(mat.norm[jpeaks11, ])
 x.long11 <- data.frame(exprs = unlist(x11), cell = rep(colnames(x11), each = nrow(x11)), 
                      coord = rep(rownames(x11), ncol(x11)), stringsAsFactors = FALSE)
-x.long11$louvain <- sapply(x.long11$cell, function(x) clstr[[x]])
+x.long11$louvain.orig <- sapply(x.long11$cell, function(x) clstr[[x]])
+x.long11$louvain <- sapply(as.character(x.long11$louvain.orig), function(x) remap.clstr[[x]])
 x.long11$exprs <- x.long11$exprs * 10^6
+
+
 
 
 pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/", jchip, "_LDA_bins_top_regions.pdf"), 
@@ -244,6 +271,19 @@ par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
 mapply(function(jcol.rgb, jtopic){
   plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.75)
 }, jcol.rgbs, seq(kchoose))
+
+# show top hits of betas
+for (i in seq(kchoose)){
+  m.top <- subset(top.peaks.annotated, topic == i) %>% top_n(n=25, wt = beta) %>% 
+    mutate(term = forcats::fct_reorder(term, dplyr::desc(beta))) %>%
+    ggplot(aes(x = term, y = log10(beta), label = SYMBOL)) + 
+    geom_point() + theme_bw(14) + geom_text_repel() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+          axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    xlab("") + ylab("Log10 Bin Weight") + 
+    ggtitle(paste("Top peak weights for topic:", i))
+  print(m.top)
+}
 
 # print Erythrypoiesis topic
 print(m)
@@ -259,10 +299,16 @@ jpeak <- subset(top.peaks.annotated, topic == 1 & SYMBOL == jgene)$term[[1]]
 print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
-jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
+# do Sox6 on same peak as H3K4me1
+jpeak.me1 <- "chr7:115920000-116020000"
+print(PlotImputedPeaks(tm.result, jpeak.me1, jchip, show.plot = FALSE, 
+                       return.plot.only = TRUE, usettings=custom.settings,
+                       gname = jgene))
+# for sox6 shift left a bit
+jstart <- subset(regions.annotated, region_coord == jpeak)$start - 6 * 10^5
 jend <- subset(regions.annotated, region_coord == jpeak)$end + 5 * 10^5
 PlotGTrack(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = "auto")
-PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 3, "Eryth", "Others")), 
+PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")), 
            jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = 1.5)
 
 # Hbb region
@@ -274,7 +320,7 @@ print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE,
 jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
 jend <- subset(regions.annotated, region_coord == jpeak)$end + 5 * 10^5
 PlotGTrack(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = "auto")
-PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 3, "Eryth", "Others")), 
+PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")), 
            jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = 1.5)
 
 # Hba region
@@ -287,7 +333,9 @@ print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE,
 jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
 jend <- subset(regions.annotated, region_coord == jpeak)$end + 5 * 10^5
 PlotGTrack(x.long11, jstart, jend, mart.obj, gen = "mm10", chr = jchr, jheight = "auto")
-PlotGTrack(x.long11 %>% mutate(louvain = ifelse(louvain == 3, "Eryth", "Others")), 
+PlotGTrack(x.long11 %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")), 
            jstart, jend, mart.obj, gen = "mm10", chr = jchr, jheight = 1.5)
+
+# Plot top hits for 
 
 dev.off()

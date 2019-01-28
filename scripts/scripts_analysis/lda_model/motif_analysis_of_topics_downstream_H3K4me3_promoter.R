@@ -1,8 +1,8 @@
 # Jake Yeung
-# Date of Creation: 2019-01-21
-# File: ~/projects/scChiC/scripts/scripts_analysis/lda_model/motif_analysis_of_topics_downstream.R
-# 
-# 
+# Date of Creation: 2019-01-25
+# File: ~/projects/scChiC/scripts/scripts_analysis/lda_model/motif_analysis_of_topics_downstream_H3K4me3_promoter.R
+# H3K4me3 
+
 
 rm(list=ls())
 
@@ -17,8 +17,6 @@ library(org.Mm.eg.db)
 library(JFuncs)
 library(umap)
 library(ggplot2)
-library(forcats)
-library(ggrepel)
 
 source("scripts/Rfunctions/MetricsLDA.R")
 source("scripts/Rfunctions/AuxLDA.R")
@@ -136,9 +134,9 @@ PlotAllMarks <- function(jgene, jmarks, jdist, out.objs){
 # jchip <- "H3K4me1"
 jchips <- c("H3K27me3", "H3K4me1", "H3K4me3", "H3K9me3")
 
-jchip <- jchips[[2]]
+jchip <- jchips[[3]]
 
-etables <- readRDS(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/motif_enrichment_tables.", jchip, ".rds"))
+etables <- readRDS(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/motif_enrichment_tables.db_promoter.", jchip, ".rds"))
 
 # load the LDA output for visualization
 
@@ -146,9 +144,9 @@ jchips <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
 out.objs <- lapply(jchips, LoadLDA)
 names(out.objs) <- jchips
 
-etables[[17]][1:15, 1:5]  # Tal1
-etables[[12]][1:15, 1:5]
-etables[[19]][1:15, 1:5]
+# etables[[17]][1:15, 1:5]  # Tal1
+# etables[[12]][1:15, 1:5]
+# etables[[19]][1:15, 1:5]
 
 etables.all <- bind_rows(lapply(seq(length(etables)), function(i) etables[[i]] %>% mutate(topic = i))) %>%
   arrange(desc(NES))
@@ -162,10 +160,10 @@ tm.result <- posterior(out.lda)
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 
-nn=40
-nnterms <- 15
+nn=15
+nnterms <- 25
 jmetric='euclidean' 
-jmindist=0.2
+jmindist=0.1
 jseed=123
 custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
 custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)
@@ -244,9 +242,9 @@ top.peaks.annotated <- dplyr::left_join(top.peaks, subset(regions.annotated, sel
 # Motif analysis ----------------------------------------------------------
 
 # show topic 17: Hbb and Sox6 enriched here 
-jtopic <- 17
+jtopic <- 11
 par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `17`)) + geom_point() + 
+m <- ggplot(dat.umap.long, aes_string(x = "umap1", y = "umap2", color = paste("`", jtopic, "`", sep=""))) + geom_point() + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
 print(m)
@@ -259,40 +257,22 @@ out.objs[["H3K4me1"]]$regions.annotated
 print(subset(etables[[jtopic]], select = -enrichedGenes, NES > 4 & AUC > 0.005))
 
 
-
 # Do for all topics -------------------------------------------------------
 
-outdir <- paste0("~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/", jchip)
+outdir <- paste0("~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/promoters_", jchip)
 dir.create(outdir)
 pdf(file.path(outdir, paste0("topic_weights_from_peak_calling.", jchip, ".pdf")), useDingbats = FALSE)
-
 
 par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
 mapply(function(jcol.rgb, jtopic){
   plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.75)
 }, jcol.rgbs, seq(kchoose))
 
-# show top hits of betas
-for (i in seq(kchoose)){
-  # etables at topic 17
-  m.topmotifs <- etables[[i]] %>% top_n(n = 25, wt = NES) %>% 
-    mutate(motif = forcats::fct_reorder(motif, dplyr::desc(NES))) %>%
-    rowwise() %>%
-    mutate(TFname = sapply(TF_highConf, function(x) strsplit(x, " ")[[1]][1])) %>%
-    ggplot(aes(x = motif, y = NES, label = TFname)) + 
-    geom_text_repel() +
-    geom_point() + 
-    theme_bw(12) + 
-    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-          axis.text.x = element_text(angle = 45, hjust = 1)) + 
-    xlab("") + ggtitle(paste("Motif enrichment topic:", i))
-  print(m.topmotifs)
-}
-
-
 
 jtopics <- seq(kchoose)
 for (jtopic in jtopics){
+  
+  
   par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
   # handle variable column names
   # https://stackoverflow.com/questions/13445435/ggplot2-aes-string-fails-to-handle-names-starting-with-numbers-or-containing-s
@@ -307,139 +287,3 @@ for (jtopic in jtopics){
   write.table(etab.out, file.path(outdir, paste0(jchip, ".topic_", jtopic, "_topmotifs.txt")), quote = FALSE, sep = "\t", row.names = FALSE)
 }
 dev.off()
-
-# 
-# # Show topic 1 ------------------------------------------------------------
-# 
-# jtopic <- 1
-# par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-# m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `1`)) + geom_point() + 
-#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-#   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
-# print(m)
-# 
-# # which motifs here?
-# peaks.sub <- out.objs[[jchip]]$topic.regions[[jtopic]]
-# regions.sub <- subset(regions.annotated, abs(distanceToTSS) < 10000 & region_coord %in% peaks.sub)
-# # out.objs[["H3K4me1"]]$regions.annotated
-# 
-# # print(etables[[jtopic]]$enrichedGenes[[1]])
-# # print(subset(etables[[jtopic]], select = -enrichedGenes)[1:10, ])
-# print(subset(etables[[jtopic]], select = -enrichedGenes, NES > 4 & AUC > 0.005))
-# 
-# # Show topic 12 ------------------------------------------------------------
-# 
-# jtopic <- 12
-# par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-# m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `12`)) + geom_point() + 
-#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-#   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
-# print(m)
-# 
-# # which motifs here?
-# peaks.sub <- out.objs[[jchip]]$topic.regions[[jtopic]]
-# regions.sub <- subset(regions.annotated, abs(distanceToTSS) < 10000 & region_coord %in% peaks.sub)
-# 
-# print(subset(etables[[jtopic]], select = -enrichedGenes, NES > 4 & AUC > 0.005))
-# 
-# 
-# # Show tpic 19 ------------------------------------------------------------
-# 
-# jtopic <- 19
-# par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-# m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `19`)) + geom_point() + 
-#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-#   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
-# print(m)
-# 
-# # which motifs here?
-# peaks.sub <- out.objs[[jchip]]$topic.regions[[jtopic]]
-# regions.sub <- subset(regions.annotated, abs(distanceToTSS) < 10000 & region_coord %in% peaks.sub)
-# 
-# print(subset(etables[[jtopic]], select = -enrichedGenes, NES > 3.5 & AUC > 0.005))
-# 
-# # Show tpic 10 ------------------------------------------------------------
-# 
-# jtopic <- 10
-# par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-# m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `10`)) + geom_point() + 
-#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-#   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
-# print(m)
-# 
-# # which motifs here?
-# peaks.sub <- out.objs[[jchip]]$topic.regions[[jtopic]]
-# regions.sub <- subset(regions.annotated, abs(distanceToTSS) < 10000 & region_coord %in% peaks.sub)
-# 
-# print(subset(etables[[jtopic]], select = -enrichedGenes, NES > 3.5 & AUC > 0.005))
-# 
-# # Show tpic 9 ------------------------------------------------------------
-# 
-# jtopic <- 9
-# par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-# m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `9`)) + geom_point() + 
-#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-#   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
-# print(m)
-# 
-# # which motifs here?
-# peaks.sub <- out.objs[[jchip]]$topic.regions[[jtopic]]
-# regions.sub <- subset(regions.annotated, abs(distanceToTSS) < 10000 & region_coord %in% peaks.sub)
-# 
-# print(subset(etables[[jtopic]], select = -enrichedGenes, NES > 3.5 & AUC > 0.005))
-# 
-# # Show tpic 20 ------------------------------------------------------------
-# 
-# jtopic <- 20
-# par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-# m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `9`)) + geom_point() + 
-#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-#   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
-# print(m)
-# 
-# # which motifs here?
-# peaks.sub <- out.objs[[jchip]]$topic.regions[[jtopic]]
-# regions.sub <- subset(regions.annotated, abs(distanceToTSS) < 10000 & region_coord %in% peaks.sub)
-# 
-# print(subset(etables[[jtopic]], select = -enrichedGenes, NES > 3.5 & AUC > 0.005))
-# 
-# 
-# 
-# 
-# # Tables ------------------------------------------------------------------
-# 
-# # look at topic 1 H3K4me1
-# # Spib motif is upregulated
-# # Target genes: Cebpg
-# 
-# print(etables[[1]]$enrichedGenes[[1]])
-# jgene <- "Cepbg"
-# jgene <- "Sox6"
-# jgene <- "Igf2r"
-# jdist <- 10000
-# system.time(
-#   plots.out <- PlotAllMarks(jgene, jchips, jdist, out.objs)
-# )
-# multiplot(plots.out[[1]], plots.out[[2]], plots.out[[3]], plots.out[[4]], cols = 4)
-# 
-# # Sox10 outputs
-# 
-# head(etables[[3]]$TF_highConf, n = 30)
-# etables[[3]]$enrichedGenes[[1]]
-# 
-# jgene <- "Dgkg"
-# jdist <- 10000
-# system.time(
-#   plots.out <- PlotAllMarks(jgene, jchips, jdist, out.objs)
-# )
-# multiplot(plots.out[[1]], plots.out[[2]], plots.out[[3]], plots.out[[4]], cols = 4)
-# 
-# # Irf?
-# head(etables[[3]]$TF_highConf, n = 30)
-# etables[[3]]$enrichedGenes[[6]]
-# 
-# jgene <- "Irf4"
-# system.time(
-#   plots.out <- PlotAllMarks(jgene, jchips, jdist, out.objs)
-# )
-# multiplot(plots.out[[1]], plots.out[[2]], plots.out[[3]], plots.out[[4]], cols = 4)

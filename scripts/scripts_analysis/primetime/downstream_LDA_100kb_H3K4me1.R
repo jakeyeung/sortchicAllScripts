@@ -18,6 +18,8 @@ library(rGREAT)
 library(hash)
 library(JFuncs)
 library(umap)
+library(forcats)
+library(ggrepel)
 
 library(igraph)  # louvain
 
@@ -149,7 +151,8 @@ jtopic <- 12
 jcol.rgb <- jcol.rgbs[[jtopic]]
 par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
 # make it pretty
-m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `12`)) + geom_point() + 
+
+m <- ggplot(dat.umap.long, aes_string(x = "umap1", y = "umap2", color = paste0("`", jtopic, "`"))) + geom_point() + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
 print(m)
@@ -192,10 +195,24 @@ clstr <- hash(g.out$names, g.out$membership)
 
 dat.umap.long$louvain <- sapply(dat.umap.long$cell, function(x) clstr[[x]])
 
-# plot umap with louvain 
-m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = as.character(louvain))) + geom_point() + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+jclst <- 6
+clstrs.orig <- as.character(sort(unique(as.numeric(dat.umap.long$louvain))))
+# swap jclst with first element
+clstrs.new <- clstrs.orig
+clstrs.new[c(1, which(clstrs.new == jclst))] <- clstrs.new[c(which(clstrs.new == jclst), 1)]
+remap.clstr <- hash(clstrs.orig, clstrs.new)
+dat.umap.long$louvain <- sapply(as.character(dat.umap.long$louvain), function(x) remap.clstr[[x]])
+dat.umap.long$louvain <- factor(as.character(dat.umap.long$louvain), levels = clstrs.orig)  # 1 to N
+m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_brewer(palette = "Spectral")
 print(m.louvain)
+# 
+# # plot umap with louvain 
+# m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = as.character(louvain))) + geom_point() + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# print(m.louvain)
 
 # plot graph with edges?
 # https://stackoverflow.com/questions/5364264/how-to-control-the-igraph-plot-layout-with-fixed-positions
@@ -226,7 +243,8 @@ jpeaks <- grep("chr7", rownames(mat.norm), value = TRUE)
 x <- as.data.frame(mat.norm[jpeaks, ])
 x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)), 
                      coord = rep(rownames(x), ncol(x)), stringsAsFactors = FALSE)
-x.long$louvain <- sapply(x.long$cell, function(x) clstr[[x]])
+x.long$louvain.orig <- sapply(x.long$cell, function(x) clstr[[x]])
+x.long$louvain <- sapply(as.character(x.long$louvain.orig), function(x) remap.clstr[[x]])
 x.long$exprs <- x.long$exprs * 10^6
 
 # get data for chromo 11
@@ -234,10 +252,30 @@ jpeaks11 <- grep("chr11", rownames(mat.norm), value = TRUE)
 x11 <- as.data.frame(mat.norm[jpeaks11, ])
 x.long11 <- data.frame(exprs = unlist(x11), cell = rep(colnames(x11), each = nrow(x11)), 
                        coord = rep(rownames(x11), ncol(x11)), stringsAsFactors = FALSE)
-x.long11$louvain <- sapply(x.long11$cell, function(x) clstr[[x]])
+x.long11$louvain.orig <- sapply(x.long11$cell, function(x) clstr[[x]])
+x.long11$louvain <- sapply(as.character(x.long11$louvain.orig), function(x) remap.clstr[[x]])
 x.long11$exprs <- x.long11$exprs * 10^6
 
-pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/", jchip, "_LDA_bins_top_regions.pdf"), 
+
+
+# jpeaks <- grep("chr7", rownames(mat.norm), value = TRUE)
+# x <- as.data.frame(mat.norm[jpeaks, ])
+# x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)), 
+#                      coord = rep(rownames(x), ncol(x)), stringsAsFactors = FALSE)
+# # x.long$louvain <- sapply(x.long$cell, function(x) clstr[[x]])
+# x.long$louvain.orig <- sapply(x.long$cell, function(x) clstr[[x]])
+# x.long$louvain <- sapply(as.character(x.long$louvain.orig), function(x) remap.clstr[[x]])
+# x.long$exprs <- x.long$exprs * 10^6
+# 
+# # get data for chromo 11
+# jpeaks11 <- grep("chr11", rownames(mat.norm), value = TRUE)
+# x11 <- as.data.frame(mat.norm[jpeaks11, ])
+# x.long11 <- data.frame(exprs = unlist(x11), cell = rep(colnames(x11), each = nrow(x11)), 
+#                        coord = rep(rownames(x11), ncol(x11)), stringsAsFactors = FALSE)
+# x.long11$louvain <- sapply(x.long11$cell, function(x) clstr[[x]])
+# x.long11$exprs <- x.long11$exprs * 10^6
+
+pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/", jchip, "_LDA_bins_top_regions.pdf"),
     useDingbats = FALSE)
 
 # plot topics
@@ -246,7 +284,25 @@ mapply(function(jcol.rgb, jtopic){
   plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.75)
 }, jcol.rgbs, seq(kchoose))
 
+# show top hits of betas
+
+# show top hits of betas
+for (i in seq(kchoose)){
+  m.top <- subset(top.peaks.annotated, topic == i) %>% top_n(n=25, wt = beta) %>% 
+    mutate(term = forcats::fct_reorder(term, dplyr::desc(beta))) %>%
+    ggplot(aes(x = term, y = log10(beta), label = SYMBOL)) + 
+    geom_point() + theme_bw(14) + geom_text_repel() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+          axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    xlab("") + ylab("Log10 Bin Weight") + 
+    ggtitle(paste("Top peak weights for topic:", i))
+  print(m.top)
+}
+
 print(m)
+
+# plot topic weight
+print(m.top)
 
 # plot louvain clusters 
 print(m.louvain)
@@ -259,10 +315,11 @@ jpeak <- subset(top.peaks.annotated, topic == 12 & SYMBOL == jgene)$term[[1]]
 print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
-jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
+# for sox6 shift left a bit
+jstart <- subset(regions.annotated, region_coord == jpeak)$start - 6 * 10^5
 jend <- subset(regions.annotated, region_coord == jpeak)$end + 5 * 10^5
 PlotGTrack(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = "auto")
-PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 6, "Eryth", "Others")), 
+PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")), 
            jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = 1.5)
 
 # Hbb region
@@ -275,7 +332,7 @@ jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
 jend <- subset(regions.annotated, region_coord == jpeak)$end + 5 * 10^5
 
 PlotGTrack(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = "auto")
-PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 6, "Eryth", "Others")), 
+PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")), 
            jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = 1.5)
 
 # Hba region
@@ -290,7 +347,7 @@ jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
 jend <- subset(regions.annotated, region_coord == jpeak)$end + 5 * 10^5
 
 PlotGTrack(x.long11, jstart, jend, mart.obj, gen = "mm10", chr = jchr, jheight = "auto")
-PlotGTrack(x.long11 %>% mutate(louvain = ifelse(louvain == 6, "Eryth", "Others")), 
+PlotGTrack(x.long11 %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")), 
            jstart, jend, mart.obj, gen = "mm10", chr = jchr, jheight = 1.5)
 
 

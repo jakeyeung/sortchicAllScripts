@@ -16,6 +16,7 @@ library(org.Mm.eg.db)
 library(JFuncs)
 library(umap)
 library(ggplot2)
+library(ggrepel)
 
 source("scripts/Rfunctions/MetricsLDA.R")
 source("scripts/Rfunctions/AuxLDA.R")
@@ -268,10 +269,29 @@ mapply(function(jcol.rgb, jtopic){
 }, jcol.rgbs, seq(kchoose))
 
 
+
+# show top hits of betas
+for (i in seq(kchoose)){
+  # etables at topic 17
+  m.topmotifs <- etables[[i]] %>% top_n(n = 25, wt = NES) %>% 
+    mutate(motif = forcats::fct_reorder(motif, dplyr::desc(NES))) %>%
+    rowwise() %>%
+    mutate(TFname = sapply(TF_highConf, function(x) strsplit(x, " ")[[1]][1])) %>%
+    ggplot(aes(x = motif, y = NES, label = TFname)) + 
+    geom_text_repel() +
+    geom_point() + 
+    theme_bw(12) + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    xlab("") + ggtitle(paste("Motif enrichment topic:", i))
+  print(m.topmotifs)
+}
+
+
+
+
 jtopics <- seq(kchoose)
 for (jtopic in jtopics){
-  
-  
   par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
   # handle variable column names
   # https://stackoverflow.com/questions/13445435/ggplot2-aes-string-fails-to-handle-names-starting-with-numbers-or-containing-s
