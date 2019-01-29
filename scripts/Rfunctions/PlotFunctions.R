@@ -1,4 +1,4 @@
-PlotGTrack <- function(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = "auto"){
+PlotGTrack <- function(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = "auto", jtype = "mountain"){
   datheight <- 10
   trackheight <- 2
   itrack <- IdeogramTrack(genome=gen, chromosome=chr)
@@ -36,7 +36,7 @@ PlotGTrack <- function(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7
                                          end = jend, 
                                          chromo = chr,
                                          genome = gen, name = paste("Clstr", l),
-                                         type="mountain")
+                                         type=jtype)
   }
   if (jheight != "auto"){
     jsizes <- rep(jheight, length(dlst))
