@@ -24,14 +24,14 @@ cell="BM"
 
 K=20  # kind of useless parameter
 ncores=5
-topics="15,20,25,30,35"
+topics="5,10,15,20,25"
 topicsName=`echo $topics | sed 's/,/_/g'`
 tunemodels="TRUE"
 binarize="TRUE"
 cellmin="100"
 cellmax="500000"
 
-marks="H3K27me3"
+# marks="H3K27me3"
 for mark in $marks; do
     inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}/PZ-${cell}-${mark}.merged.NoCountThres.hiddenDomains.Robj"
     # meanmax="0.15"  # about 0.32 for pvalcutoff 0.5, 0.15 for pvalcutoff 0.3
@@ -39,7 +39,7 @@ for mark in $marks; do
     # cellmin="1000"
     # cellmax="50000"
     # relax assumptions to capture more H3K4me3 and H3K9me3 cells?
-    outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisHiddenDomains_${mindist}/lda_outputs.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}"
+    outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisHiddenDomains_${mindist}/lda_outputs.AutosomesOnly.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}"
     [[ ! -d $outdir ]] && mkdir -p $outdir
 
     [[ ! -e $inf ]] && echo "$inf not found, exiting" && exit 1

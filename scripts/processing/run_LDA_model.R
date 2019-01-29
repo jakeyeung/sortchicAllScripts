@@ -113,8 +113,8 @@ print("Dimensions after filtering peaks...")
 print(dim(count.mat))
 
 # remove peaks in chrM
-# M.peaks <- grep("chrM|chrY|chrX", dat.meanvar$peak, value=TRUE)
-M.peaks <- grep("chrM", dat.meanvar$peak, value=TRUE)
+M.peaks <- grep("chrM|chrY|chrX", dat.meanvar$peak, value=TRUE)
+# M.peaks <- grep("chrM", dat.meanvar$peak, value=TRUE)
 
 count.mat <- count.mat[which(!rownames(count.mat) %in% M.peaks), ]
 print("Dimensions after filtering peaks X, Y, M chromos")

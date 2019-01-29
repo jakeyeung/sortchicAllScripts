@@ -6,9 +6,10 @@
 GetTissue <- function(inf, type="BM"){
   # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> BM
   # PZ-K562-H3K27me3-G1_AH2VV5BGX9_S11.bc_counts.txt
+  # PZ-K562-G1-M-H3K4me1-plate1_AHHCCGBGX9_S2 -> K562 ok
   if (type == "BM"){
     x <- strsplit(inf, split = "-")[[1]][[2]]
-  } else if (type == "K562"){
+  } else if (type == "K562" | type == "K562_round2"){
     x <- strsplit(inf, split = "-")[[1]][[2]]
   } else {
     print("Must be BM or K562")
@@ -17,11 +18,14 @@ GetTissue <- function(inf, type="BM"){
 }
 GetChip <- function(inf, type="BM"){
   # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> H3K7me3
-  # PZ-K562-H3K27me3-G1_AH2VV5BGX9_S11.bc_counts.txt
+  # PZ-K562-H3K27me3-G1_AH2VV5BGX9_S11.bc_counts.txt -> H3K27me3
+  # PZ-K562-G1-M-H3K4me1-plate1_AHHCCGBGX9_S2 -> H3K4me1
   if (type == "BM"){
     x <- strsplit(inf, split = "-")[[1]][[4]]
   } else if (type == "K562"){
     x <- strsplit(inf, split = "-")[[1]][[3]]
+  } else if (type == "K562_round2"){
+    x <- strsplit(inf, split = "-")[[1]][[5]]
   } else {
     print("Must be BM or K562")
   }
@@ -30,11 +34,15 @@ GetChip <- function(inf, type="BM"){
 GetBioRep <- function(inf, type="BM"){
   # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> m1
   # PZ-K562-H3K27me3-G1_AH2VV5BGX9_S11.bc_counts.txt -> G1
+  # PZ-K562-G1-M-H3K4me1-plate1_AHHCCGBGX9_S2 -> plate1
   if (type == "BM"){
     # x <- strsplit(x, split = "m")[[1]][[2]]  # keep the m1
     x <- strsplit(inf, split = "-")[[1]][[3]]
   } else if (type == "K562"){
     xtmp <- strsplit(inf, split = "-")[[1]][[4]]
+    x <- strsplit(xtmp, split = "_")[[1]][[1]]
+  } else if (type == "K562_round2"){
+    xtmp <- strsplit(inf, split = "-")[[1]][[6]]
     x <- strsplit(xtmp, split = "_")[[1]][[1]]
   } else {
     print("Must be BM or K562")
@@ -46,14 +54,18 @@ GetTechRep <- function(inf, type="BM"){
   # PZ-K562-H3K27me3-G1_AH2VV5BGX9_S11.bc_counts.txt
   # x <- stringr::str_match(inf, "_S[1-9]*.")[1, 1]
   # "PZ-BM-m2-H3K9me3-1_H2GV2BGX9_S17" -> 1
-  if (type == "BM"){
-    x <- stringr::str_match(inf, "-[1-9]*_")[1, 1] 
-    # remove first and last characters
-    x <- substr(x, start = 2, stop = nchar(x) - 1)
-  } else if (type == "K562"){
+  # if (type == "BM" | type == "K562" | type == "K562_round2"){
     x <- stringr::str_match(inf, "_S[1-9]*.")[1, 1]
     x <- substr(x, start = 2, stop = nchar(x) - 1)
-  }
+  # }
+  # if (type == "BM"){
+  #   x <- stringr::str_match(inf, "-[1-9]*_")[1, 1] 
+  #   # remove first and last characters
+  #   x <- substr(x, start = 2, stop = nchar(x) - 1)
+  # } else if (type == "K562"){
+  #   x <- stringr::str_match(inf, "_S[1-9]*.")[1, 1]
+  #   x <- substr(x, start = 2, stop = nchar(x) - 1)
+  # }
   return(x)
 }
 GetExperiment <- function(inf, type="BM"){
