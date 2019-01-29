@@ -15,7 +15,7 @@ workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 
 cd $workdir
 
-rs="scripts/processing/run_LDA_model.R"
+rs="scripts/processing/lib/run_LDA_model.R"
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 
 marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"

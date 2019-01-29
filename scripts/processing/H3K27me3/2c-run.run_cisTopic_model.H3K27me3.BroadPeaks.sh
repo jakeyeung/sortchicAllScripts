@@ -11,7 +11,6 @@ workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 
 cd $workdir
 
-# rs="scripts/processing/run_LDA_model.R"
 rs="scripts/processing/run_cisTopic.R"
 
 inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats/PZ-BM-H3K27me3.merged.NoCountThres.Robj"

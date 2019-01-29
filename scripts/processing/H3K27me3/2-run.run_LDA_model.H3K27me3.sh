@@ -12,7 +12,7 @@ workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 
 cd $workdir
 
-rs="scripts/processing/run_LDA_model.R"
+rs="scripts/processing/lib/run_LDA_model.R"
 
 inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/lda_analysis.h3k27me3.dropbox/BM-H3K27me3.AvO_filt.Robj"
 
