@@ -48,6 +48,8 @@ jmetric='euclidean'
 jmindist=0.4
 jseed=123
 
+plotout <- paste0("/tmp/", jmark, "_LDA_bins_top_regions.pdf")
+
 # LDA was run on binarized matrix or not. 
 # I was thinking this binarized matrix would help reduce weird genomic regions with way too many reads. 
 # Because we expect the count matrix to have only a few reads per bin per cell. 
@@ -277,8 +279,7 @@ x.long11$exprs <- x.long11$exprs * 10^6
 # x.long11$louvain <- sapply(x.long11$cell, function(x) clstr[[x]])
 # x.long11$exprs <- x.long11$exprs * 10^6
 
-pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/", jchip, "_LDA_bins_top_regions.pdf"),
-    useDingbats = FALSE)
+pdf(plotout, useDingbats = FALSE)
 
 # plot topics
 par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
@@ -338,7 +339,6 @@ PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")),
            jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = 1.5)
 
 # Hba region
-# Hbb region
 jgene <- "Hba"
 jchr <- "chr11"
 jpeak <- subset(top.peaks.annotated, topic == jtopic & grepl(jgene, SYMBOL))$term[[1]]
