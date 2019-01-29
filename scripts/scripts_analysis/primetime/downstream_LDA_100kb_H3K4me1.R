@@ -20,6 +20,7 @@ library(JFuncs)
 library(umap)
 library(forcats)
 library(ggrepel)
+library(biomaRt)
 
 library(igraph)  # louvain
 
@@ -34,18 +35,33 @@ source("scripts/Rfunctions/GetMetaCellHash.R")
 
 source("scripts/Rfunctions/PlotFunctions.R")
 
-# Functions ---------------------------------------------------------------
+# Constants you can tweak -------------------------------------------------
 
 
+jmark <- "H3K4me1"
 
+# settings for UMAP
+nn=40
+# nn=15
+nnterms <- 15
+jmetric='euclidean' 
+jmindist=0.4
+jseed=123
+
+# LDA was run on binarized matrix or not. 
+# I was thinking this binarized matrix would help reduce weird genomic regions with way too many reads. 
+# Because we expect the count matrix to have only a few reads per bin per cell. 
+# Can tweak this to TRUE or FALSE
+jbin <- "TRUE"
+
+top.thres <- 0.995
+
+# the northern island with Sox6, Hbb, and Hba signal
+
+jtopic <- 12
 
 # Load --------------------------------------------------------------------
 
-jbin <- "TRUE"
-jchip <- "H3K4me1"
-# from t2:/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/lda_analysis.h3k27me3.dropbox/lda_outputs.meanfilt_1000.merge_Windows2.cellmin_NA.cellmax_NA/lda_out.meanfilt.K-12.Robj
-# from t2:/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.TRUE/lda_out_meanfilt.BM-H3K4me3.CountThres0.K-5_10_15_20_25.Robj
-# inf <- paste0("/private/tmp/lda_output_binned/lda_out_meanfilt.BM-", jchip, ".CountThres0.K-5_10_15_20_25.Robj")
 if (jbin){
   inf <- paste0("/private/tmp/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jchip, ".CountThres0.K-5_10_15_20_25.Robj")
 } else {
@@ -56,8 +72,6 @@ assertthat::assert_that(file.exists(inf))
 
 load(inf, v=T)
 
-# out.lda <- out.lda[[5]]
-# print(out.lda@loglikelihood)
 out.lda <- ChooseBestLDA(out.lda)
 (kchoose <- out.lda@k)
 tm.result <- posterior(out.lda)
@@ -65,12 +79,7 @@ tm.result <- posterior(out.lda)
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 
-nn=40
-# nn=15
-nnterms <- 15
-jmetric='euclidean' 
-jmindist=0.4
-jseed=123
+
 custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
 custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)
 
@@ -93,12 +102,14 @@ mapply(function(jcol.rgb, jtopic){
 }, jcol.rgbs, seq(kchoose))
 
 # Plot terms umap ---------------------------------------------------------
-top.thres <- 0.995
 topic.regions <- lapply(seq(kchoose), function(clst){
   return(SelectTopRegions(tm.result$terms[clst, ], colnames(tm.result$terms), method = "thres", method.val = top.thres))
 })
 top.regions <- unique(unlist(topic.regions))
 terms.mat <- t(tm.result$terms)[top.regions, ]
+
+# Uncomment below to plot the UMAP on the terms, can take a few more minutes
+
 # dat.umap.terms <- umap(terms.mat, config = custom.settings.terms)
 # # downsample rows for plotting purposes
 # downsamp.i <- sample(seq(nrow(dat.umap.terms$layout)), size = round(0.1 * nrow(dat.umap.terms$layout)), replace = FALSE)
@@ -146,8 +157,7 @@ topics.mat.named$cell <- rownames(topics.mat.named)
 dat.umap.long <- data.frame(umap1 = dat.umap$layout[, 1], umap2 = dat.umap$layout[, 2], cell = rownames(dat.umap$layout))
 dat.umap.long <- left_join(dat.umap.long, topics.mat.named)
 
-# plot topic12 
-jtopic <- 12
+# plot northern island
 jcol.rgb <- jcol.rgbs[[jtopic]]
 par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
 # make it pretty
@@ -167,7 +177,7 @@ jgene <- c("Vldlr", "Uhrf1", "Rrm2", "Lig1", "Tipin")
 jgene <- c("F2r", "Itga2b", "Zfp385a", "Zfpm1", "Plek", "Cd9", "Zeb2")
 
 # translate beta to log fold change?
-mat.norm <- t(tm.result$topics %*% tm.result$terms)
+mat.norm <- t(tm.result$topics %*% tm.result$terms)  # this should give normalized signal, without the poisson noise?
 # mat.norm <- mat.norm[top.regions, ]
 
 # label using louvain clustering?
@@ -177,8 +187,6 @@ cell.indx <- hash(rownames(dat.umap$knn$indexes), dat.umap$knn$indexes[, 1])
 cell.indx.rev <- hash(dat.umap$knn$indexes[, 1], rownames(dat.umap$knn$indexes))
 nr <- nrow(dat.umap$knn$indexes)
 nc <- ncol(dat.umap$knn$indexes)
-# nc <- 4
-# edgelist <- matrix(NA, nrow = nr * nc, ncol = 3)
 edgelist <- matrix(NA, nrow = nr * nc, ncol = 2)
 colnames(edgelist) <- c("from", "to")
 for (vertex.i in seq(nr)){
@@ -208,11 +216,6 @@ m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_brewer(palette = "Spectral")
 print(m.louvain)
-# 
-# # plot umap with louvain 
-# m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = as.character(louvain))) + geom_point() + 
-#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-# print(m.louvain)
 
 # plot graph with edges?
 # https://stackoverflow.com/questions/5364264/how-to-control-the-igraph-plot-layout-with-fixed-positions
@@ -231,7 +234,6 @@ plot.igraph(simplify(g),
 
 # Merge cells and plot hits -----------------------------------------------
 
-library(biomaRt)
 
 gen <- "mm10"
 chr <- "chr7"
@@ -311,7 +313,7 @@ print(m.louvain)
 
 # Sox6 region
 jgene <- "Sox6"
-jpeak <- subset(top.peaks.annotated, topic == 12 & SYMBOL == jgene)$term[[1]]
+jpeak <- subset(top.peaks.annotated, topic == jtopic & SYMBOL == jgene)$term[[1]]
 print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
@@ -324,7 +326,7 @@ PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")),
 
 # Hbb region
 jgene <- "Hbb"
-jpeak <- subset(top.peaks.annotated, topic == 12 & grepl(jgene, SYMBOL))$term[[1]]
+jpeak <- subset(top.peaks.annotated, topic == jtopic & grepl(jgene, SYMBOL))$term[[1]]
 print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
@@ -339,7 +341,7 @@ PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")),
 # Hbb region
 jgene <- "Hba"
 jchr <- "chr11"
-jpeak <- subset(top.peaks.annotated, topic == 12 & grepl(jgene, SYMBOL))$term[[1]]
+jpeak <- subset(top.peaks.annotated, topic == jtopic & grepl(jgene, SYMBOL))$term[[1]]
 print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))

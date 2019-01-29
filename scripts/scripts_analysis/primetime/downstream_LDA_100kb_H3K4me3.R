@@ -19,6 +19,7 @@ library(hash)
 library(JFuncs)
 library(umap)
 library(ggrepel)
+library(biomaRt)
 
 library(igraph)  # louvain
 
@@ -33,22 +34,42 @@ source("scripts/Rfunctions/GetMetaCellHash.R")
 
 source("scripts/Rfunctions/PlotFunctions.R")
 
-# Functions ---------------------------------------------------------------
 
 
+# Constants you can tweak -------------------------------------------------
 
+
+jmark <- "H3K4me3"
+
+# settings for UMAP
+nn=35
+# nn=15
+nnterms <- 15  # if you plot UMAP on the bins you use this variable
+jmetric='euclidean' 
+jmindist=0.2
+jseed=123
+
+# LDA was run on binarized matrix or not. 
+# I was thinking this binarized matrix would help reduce weird genomic regions with way too many reads. 
+# Because we expect the count matrix to have only a few reads per bin per cell. 
+# Can tweak this to TRUE or FALSE
+jbin <- "TRUE"
+
+top.thres <- 0.995
+
+# the northern island with Sox6, Hbb, and Hba signal
+
+jtopic <- 1
 
 # Load --------------------------------------------------------------------
 
-jbin <- "TRUE"
-jchip <- "H3K4me3"
+
 # from t2:/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/lda_analysis.h3k27me3.dropbox/lda_outputs.meanfilt_1000.merge_Windows2.cellmin_NA.cellmax_NA/lda_out.meanfilt.K-12.Robj
 # from t2:/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.TRUE/lda_out_meanfilt.BM-H3K4me3.CountThres0.K-5_10_15_20_25.Robj
-# inf <- paste0("/private/tmp/lda_output_binned/lda_out_meanfilt.BM-", jchip, ".CountThres0.K-5_10_15_20_25.Robj")
 if (jbin){
-  inf <- paste0("/private/tmp/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jchip, ".CountThres0.K-5_10_15_20_25.Robj")
+  inf <- paste0("/private/tmp/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_10_15_20_25.Robj")
 } else {
-  inf <- paste0("/private/tmp/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jchip, ".CountThres0.K-5_15_25.Robj")
+  inf <- paste0("/private/tmp/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_15_25.Robj")
 }
 
 assertthat::assert_that(file.exists(inf))
@@ -64,12 +85,7 @@ tm.result <- posterior(out.lda)
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 
-nn=35
-# nn=15
-nnterms <- 15
-jmetric='euclidean' 
-jmindist=0.2
-jseed=123
+
 custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
 custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)
 
@@ -79,7 +95,7 @@ jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
 
 # check your umap settings
 jpeak <- "chr7:103800000-103900000"
-PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
+PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
 
 
 # Plot dat umap -----------------------------------------------------------
@@ -92,12 +108,15 @@ mapply(function(jcol.rgb, jtopic){
 }, jcol.rgbs, seq(kchoose))
 
 # Plot terms umap ---------------------------------------------------------
-top.thres <- 0.995
+
 topic.regions <- lapply(seq(kchoose), function(clst){
   return(SelectTopRegions(tm.result$terms[clst, ], colnames(tm.result$terms), method = "thres", method.val = top.thres))
 })
 top.regions <- unique(unlist(topic.regions))
 terms.mat <- t(tm.result$terms)[top.regions, ]
+
+# Uncomment below to plot the UMAP on the terms, can take a few more minutes
+
 # dat.umap.terms <- umap(terms.mat, config = custom.settings.terms)
 # # downsample rows for plotting purposes
 # downsamp.i <- sample(seq(nrow(dat.umap.terms$layout)), size = round(0.1 * nrow(dat.umap.terms$layout)), replace = FALSE)
@@ -136,17 +155,16 @@ top.peaks.annotated <- dplyr::left_join(top.peaks, subset(regions.annotated, sel
 hit.peaks <- subset(regions.annotated, abs(distanceToTSS) < 50000 & grepl("Hbb", SYMBOL))$region_coord
 
 jpeak <- "chr7:103800000-103900000"
-PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
+PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
 
 # how top hits for specific topics
-# Progenitor cellsare in Topic 12?
+# Progenitor cell sare in Topic 12?
 topics.mat.named <- as.data.frame(topics.mat)
 topics.mat.named$cell <- rownames(topics.mat.named)
 dat.umap.long <- data.frame(umap1 = dat.umap$layout[, 1], umap2 = dat.umap$layout[, 2], cell = rownames(dat.umap$layout))
 dat.umap.long <- left_join(dat.umap.long, topics.mat.named)
 
 # plot topic1
-jtopic <- 1
 jcol.rgb <- jcol.rgbs[[jtopic]]
 par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
 # make it pretty
@@ -156,14 +174,6 @@ m <- ggplot(dat.umap.long, aes_string(x = "umap1", y = "umap2", color = paste0("
   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
 print(m)
 
-# m <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `1`)) + geom_point() + 
-#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-#   scale_color_continuous(paste0("Topic ", jtopic, "\nWeight"))
-# print(m)
-
-# plot top hits for topic 12
-
-# m <- ggplot(top.peaks.annotated %>% filter(topic == jtopic), aes(x = term, y = -)) + geom_point()
 print(subset(top.peaks.annotated, topic == 1), n = 50)
 
 jgene <- c("Tgm2", "Mmrn1", "Trim48", "Pdzk1ip1", "Mllt3", "Mecom")
@@ -172,7 +182,6 @@ jgene <- c("F2r", "Itga2b", "Zfp385a", "Zfpm1", "Plek", "Cd9", "Zeb2")
 
 # translate beta to log fold change?
 mat.norm <- t(tm.result$topics %*% tm.result$terms)
-# mat.norm <- mat.norm[top.regions, ]
 
 # label using louvain clustering?
 
@@ -181,8 +190,6 @@ cell.indx <- hash(rownames(dat.umap$knn$indexes), dat.umap$knn$indexes[, 1])
 cell.indx.rev <- hash(dat.umap$knn$indexes[, 1], rownames(dat.umap$knn$indexes))
 nr <- nrow(dat.umap$knn$indexes)
 nc <- ncol(dat.umap$knn$indexes)
-# nc <- 4
-# edgelist <- matrix(NA, nrow = nr * nc, ncol = 3)
 edgelist <- matrix(NA, nrow = nr * nc, ncol = 2)
 colnames(edgelist) <- c("from", "to")
 for (vertex.i in seq(nr)){
@@ -190,8 +197,8 @@ for (vertex.i in seq(nr)){
   iend <- nc*vertex.i
   edgelist[istart : iend, 1] <- cell.indx.rev[[as.character(vertex.i)]]
   edgelist[istart : iend, 2] <- sapply(dat.umap$knn$indexes[vertex.i, 1:nc], function(x) cell.indx.rev[[as.character(x)]])
-  # edgelist[istart : iend, 3] <- 1 / (dat.umap$knn$distances[vertex.i, 1:nc] + 0.1)
 }
+# can tweak these Louvain memberships?
 g <- graph_from_data_frame(edgelist, directed=FALSE)
 g.out <- cluster_louvain(g, weights = NULL)
 V(g)$color <- g.out$membership
@@ -207,9 +214,6 @@ clstrs.orig <- as.character(sort(unique(as.numeric(dat.umap.long$louvain))))
 clstrs.new <- clstrs.orig
 clstrs.new[c(1, which(clstrs.new == jclst))] <- clstrs.new[c(which(clstrs.new == jclst), 1)]
 remap.clstr <- hash(clstrs.orig, clstrs.new)
-
-# clstr.remapped <- clstr
-# hash::values(clstr.remapped) <- sapply(as.character(hash::values(clstr.remapped)), function(x) remap.clstr[[x]])
 
 dat.umap.long$louvain <- sapply(as.character(dat.umap.long$louvain), function(x) remap.clstr[[x]])
 dat.umap.long$louvain <- factor(as.character(dat.umap.long$louvain), levels = clstrs.orig)  # 1 to N
@@ -235,7 +239,6 @@ plot.igraph(simplify(g),
 
 # Merge cells and plot hits -----------------------------------------------
 
-library(biomaRt)
 
 gen <- "mm10"
 chr <- "chr7"
@@ -261,10 +264,10 @@ x.long11$louvain <- sapply(as.character(x.long11$louvain.orig), function(x) rema
 x.long11$exprs <- x.long11$exprs * 10^6
 
 
+pdf(plotout, useDingbats = FALSE)
 
-
-pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/", jchip, "_LDA_bins_top_regions.pdf"), 
-    useDingbats = FALSE)
+# pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/", jmark, "_LDA_bins_top_regions.pdf"), 
+#    useDingbats = FALSE)
 
 # plot topics
 par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
@@ -295,13 +298,13 @@ print(m.louvain)
 
 # Sox6 region
 jgene <- "Sox6"
-jpeak <- subset(top.peaks.annotated, topic == 1 & SYMBOL == jgene)$term[[1]]
-print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
+jpeak <- subset(top.peaks.annotated, topic == jtopic & SYMBOL == jgene)$term[[1]]
+print(PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
 # do Sox6 on same peak as H3K4me1
 jpeak.me1 <- "chr7:115920000-116020000"
-print(PlotImputedPeaks(tm.result, jpeak.me1, jchip, show.plot = FALSE, 
+print(PlotImputedPeaks(tm.result, jpeak.me1, jmark, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
 # for sox6 shift left a bit
@@ -313,8 +316,8 @@ PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")),
 
 # Hbb region
 jgene <- "Hbb"
-jpeak <- subset(top.peaks.annotated, topic == 1 & grepl(jgene, SYMBOL))$term[[1]]
-print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
+jpeak <- subset(top.peaks.annotated, topic == jtopic & grepl(jgene, SYMBOL))$term[[1]]
+print(PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
 jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
@@ -326,8 +329,8 @@ PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")),
 # Hba region
 jgene <- "Hba"
 jchr <- "chr11"
-jpeak <- subset(top.peaks.annotated, topic == 1 & grepl(jgene, SYMBOL))$term[[1]]
-print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
+jpeak <- subset(top.peaks.annotated, topic == jtopic & grepl(jgene, SYMBOL))$term[[1]]
+print(PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
 jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
