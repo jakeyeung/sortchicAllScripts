@@ -70,13 +70,19 @@ top.thres <- 0.995
 
 # Main code ---------------------------------------------------------------
 
+dirbase <- "/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_MetaCell"
+jdir <- paste0("lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin)
 if (jbin){
-  inf <- paste0("/private/tmp/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jchip, ".CountThres0.K-5_10_15_20_25.Robj")
+  fname <- paste0("lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_10_15_20_25.Robj")
+  inf <- file.path(dirbase, jdir, fname)
 } else {
-  inf <- paste0("/private/tmp/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jchip, ".CountThres0.K-5_15_25.Robj")
+  fname <- paste0("lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_15_25.Robj")  # I sweeped across fewer K's for jbin == FALSE, can add more later
+  inf <- file.path(dirbase, jdir, fname)
 }
 
 assertthat::assert_that(file.exists(inf))
+
+print(paste("Loading LDA output", inf))
 
 load(inf, v=T)
 
@@ -97,7 +103,7 @@ jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
 
 # check your umap settings
 jpeak <- "chr7:103800000-103900000"
-PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
+PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
 
 
 # Plot dat umap -----------------------------------------------------------
@@ -154,7 +160,7 @@ top.peaks.annotated <- dplyr::left_join(top.peaks, subset(regions.annotated, sel
 hit.peaks <- subset(regions.annotated, abs(distanceToTSS) < 50000 & grepl("Hbb", SYMBOL))$region_coord
 
 jpeak <- "chr7:103800000-103900000"
-PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
+PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
 
 # how top hits for specific topics
 # Progenitor cellsare in Topic 12?
@@ -264,10 +270,10 @@ x.long11$louvain.orig <- sapply(x.long11$cell, function(x) clstr[[x]])
 x.long11$louvain <- sapply(as.character(x.long11$louvain.orig), function(x) remap.clstr[[x]])
 x.long11$exprs <- x.long11$exprs * 10^6
 
-pdf()
+pdf(plotout, useDingbats=FALSE)
 
-pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/", jchip, "_LDA_bins_top_regions.pdf"),
-    useDingbats = FALSE)
+# pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/", jmark, "_LDA_bins_top_regions.pdf"),
+#     useDingbats = FALSE)
 
 # plot topics
 par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
@@ -303,7 +309,7 @@ print(m.louvain)
 # Sox6 region
 jgene <- "Sox6"
 jpeak <- subset(top.peaks.annotated, topic == jtopic & SYMBOL == jgene)$term[[1]]
-print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
+print(PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
 # for sox6 shift left a bit
@@ -316,7 +322,7 @@ PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")),
 # Hbb region
 jgene <- "Hbb"
 jpeak <- subset(top.peaks.annotated, topic == jtopic & grepl(jgene, SYMBOL))$term[[1]]
-print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
+print(PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
 jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
@@ -330,7 +336,7 @@ PlotGTrack(x.long %>% mutate(louvain = ifelse(louvain == 1, "Eryth", "Others")),
 jgene <- "Hba"
 jchr <- "chr11"
 jpeak <- subset(top.peaks.annotated, topic == jtopic & grepl(jgene, SYMBOL))$term[[1]]
-print(PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = FALSE, 
+print(PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = FALSE, 
                        return.plot.only = TRUE, usettings=custom.settings,
                        gname = jgene))
 jstart <- subset(regions.annotated, region_coord == jpeak)$start - 5 * 10^5
