@@ -43,6 +43,7 @@ jmark <- "H3K4me1"
 jtopic <- 12
 # nearest neighbors settings for UMAP
 nn=40
+jmindist=0.4
 
 # # settings for H3K4me3
 # jmark <- "H3K4me3"
@@ -50,11 +51,11 @@ nn=40
 # jtopic <- 1
 # # nearest neighbors settings for UMAP, can make it 40 to be same as H3K4me1
 # nn=35
+# jmindist=0.2
 
 # other settings for UMAP same different marks
 nnterms <- 15  # if you plot UMAP on the bins you use this variable
 jmetric='euclidean' 
-jmindist=0.2
 jseed=123
 
 plotout <- paste0("/tmp/", jmark, "_LDA_bins_top_regions.pdf")
@@ -105,6 +106,10 @@ jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
 jpeak <- "chr7:103800000-103900000"
 PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
 
+print(custom.settings)
+print(sessionInfo())
+
+# stop("Stop")
 
 # Plot dat umap -----------------------------------------------------------
 jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, topics.mat, c("lightblue", "darkblue"))
