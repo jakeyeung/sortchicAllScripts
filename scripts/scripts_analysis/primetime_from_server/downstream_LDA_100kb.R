@@ -17,7 +17,6 @@ library(ChIPseeker)
 library(rGREAT)
 library(hash)
 library(JFuncs)
-library(umap)
 library(forcats)
 library(ggrepel)
 library(biomaRt)
@@ -25,7 +24,6 @@ library(biomaRt)
 library(igraph)  # louvain
 
 library(Gviz)
-library(GenomicRanges)
 
 
 source("scripts/Rfunctions/MetricsLDA.R")
