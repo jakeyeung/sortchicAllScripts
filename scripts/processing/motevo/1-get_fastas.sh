@@ -87,12 +87,11 @@ do
         [[ ! -d $motevodirtmpsplitchunk ]] && mkdir $motevodirtmpsplitchunk
         [[ ! -d $paramsdir ]] && mkdir $paramsdir
         cd $paramsdir
-        python $sitecountscript -w $wmdir -f $infasta -c 0 -o $motevodirtmpsplitchunk
+        python $sitecountscript -w $wmdir -f $infasta -c 0 -o $motevodirtmpsplitchunk -d $paramsdir
 		ret=$?; [[ $ret -ne 0  ]] && echo "ERROR: script failed" && exit 1
 done
 
-echo "Created motevo inputs, but not yet run"
-exit 0
+# echo "Created motevo inputs, but not yet run"
 
 ## END MOTEVO ## 
 
@@ -182,7 +181,8 @@ decompress="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/mote
 [[ ! -d $motevodirtmpbedclosest ]] && echo "$motevodirtmpbedclosest not found, exiting" && exit 1
 motevodirtmpbedclosestlong=$motevodirtmpbedclosest/long_format
 [[ ! -d $motevodirtmpbedclosestlong ]] && mkdir $motevodirtmpbedclosestlong
-nohupdir="/scratch/el/monthly/jyeung/nohups/closestmulti_to_long_motifpeak"
+# nohupdir="/scratch/el/monthly/jyeung/nohups/closestmulti_to_long_motifpeak"
+nohupdir="$scratchmain/nohups_closestmulti_to_long_motifpeak"
 
 [[ ! -e $decompress ]] && echo "$decompress not found, exiting" && exit 1
 [[ ! -d $motevodirtmpbedclosest ]] && echo "$motevodirtmpbedclosest not found, exiting" && exit 1

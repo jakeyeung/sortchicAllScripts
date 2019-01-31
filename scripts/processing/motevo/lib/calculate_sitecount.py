@@ -29,6 +29,7 @@ def arguments():
     parser.add_argument('-c', '--cutoff', dest='cutoffDir', action='store',
                        type=str, required=True,
                        help='The directory which holds the cutoff values.')
+    parser.add_argument('-d', '--ParamDir', dest='ParamDir', type = str, default = "")
     parser.add_argument('-C', '--CutoffValue', dest='jcutoff', type = float, default = 0.1)
     parser.add_argument('-E', '--EMprior', dest='EMprior', type = int, default = 0)  # 0 or 1
     parser.add_argument('-B', '--BGprior', dest='BGprior', type = float, default = 0.9995)  # 0 to 1
@@ -101,29 +102,27 @@ def scanInputSequences(fastafile, WMs, WMs_rev, WMMaxScores, outf):
                     ]))
 
 
-def clusterJob(path, wmfile, wmname, fastafile, outputDir, cutoffDir, param_file):
+def clusterJob(path, wmfile, wmname, fastafile, outputDir, cutoffDir, param_file, param_dir):
     fname = os.path.join(path, wmname + '.sh')
     with open(fname, "w") as outf:
         outf.write('\n'.join([
             "#!/bin/bash",
             "#$ -S /bin/bash",
-            "#$ -M j.yeung@hubrecht.eu",
-            "#$ -m beas",
             "#$ -N %s" % wmname,
-            "#$ -l h_vmem=8000000",
+            "#$ -l h_vmem=16G",
             "#$ -l h_rt=2:00:00",
+            "#$ -o %s/%s.out" % (param_dir, wmname),
+            "#$ -e %s/%s.err" % (param_dir, wmname),
             "",
             ]))
         cmd = ' '.join([
             '/hpc/hub_oudenaarden/jyeung/software/motevo_ver1.11/bin/motevo',
             fastafile,
-            '"%s"' % param_file,
+            '"%s/%s"' % (param_dir, param_file),
             '"%s"\n' % wmfile,
             ])
         outf.write(cmd)
-    # os.system('bsub < "%s"' % fname)
-    # os.system('bsub < "%s"' % fname)
-    # os.system("qsub %s" % fname)  # dont run it yet
+    os.system("qsub %s" % fname)  # dont run it yet
     return fname
 
 
@@ -158,7 +157,7 @@ def main():
                 "minposterior %s\n" % args.jcutoff,  # put filter greatly reduces output size
                 ]))
 
-        clusterJob(path, wmfile, wmname, args.fastafile, args.outputDir, args.cutoffDir, "%s.param" % wmname)
+        clusterJob(path, wmfile, wmname, args.fastafile, args.outputDir, args.cutoffDir, "%s.param" % wmname, args.ParamDir)
         # exit()
 
 
