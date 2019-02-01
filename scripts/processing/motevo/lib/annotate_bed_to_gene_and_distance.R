@@ -22,6 +22,10 @@ parser$add_argument('infile', metavar='INFILE',
                                             help='Infile bed from hiddenDomains')
 parser$add_argument('outfile', metavar='OUTFILE',
                                             help='Outfile with gene name and distance in columns 4 and 5')
+parser$add_argument("-m", "--multi", action="store_true", default=FALSE,
+                        help="Assign to multiple genes, requires --dist option")
+parser$add_argument("-d", "--dist", metavar='INT', default=50000, type="integer",
+                        help="Maximum distance from gene for assigning")
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                         help="Print extra output [default]")
                                         
@@ -50,13 +54,31 @@ rownames(regions) <- regions$peakname
 regions <- subset(regions, !seqnames %in% c("chr20", "chr21"))  # remove X and Y?
 
 regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
-regions.annotated <- as.data.frame(annotatePeak(regions.range, 
-                                                TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, 
-                                                annoDb='org.Mm.eg.db'))
+
+if (!args$multi){
+    regions.annotated <- as.data.frame(annotatePeak(regions.range, 
+                                                    TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, 
+                                                    annoDb='org.Mm.eg.db'))
+} else {
+    regions.annotated <- as.data.frame(annotatePeak(regions.range, 
+                                                    TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, 
+                                                    addFlankGeneInfo=TRUE,
+                                                    flankDistance=args$dist,
+                                                    annoDb='org.Mm.eg.db'))
+
+}
 regions.annotated$region_coord <- names(regions.range)
 
+print(head(regions.annotated))
+print(colnames(regions.annotated))
+
 # keep gene name and distance
-regions.out <- subset(regions.annotated, select = c(seqnames, start, end, SYMBOL, distanceToTSS))
+if (!args$multi){
+    regions.out <- subset(regions.annotated, select = c(seqnames, start, end, SYMBOL, distanceToTSS))
+} else {
+    regions.out <- subset(regions.annotated, select = c(seqnames, start, end, SYMBOL, distanceToTSS, flank_geneIds, flank_gene_distances))
+}
+
 
 # write to table
 data.table::fwrite(regions.out, file = args$outfile, append=FALSE, quote=FALSE, sep = "\t", col.names=FALSE)
