@@ -7,12 +7,15 @@
 
 . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate py2
 
-scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output"
+scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_multigene"
+
+[[ ! -d $scratchmain ]] && mkdir $scratchmain
 
 jmark="H3K4me1"
 ## BEGIN GET FASTA ## 
 
-windowsf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output/BM_H3K4me1_merged.1000.cutoff/BM_H3K4me1_merged.1000.cutoff_analysis.blacklistfilt.annot.bed"
+# windowsf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output/BM_H3K4me1_merged.1000.cutoff/BM_H3K4me1_merged.1000.cutoff_analysis.blacklistfilt.annot.bed"
+windowsf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output/BM_H3K4me1_merged.1000.cutoff/BM_H3K4me1_merged.1000.cutoff_analysis.blacklistfilt.annot.multigene.bed"
 [[ ! -e $windowsf ]] && echo "$windowsf not found, exiting" && exit 1
 windowsbname=$(basename $windowsf)
 windowsnoext=${windowsbname%.*}
@@ -130,7 +133,7 @@ convertscript="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/m
 [[ ! -e $convertscript ]] && echo "$convertscript not found, exiting" && exit 1
 
 [[ ! -d $motevodirtmpmerged ]] && echo "$motevodirtmpmerged not found, exiting" && exit 1
-motevodirtmpbed="$motevodirtmpbase/bed"
+motevodirtmpbed="$motevodirtmpbase/bed_stranded"
 
 if [[ -d $motevodirtmpbed ]]
 then
@@ -138,7 +141,7 @@ then
 else
 	echo "Running convert script"
 	mkdir $motevodirtmpbed
-	python $convertscript $motevodirtmpmerged $motevodirtmpbed --get_exact_region
+	python $convertscript $motevodirtmpmerged $motevodirtmpbed --get_exact_region --add-strand
 fi
 
 
