@@ -115,8 +115,8 @@ def main():
     url_base = "%s/%s/data" % (url, dirname)
     # upload_main = "~/Sites/%s" % dirname
     # upload_base = "~/Sites/%s/data" % dirname
-    upload_main = "/data/web/sites/%s" % dirname
-    upload_base = "/data/web/sites/%s/data" % dirname
+    upload_main = "%s" % dirname
+    upload_base = "%s/data" % dirname
     if not args.has_strand:
         ftype = "bigBed 5"
     else:
@@ -217,9 +217,9 @@ def main():
 
     if args.upload:
         print('Uploading to web@circadian.epfl.ch')
-        for track in trackdb.tracks:
-            upload_track(track = track, host = host, user = user)
-        upload_hub(hub = hub, host = host, user = user)
+        # for track in trackdb.tracks:
+        #     upload_track(track = track, host = host, user = user)
+        upload_hub(hub = hub, host = host, user = user, remote_dir="/data/web/sites/motevo_from_peaks")
 
     print('Subgroups:')
     for sg in subgroups:
