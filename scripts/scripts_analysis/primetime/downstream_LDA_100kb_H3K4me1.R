@@ -17,7 +17,6 @@ library(ChIPseeker)
 library(rGREAT)
 library(hash)
 library(JFuncs)
-library(umap)
 library(forcats)
 library(ggrepel)
 library(biomaRt)
@@ -25,8 +24,6 @@ library(biomaRt)
 library(igraph)  # louvain
 
 library(Gviz)
-library(GenomicRanges)
-
 
 source("scripts/Rfunctions/MetricsLDA.R")
 source("scripts/Rfunctions/AuxLDA.R")
@@ -38,7 +35,7 @@ source("scripts/Rfunctions/PlotFunctions.R")
 # Constants you can tweak -------------------------------------------------
 
 
-jmark <- "H3K4me1"
+jchip <- "H3K4me1"
 
 # settings for UMAP
 nn=40
@@ -48,7 +45,7 @@ jmetric='euclidean'
 jmindist=0.4
 jseed=123
 
-plotout <- paste0("/tmp/", jmark, "_LDA_bins_top_regions.pdf")
+plotout <- paste0("/tmp/", jchip, "_LDA_bins_top_regions.pdf")
 
 # LDA was run on binarized matrix or not. 
 # I was thinking this binarized matrix would help reduce weird genomic regions with way too many reads. 
@@ -93,6 +90,7 @@ jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
 jpeak <- "chr7:103800000-103900000"
 PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
 
+print(sessionInfo())
 
 # Plot dat umap -----------------------------------------------------------
 jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, topics.mat, c("lightblue", "darkblue"))
