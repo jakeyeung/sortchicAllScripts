@@ -5,13 +5,13 @@
 # process and run motevo 
 # 2016-07-24
 
+jmark="H3K4me1"
+
 . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate py2
 
-scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_multigene"
-
+scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_multigene/${jmark}"
 [[ ! -d $scratchmain ]] && mkdir $scratchmain
 
-jmark="H3K4me1"
 ## BEGIN GET FASTA ## 
 
 # windowsf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output/BM_H3K4me1_merged.1000.cutoff/BM_H3K4me1_merged.1000.cutoff_analysis.blacklistfilt.annot.bed"
@@ -141,7 +141,7 @@ then
 else
 	echo "Running convert script"
 	mkdir $motevodirtmpbed
-	python $convertscript $motevodirtmpmerged $motevodirtmpbed --get_exact_region --add-strand
+	python $convertscript $motevodirtmpmerged $motevodirtmpbed --get_exact_region --add_strand
 fi
 
 

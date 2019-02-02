@@ -79,6 +79,8 @@ if (!args$multi){
     regions.out <- subset(regions.annotated, select = c(seqnames, start, end, SYMBOL, distanceToTSS, flank_geneIds, flank_gene_distances))
 }
 
+print(regions.out)
+
 
 # write to table
-data.table::fwrite(regions.out, file = args$outfile, append=FALSE, quote=FALSE, sep = "\t", col.names=FALSE)
+data.table::fwrite(regions.out, file = args$outfile, append=FALSE, quote=FALSE, sep = "\t", col.names=FALSE, na = "NA")
