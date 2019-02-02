@@ -73,6 +73,8 @@ def main():
                          help='Switch from mm10 to mm9')
     parser.add_argument('--has_strand', '-s', action='store_true',
                          help='Bed has strand (changes from 5 columns to 6)')
+    parser.add_argument('--suffix', '-S', metavar="trackhub label suffix", default = "",
+                         help='Suffix to label, for example H3K4me1')
     args = parser.parse_args()
 
     # store command line arguments for reproducibility
@@ -95,11 +97,12 @@ def main():
         genobuild = "mm9"
     else:
         genobuild = "mm10"
-    print("Assigning prefix: %s" %genobuild)
-    dirname = "motevo_motifs_%s" % genobuild
-    hubname = "motevo_motifs_%s" % genobuild
-    shortlab = "motevo_%s" % genobuild
-    longlab = "Motevo motifs %s" % genobuild
+    jsuffix = "%s_%s" % (genobuild, args.suffix)
+    print("Assigning prefix: %s" %jsuffix)
+    dirname = "motevo_motifs_%s" % jsuffix
+    hubname = "motevo_motifs_%s" % jsuffix
+    shortlab = "motevo_%s" % jsuffix
+    longlab = "Motevo motifs %s" % jsuffix
     email = "jake.yeung@epfl.ch"
     # url = "http://upnaepc2.epfl.ch"
     url = "http://upnaesrv1.epfl.ch"
@@ -224,7 +227,8 @@ def main():
     print('Subgroups:')
     for sg in subgroups:
         print(sg)
-    print('Hub URL if you uploaded to server: %s' % hub.url)
+    print("Staging to path: %s" % args.outdir)
+    # print('Hub URL if you uploaded to server: %s' % hub.url)
 
 if __name__ == '__main__':
     main()
