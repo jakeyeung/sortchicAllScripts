@@ -10,8 +10,18 @@ suppressPackageStartupMessages(library(GenomicRanges))
 suppressPackageStartupMessages(library(TxDb.Mmusculus.UCSC.mm10.knownGene))
 suppressPackageStartupMessages(library(org.Mm.eg.db))
 suppressPackageStartupMessages(library(ChIPseeker))
+suppressPackageStartupMessages(library(annotate))
 
 source("scripts/Rfunctions/Aux.R")
+
+EntrezToSymbol.csv <- function(x, jsplit = ";"){
+    # csv of entrez to symbol
+    # 59014;76187;76187;72481;72481;76982
+    xvec <- strsplit(x, split=jsplit)[[1]]
+    xvec.symbol <- getSYMBOL(xvec, data = "org.Mm.eg.db")
+    xsymbol <- paste(xvec.symbol, collapse = "@")
+    return(xsymbol)
+}
 
 parser <- ArgumentParser()
 
@@ -76,7 +86,18 @@ print(colnames(regions.annotated))
 if (!args$multi){
     regions.out <- subset(regions.annotated, select = c(seqnames, start, end, SYMBOL, distanceToTSS))
 } else {
-    regions.out <- subset(regions.annotated, select = c(seqnames, start, end, SYMBOL, distanceToTSS, flank_geneIds, flank_gene_distances))
+    # keep column names the same
+    regions.out <- subset(regions.annotated, select = c(seqnames, start, end, flank_geneIds, flank_gene_distances))
+    # replace flank_geneIDs from entrezID to symbol
+    regions.out$flank_geneIds <- sapply(regions.out$flank_geneIds, function(x){
+                                        if (!is.na(x)){
+                                          xsym <- EntrezToSymbol.csv(x, jsplit = ";")
+                                        } else {
+                                          xsym <- x
+                                        }
+                      })
+    # use @ as separation to fit with /home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/motevo/lib/convert_compressed_bed_to_long.py
+    regions.out$flank_gene_distances <- sapply(regions.out$flank_gene_distances, function(x) gsub(";", "@", x))
 }
 
 print(regions.out)

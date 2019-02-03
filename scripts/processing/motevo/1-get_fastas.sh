@@ -201,7 +201,9 @@ for b in `ls -d $motevodirtmpbedclosest/*.bed`; do
         outf=$nohupdir/$basenoext.out
         # bsub -e $errf -o $outf -M 4000000 "python $decompress $b $bout --has_dist --gene_col_i 5"
         BNAME=$nohupdir/$base
-        echo "python $decompress $b $bout --has_dist --gene_col_i 5" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err
+        # echo "python $decompress $b $bout --has_dist --gene_col_i 5" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err
+        # if includes strand, shift gene_col_i from 5 to 6
+        echo "python $decompress $b $bout --has_dist --gene_col_i 6" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err
 done
 
 # wait for jobs

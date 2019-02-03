@@ -99,7 +99,8 @@ def main():
         genobuild = "mm10"
     jsuffix = "%s_%s" % (genobuild, args.suffix)
     print("Assigning prefix: %s" %jsuffix)
-    dirname = "motevo_motifs_%s" % jsuffix
+    # dirname: motevo_from_peaks/H3K4me1_peaks
+    dirname = "motevo_from_peaks/%s_peaks/motevo_motifs_%s" % (args.suffix, jsuffix)
     hubname = "motevo_motifs_%s" % jsuffix
     shortlab = "motevo_%s" % jsuffix
     longlab = "Motevo motifs %s" % jsuffix
@@ -118,8 +119,8 @@ def main():
     url_base = "%s/%s/data" % (url, dirname)
     # upload_main = "~/Sites/%s" % dirname
     # upload_base = "~/Sites/%s/data" % dirname
-    upload_main = "%s" % dirname
-    upload_base = "%s/data" % dirname
+    upload_main = "%s" % hubname
+    upload_base = "%s/data" % hubname
     if not args.has_strand:
         ftype = "bigBed 5"
     else:
