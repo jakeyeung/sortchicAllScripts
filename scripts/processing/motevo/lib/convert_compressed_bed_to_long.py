@@ -35,17 +35,20 @@ class BedRow():
         # convert to lists
         self.genes = self.generaw.split("@")
         if (has_dists):
-            self.dists = self.distraw.split("@")  # has commas? need to check
-            try:
-                self.dists = [float(i) for i in self.dists]
-            except ValueError:
-                # dist has comma eg: 1000,1500. Take min distance
-                for i, dist in enumerate(self.dists):
-                    dists_split = [float(d) for d in dist.split(',')]
-                    # take min
-                    self.dists[i] = min(dists_split)
-            # make int
-            self.dists = [int(i) for i in self.dists]
+            if self.distraw == "NA":
+                self.dists = ["NA"]
+            else:
+                self.dists = self.distraw.split("@")  # has commas? need to check
+                try:
+                    self.dists = [float(i) for i in self.dists]
+                except ValueError:
+                    # dist has comma eg: 1000,1500. Take min distance
+                    for i, dist in enumerate(self.dists):
+                        dists_split = [float(d) for d in dist.split(',')]
+                        # take min
+                        self.dists[i] = min(dists_split)
+                # make int
+                self.dists = [int(i) for i in self.dists]
 
     def make_outrow(self, gene, dist = "", motif_only=False):
         '''

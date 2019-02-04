@@ -13,4 +13,4 @@ outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output/trackhub_files/H3K4m
 [[ ! -d $indir ]] && echo "$indir not found, exiting" && exit 1
 [[ ! -d $outdir ]] && mkdir $outdir
 
-python $script $indir $outdir --render 
+python $script $indir $outdir --render --suffix "H3K4me1"
