@@ -25,6 +25,32 @@ MakeNewExperiName <- function(old.name, replhash){
   return(xnew)
 }
 
+  MakeNewCellName.rev <- function(x, experihash, cellhash, return.path=TRUE){
+    # BM_H3K4me1_m1_rep1_cell4 -> H3K27me3-BM-1-S14-H2GV2BGX9-AACTAGTG
+    # goal: match file names here: /hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc/count_thres-0/PZ-BM-m1-H3K4me1-1_AH3VGVBGX9_S9
+    indx <- gsub("cell", "", strsplit(x, "_")[[1]][[5]])
+    bc <- AssignHash(indx, cellhash)
+    jsci <- "PZ"
+    jtiss <- strsplit(x, "_")[[1]][[1]]
+    jmark <- strsplit(x, "_")[[1]][[2]]
+    jmouse <- strsplit(x, "_")[[1]][[3]]
+    jrepl <- gsub("rep", "", strsplit(x, "_")[[1]][[4]])
+    jkey <- paste(jsci, jtiss, jmouse, jmark, jrepl, sep = "-")
+    jval <- AssignHash(jkey, experihash)
+    assertthat::assert_that(!is.na(jval))
+    # link key and val to make dirname
+    dirname <- paste(jkey, jval, sep = "_")
+    # make filename
+    # "PZ-BM-m1-H3K4me1-1_AH3VGVBGX9_S9.filtered.sorted.CTCTGAAG.sorted.bam.bai"
+    fname <- paste0(dirname, ".filtered.sorted.", bc, ".sorted.bam")
+	if (return.path){
+	  out <- file.path(dirname, fname)
+	} else {
+	  out <- fname
+	}
+	return(out)
+  }
+
 MakeNewCellName <- function(oldname, replhash, cellhash, add.m = TRUE){
   # H3K27me3-BM-1-S14-H2GV2BGX9-AACTAGTG -> BM-H3K27me3-m1-rep2-cell244
   # replhash: convert old experiment name to new experiment name
