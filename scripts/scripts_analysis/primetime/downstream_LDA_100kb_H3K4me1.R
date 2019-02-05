@@ -78,7 +78,6 @@ tm.result <- posterior(out.lda)
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 
-
 custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
 custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)
 

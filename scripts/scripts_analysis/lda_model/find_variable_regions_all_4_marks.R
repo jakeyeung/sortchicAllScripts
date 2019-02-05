@@ -190,11 +190,11 @@ jgene <- "Galnt1"
 jgene <- "Glg1"
 jgenes <- c("Actr3", "Herc4", "Nfia", "Galnt1", "Glg1")
 jdist <- 50000
-pdf("~/Dropbox/scCHiC_figs/FIG4_BM/LDA_outputs/variable_regions_genes.pdf")
+# /pdf("~/Dropbox/scCHiC_figs/FIG4_BM/LDA_outputs/variable_regions_genes.pdf")
 for (jgene in jgenes){
   system.time(
     plots.out <- PlotAllMarks(jgene, jchips, jdist, out.objs)
   )
   multiplot(plots.out[[1]], plots.out[[2]], plots.out[[3]], plots.out[[4]], cols = 4)
 }
-dev.off()
+#

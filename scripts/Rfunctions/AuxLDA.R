@@ -1,3 +1,68 @@
+GetPeaksFromGene <- function(jgene, regions.annot, dist = 50000){
+  jsub <- subset(regions.annot, grepl(jgene, SYMBOL)) %>% arrange(abs(distanceToTSS)) %>% filter(distanceToTSS <= dist)
+  jpeaks <- jsub$region_coord
+  return(list(regions.sub = jsub, peaks = jpeaks))
+}
+
+SelectBestPeak <- function(jpeaks, regions.annot, tm.result){
+  if (length(jpeaks) == 1){
+    warning("Only one peak entered, returning only option")
+    # no need to select
+    return(jpeaks)
+  }
+  terms.sub <- tm.result$terms[, jpeaks]
+  jmax <- apply(terms.sub, 2, max)
+  jmax.i <- apply(terms.sub, 2, which.max)  # which topic max occurs. Often they agree.
+  
+  print(unique(jmax.i))
+  
+  jpeak <- jpeaks[which(jmax == max(jmax))]
+  return(jpeak)
+}
+
+PlotAllMarks <- function(jgene, jpeak, jmarks, out.objs, custom.settings){
+  out <- lapply(jmarks, function(jmark){
+    print(jmark)
+    m <- PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmark, show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene)
+  })
+  return(out)
+}
+
+
+LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995){
+  # jbin <- "TRUE"
+  # top.thres <- 0.995
+  if (jbin){
+    inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_10_15_20_25.Robj")
+  } else {
+    inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_15_25.Robj")
+  }
+  assertthat::assert_that(file.exists(inf))
+  load(inf, v=T)
+  out.lda <- ChooseBestLDA(out.lda)
+  kchoose <- out.lda@k
+  tm.result <- posterior(out.lda)
+  
+  regions <- data.frame(seqnames = sapply(colnames(tm.result$terms), GetChromo),
+                        start = sapply(colnames(tm.result$terms), GetStart),
+                        end = sapply(colnames(tm.result$terms), GetEnd), 
+                        stringsAsFactors = FALSE)
+  rownames(regions) <- colnames(tm.result$terms)
+  regions <- subset(regions, !seqnames %in% c("chr20", "chr21"))
+  
+  regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
+  regions.annotated <- as.data.frame(annotatePeak(regions.range, 
+                                                  TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, 
+                                                  annoDb='org.Mm.eg.db'))
+  regions.annotated$region_coord <- names(regions.range)
+  
+  topic.regions <- lapply(seq(kchoose), function(clst){
+    return(SelectTopRegions(tm.result$terms[clst, ], colnames(tm.result$terms), method = "thres", method.val = top.thres))
+  })
+  
+  return(list('out.lda' = out.lda, 'tm.result' = tm.result, 'topic.regions' = topic.regions, 'regions.annotated' = regions.annotated))
+}
+
 GetVar <- function(tm.result, regions.annotated){
   mat.norm <- t(tm.result$topics %*% tm.result$terms)
   # find peaks with largest range

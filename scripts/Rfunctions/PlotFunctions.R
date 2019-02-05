@@ -48,7 +48,8 @@ PlotGTrack <- function(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7
   # plotTracks(dlst, collapseTranscripts="meta", from = jstart, to = jend)
 }
 
-PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, return.plot.only=FALSE, use.count.mat=NULL, usettings=NULL, gname = ""){
+PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, return.plot.only=FALSE, use.count.mat=NULL, usettings=NULL, gname = "", 
+                             jsize = 3, jcolvec = c("lightblue", "darkblue")){
   # regions.sub <- subset(regions.annotated, abs(distanceToTSS) < jdist & grepl(jgene, SYMBOL)) %>%
   #   mutate(coord = paste(paste(seqnames, start, sep = ":"), end, sep = "-"),
   #          coord.kb = paste(paste(seqnames, start / 1000, sep = ":"), end / 1000, sep = "-"))
@@ -72,14 +73,23 @@ PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, retur
   # run on imputed matrix
   row.i <- which(rownames(mat.norm) %in% peaks.keep)
   
+  if (length(row.i) == 0){
+    warning(paste(paste(peaks.keep, collapse = ";"), "peak not found, returning NULL"))
+    return(NULL)
+  }
+  
   if (length(row.i) > 1){
     # print(paste("Merging", length(row.i)), "rows")
     jcounts.norm <- Matrix::colSums(mat.norm[row.i, ])
   } else {
     jcounts.norm <- mat.norm[row.i, ]
   }
+  
+  print(head(jcounts.norm))
   # print(range(jcounts.norm))
-  jcol.counts <- ColorsByCounts(jcounts.norm, nbreaks = 100, colvec = c("lightblue", "darkblue"))
+  
+  # change color scheme here
+  jcol.counts <- ColorsByCounts(jcounts.norm, nbreaks = 100, colvec = jcolvec)
   # plot topics soft clustering weights
   topics.mat <- tm.result$topics
   
@@ -101,7 +111,8 @@ PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, retur
                     umap2 = dat.umap$layout[, 2], 
                     jcol = jcol.counts,
                     counts.norm = jcounts.norm)
-  m <- ggplot(dat, aes(x = umap1, y = umap2, col = jcol.counts)) + geom_point() + scale_color_identity() + 
+  m <- ggplot(dat, aes(x = umap1, y = umap2, col = jcol.counts)) + 
+    geom_point(size = jsize) + scale_color_identity() + 
     theme_bw() + 
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           plot.title = element_text(size=7), legend.position = "bottom") + 
