@@ -5,17 +5,14 @@
 # process and run motevo 
 # 2016-07-24
 
-jmark="H3K4me1"
-
 . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate py2
 
-scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_multigene/${jmark}"
-[[ ! -d $scratchmain ]] && mkdir $scratchmain
+jmark="H3K4me1"
+scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_singlegene/${jmark}"
 
 ## BEGIN GET FASTA ## 
 
-# windowsf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output/BM_H3K4me1_merged.1000.cutoff/BM_H3K4me1_merged.1000.cutoff_analysis.blacklistfilt.annot.bed"
-windowsf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output/BM_H3K4me1_merged.1000.cutoff/BM_H3K4me1_merged.1000.cutoff_analysis.blacklistfilt.annot.multigene.bed"
+windowsf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output/BM_H3K4me1_merged.1000.cutoff/BM_H3K4me1_merged.1000.cutoff_analysis.blacklistfilt.annot.bed"
 [[ ! -e $windowsf ]] && echo "$windowsf not found, exiting" && exit 1
 windowsbname=$(basename $windowsf)
 windowsnoext=${windowsbname%.*}
@@ -133,7 +130,7 @@ convertscript="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/m
 [[ ! -e $convertscript ]] && echo "$convertscript not found, exiting" && exit 1
 
 [[ ! -d $motevodirtmpmerged ]] && echo "$motevodirtmpmerged not found, exiting" && exit 1
-motevodirtmpbed="$motevodirtmpbase/bed_stranded"
+motevodirtmpbed="$motevodirtmpbase/bed"
 
 if [[ -d $motevodirtmpbed ]]
 then
@@ -141,7 +138,7 @@ then
 else
 	echo "Running convert script"
 	mkdir $motevodirtmpbed
-	python $convertscript $motevodirtmpmerged $motevodirtmpbed --get_exact_region --add_strand
+	python $convertscript $motevodirtmpmerged $motevodirtmpbed --get_exact_region
 fi
 
 
@@ -201,9 +198,7 @@ for b in `ls -d $motevodirtmpbedclosest/*.bed`; do
         outf=$nohupdir/$basenoext.out
         # bsub -e $errf -o $outf -M 4000000 "python $decompress $b $bout --has_dist --gene_col_i 5"
         BNAME=$nohupdir/$base
-        # echo "python $decompress $b $bout --has_dist --gene_col_i 5" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err
-        # if includes strand, shift gene_col_i from 5 to 6
-        echo "python $decompress $b $bout --has_dist --gene_col_i 6" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err
+        echo "python $decompress $b $bout --has_dist --gene_col_i 5" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err
 done
 
 # wait for jobs
