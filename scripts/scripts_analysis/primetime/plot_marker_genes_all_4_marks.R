@@ -29,7 +29,12 @@ jcolvec <- c("blue", "yellow", "red")
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
 names(jmarks) <- jmarks
 
-out.objs <- lapply(jmarks, LoadLDABins)
+jbin <- TRUE
+infs <- lapply(jmarks, function(jmark){
+  inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_10_15_20_25.Robj")
+})
+# out.objs <- lapply(jmarks, LoadLDABins)
+out.objs <- mapply(function(jmark, inf) LoadLDABins(jmark, inf=inf), jmarks, infs)
 names(out.objs) <- jmarks
 
 tm.result.lst <- lapply(out.objs, function(x) posterior(x[['out.lda']]))

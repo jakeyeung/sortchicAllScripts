@@ -29,13 +29,15 @@ PlotAllMarks <- function(jgene, jpeak, jmarks, out.objs, custom.settings){
 }
 
 
-LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995){
+LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995, inf = NULL){
   # jbin <- "TRUE"
   # top.thres <- 0.995
-  if (jbin){
-    inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_10_15_20_25.Robj")
-  } else {
-    inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_15_25.Robj")
+  if (is.null(inf)){
+    if (jbin){
+      inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_10_15_20_25.Robj")
+    } else {
+      inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_15_25.Robj")
+    }
   }
   assertthat::assert_that(file.exists(inf))
   load(inf, v=T)
