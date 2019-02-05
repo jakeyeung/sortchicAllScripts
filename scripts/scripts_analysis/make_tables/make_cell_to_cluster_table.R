@@ -266,9 +266,10 @@ jchip <- "H3K4me1"
   cellhash.bc <- hash(unlist(barcodes), paste("cell", rownames(barcodes), sep = ""))
   out.dat$cellnew <- sapply(out.dat$cell, function(x) MakeNewCellName.rev(x, experihash, cellhash))
   
+  outdir <- paste0("data/outputs/cell_clusters_bin_", jmark, "/")
+  dir.create(outdir)
   for (l in unique(out.dat$louvain)){
     jsub <- subset(out.dat, louvain == l, select = cellnew)
-    outdir <- paste0("data/outputs/cell_clusters_bin_", jmark, "/")
     data.table::fwrite(jsub, file = file.path(outdir, paste0("bamlist.", l, ".txt")), sep = "\t", col.names = FALSE)
   }
   
