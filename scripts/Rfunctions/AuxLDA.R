@@ -62,7 +62,7 @@ LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995, inf = NULL){
     return(SelectTopRegions(tm.result$terms[clst, ], colnames(tm.result$terms), method = "thres", method.val = top.thres))
   })
   
-  return(list('out.lda' = out.lda, 'tm.result' = tm.result, 'topic.regions' = topic.regions, 'regions.annotated' = regions.annotated))
+  return(list('out.lda' = out.lda, 'tm.result' = tm.result, 'topic.regions' = topic.regions, 'regions.annotated' = regions.annotated, 'count.mat' = count.mat))
 }
 
 GetVar <- function(tm.result, regions.annotated){

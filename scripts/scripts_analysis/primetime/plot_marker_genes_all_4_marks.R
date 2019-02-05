@@ -29,12 +29,20 @@ jcolvec <- c("blue", "yellow", "red")
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
 names(jmarks) <- jmarks
 
-jbin <- TRUE
+jbin <- FALSE
+if (jbin){
+  Kstr <- "5_10_15_20_25"
+} else {
+  Kstr <- "5_15_25"
+}
 infs <- lapply(jmarks, function(jmark){
-  inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-5_10_15_20_25.Robj")
+  inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.", jbin, "/lda_out_meanfilt.BM-", jmark, ".CountThres0.K-", Kstr, ".Robj")
+  assertthat::assert_that(file.exists(inf))
+  return(inf)
 })
 # out.objs <- lapply(jmarks, LoadLDABins)
-out.objs <- mapply(function(jmark, inf) LoadLDABins(jmark, inf=inf), jmarks, infs)
+out.objs <- mapply(function(jmark, inf) LoadLDABins(jmark, inf=inf), jmarks, infs, SIMPLIFY = FALSE)
+# out.objs <- mapply(function(jmark, inf) print(paste(jmark, inf)), jmarks, infs)
 names(out.objs) <- jmarks
 
 tm.result.lst <- lapply(out.objs, function(x) posterior(x[['out.lda']]))
@@ -55,7 +63,7 @@ custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, se
 
 
 
-regions.annot <- out.objs[[1]]$regions.annotated
+# regions.annot <- out.objs[[1]]$regions.annotated
 
 outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/marker_genes"
 dir.create(outdir)
@@ -76,20 +84,40 @@ multiplot(m.lst[[1]], m.lst[[2]], m.lst[[3]], m.lst[[4]], cols = 4)
 # Hbb gene
 ref.mark <- "H3K4me1"
 jgene <- "Hbb"
-out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
+out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot, dist = 50000)
 jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]],
+m.lst1 <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]], use.count.mat = log(out.objs[[jmark]]$count.mat + 1),
+                                                         show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene,
+                                                         jsize = jsize, jcolvec = jcolvec))
+m.lst2 <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]], use.count.mat = NULL,
+                                                         show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene,
+                                                         jsize = jsize, jcolvec = jcolvec))
+multiplot(m.lst1[[1]], m.lst1[[2]], m.lst1[[3]], m.lst1[[4]], 
+          m.lst2[[1]], m.lst2[[2]], m.lst2[[3]], m.lst2[[4]],
+          cols = 4)
+
+# Random gene
+ref.mark <- "H3K4me1"
+jgene <- "RandomlyPicked"
+jpeak <- sample(out.objs[[ref.mark]]$regions.annot$region_coord, size = 1)
+m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]], use.count.mat = out.objs[[jmark]]$count.mat, 
                                                          show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene,
                                                          jsize = jsize, jcolvec = jcolvec))
 multiplot(m.lst[[1]], m.lst[[2]], m.lst[[3]], m.lst[[4]], cols = 4)
+m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]], use.count.mat = NULL, 
+                                                         show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene,
+                                                         jsize = jsize, jcolvec = jcolvec))
+multiplot(m.lst[[1]], m.lst[[2]], m.lst[[3]], m.lst[[4]], cols = 4)
+
 
 # Sox6 gene
 # ref.mark <- "H3K4me1"
 jgene <- "Sox6"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot, dist = 100000)
 
-# jpeak <- "chr7:115400000-115500000"  # doesnt work???
-jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
+# jpeak <- "chr7:115400000-115500000"
+jpeak <- "chr7:115420000-115520000"
+# jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
 m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]],
                                                          show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene,
                                                          jsize = jsize, jcolvec = jcolvec))
@@ -122,9 +150,16 @@ ref.mark <- "H3K27me3"
 jgene <- "Hoxc13"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
 (jpeak <- SelectBestPeak(out.sub$peaks, out.objs[[ref.mark]]$regions.annot, tm.result.lst[[ref.mark]]))
-m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]], 
+m.lst1 <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]], 
                                                          show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene,
                                                          jsize = jsize, jcolvec = jcolvec))
+m.lst2 <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]], use.count.mat = log(out.objs[[jmark]]$count.mat + 1),  
+                                                         show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene,
+                                                         jsize = jsize, jcolvec = jcolvec))
+multiplot(m.lst1[[1]], m.lst1[[2]], m.lst1[[3]], m.lst1[[4]], 
+          m.lst2[[1]], m.lst2[[2]], m.lst2[[3]], m.lst2[[4]],
+          cols = 4)
+
 multiplot(m.lst[[1]], m.lst[[2]], m.lst[[3]], m.lst[[4]], cols = 4)
 
 # do Sox cluster, all numbers
