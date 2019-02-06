@@ -140,7 +140,7 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
   } else {
     jlegend <- "Counts"
   } 
-  if (is.null(use.count.mat)){
+  if (!is.null(use.count.mat)){
     jlegend <- paste0(jlegend, "(sum normalized)")
   } else {
     jlegend <- paste0(jlegend, "(imputed)")
