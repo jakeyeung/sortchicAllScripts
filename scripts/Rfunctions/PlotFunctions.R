@@ -130,3 +130,80 @@ PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, retur
     return(m)
   }
 }
+
+PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL, 
+                              usettings=NULL, gname = "", 
+                              jsize = 3, jcolvec = c("blue", "white", "red"),
+                              .log = TRUE){
+  if (.log){
+    jlegend <- "Log10 counts"
+  } else {
+    jlegend <- "Counts"
+  } 
+  if (is.null(use.count.mat)){
+    jlegend <- paste0(jlegend, "(sum normalized)")
+  } else {
+    jlegend <- paste0(jlegend, "(imputed)")
+  }
+  peaks.keep.kb <- peaks.keep
+  if (is.null(use.count.mat)){
+    mat.norm <- log10(t(tm.result$topics %*% tm.result$terms))
+  } else {
+    mat.norm <- log10(use.count.mat + 10^-6)
+  }
+  jlab <- peaks.keep
+  # run on imputed matrix
+  row.i <- which(rownames(mat.norm) %in% peaks.keep)
+  
+  if (length(row.i) == 0){
+    warning(paste(paste(peaks.keep, collapse = ";"), "peak not found, returning NULL"))
+    return(NULL)
+  }
+  
+  if (length(row.i) > 1){
+    # print(paste("Merging", length(row.i)), "rows")
+    jcounts.norm <- Matrix::colSums(mat.norm[row.i, ])
+  } else {
+    jcounts.norm <- mat.norm[row.i, ]
+  }
+  
+  # plot topics soft clustering weights
+  topics.mat <- tm.result$topics
+  
+  if (is.null(usettings)){
+    nn=5
+    jmetric='euclidean' 
+    jmindist=0.1
+    custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist)
+  } else {
+    custom.settings <- usettings
+  }
+  
+  if (class(custom.settings) == "umap.config"){
+    dat.umap <- umap(topics.mat, config = custom.settings)
+  } else if (class(custom.settings) == "umap"){
+    dat.umap <- custom.settings
+  } else {
+    warning(paste("custom.settings must be umap.config or umap class, found:", class(custom.settings)))
+  }
+  par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+  jpeaks.str <- paste(peaks.keep.kb, collapse = ",")
+  jmain <- paste0(jchip, " ", jlab, "\n", gname)
+  # prepare plot object
+  dat <- data.frame(umap1 = dat.umap$layout[, 1], 
+                    umap2 = dat.umap$layout[, 2], 
+                    counts.norm = jcounts.norm)
+  m <- ggplot(dat, aes(x = umap1, y = umap2, col = counts.norm)) + 
+    geom_point(size = jsize) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          plot.title = element_text(size=7), legend.position = "bottom",
+          legend.title=element_text(size=8),
+          legend.text = element_text(size=5)) +
+    guides(colour = guide_colourbar(title.position="top", title.hjust = 0.5)) + 
+    ggtitle(jmain) + 
+    scale_color_gradient2(low = scales::muted(jcolvec[[1]]), mid = jcolvec[[2]], high = scales::muted(jcolvec[[3]]), name = jlegend, 
+                          midpoint = mean(jcounts.norm))
+  return(m)
+}
+

@@ -190,10 +190,11 @@ jgenes <- unique(jsub$SYMBOL)
 for (jgene in jgenes){
   out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
   jpeak <- SelectBestPeak(out.sub$peaks, out.objs[[ref.mark]]$regions.annot, tm.result.lst[[ref.mark]])
-  m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]], 
-                                                           show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene,
-                                                           jsize = jsize, jcolvec = jcolvec))
-  multiplot(m.lst[[1]], m.lst[[2]], m.lst[[3]], m.lst[[4]], cols = 4)
+  print(jpeak)
+  # m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]], 
+                                                           # show.plot = FALSE, return.plot.only = TRUE, usettings=custom.settings, gname = jgene,
+                                                           # jsize = jsize, jcolvec = jcolvec))
+  # multiplot(m.lst[[1]], m.lst[[2]], m.lst[[3]], m.lst[[4]], cols = 4)
 }
 
 # why H3K27me3 look the same for different genes? One cell has huge weights on topic 23
