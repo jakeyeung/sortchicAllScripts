@@ -25,3 +25,10 @@ The script "2-run.run_LDA_model.hiddenDomains.sh" is named to imply it's running
 lib/run_LDA_model.R is the script that takes input arguments and runs the LDA model. 
 
 To use run_LDA_model.R all you need is a count matrix (in normal or sparse format) put into an object that can be accessed by "count.dat$counts" (I use the $counts here because Rsubread package creates this object, but in theory it can be made without Rsubread). 
+
+
+** Installing things
+
+- Some packages are install.packages() some are through bioconductor
+
+- One exception: JFuncs is installed through github devtools::install_github("jakeyeung/JFuncs")
