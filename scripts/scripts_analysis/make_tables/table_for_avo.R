@@ -1,8 +1,9 @@
 # Jake Yeung
-# Date of Creation: 2019-01-31
-# File: ~/projects/scchic/scripts/scripts_analysis/make_tables/table_for_chloe.R
-# Make table for Chloe
+# Date of Creation: 2019-02-08
+# File: ~/projects/scchic/scripts/scripts_analysis/make_tables/table_for_avo.R
+# Make matrix with umap coordinates rbinded
 
+jstart <- Sys.time()
 
 rm(list=ls())
 
@@ -42,11 +43,12 @@ jchip <- "H3K4me1"
 jchips <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
 
 dirmain <- "/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell"
+outmain <- "/Users/yeung/Dropbox/scCHiC_figs/FIG4_BM/tables"
 
 for (jchip in jchips){
   
-  outf <- paste0("/tmp/cluster_table_", jchip, ".rds")
-  outf2 <- paste0("/tmp/normalized_count_table_", jchip, ".rds")
+  outf <- file.path(outmain, paste0("umap_with_imputed_matrix_", jchip, ".txt"))
+  out.plot <- file.path(outmain, paste0("plot_cluster_", jchip, ".pdf"))
   
   if (file.exists(outf)){
     print(paste("Skipping", jchip))
@@ -96,9 +98,9 @@ for (jchip in jchips){
   } else if (jchip == "H3K4me3"){
     jmindist=0.4
   } else if (jchip == "H3K27me3"){
-    jmindist=0.1
+    jmindist=0.2
   } else if (jchip == "H3K9me3"){
-    jmindist=0.1
+    jmindist=0.2
   }
   jseed=123
   
@@ -239,11 +241,13 @@ for (jchip in jchips){
   m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point() + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     scale_color_brewer(palette = "Spectral")
-  print(m.louvain)
   
   # plot graph with edges?
   # https://stackoverflow.com/questions/5364264/how-to-control-the-igraph-plot-layout-with-fixed-positions
   
+  pdf(out.plot, useDingbats = FALSE)
+  print(m)
+  print(m.louvain)
   par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
   coords <- layout.auto(g)
   plot.igraph(simplify(g),
@@ -253,14 +257,22 @@ for (jchip in jchips){
               label = NA,
               edge.width = 0.5,
               vertex.size = 1)
+  dev.off()
   
   # give cluster ID and gene names 
   
   # save to output
 
-  saveRDS(object = subset(dat.umap.long, select = c(umap1, umap2, cell, louvain)), file = outf)
-  saveRDS(object = mat.norm, file = outf2)
+  # saveRDS(object = subset(dat.umap.long, select = c(umap1, umap2, cell, louvain)), file = outf)
+  # saveRDS(object = mat.norm, file = outf2)
   # merge mat.norm and dat.umap.long together?
+  umap.mat <- t(subset(dat.umap.long, select = c(umap1, umap2)))
+  colnames(umap.mat) <- dat.umap.long$cell
+  # rbind with imputed matrix
+  assertthat::assert_that(all(identical(colnames(mat.norm), colnames(umap.mat))))
   
+  mat.merged <- rbind(umap.mat, mat.norm)
+  write.table(mat.merged, file = outf, quote = FALSE, sep = "\t")
 }
 
+print(Sys.time() - jstart)
