@@ -32,6 +32,10 @@ parser$add_argument('infile', metavar='INFILE',
                                             help='In bed ~20 GB? 8 Columns. No strand')
 parser$add_argument('outfile', metavar='OUTFILE',
                                             help='Out sitecount matrix')
+parser$add_argument('--scale', metavar="TRUE or FALSE", type = "logical", 
+                    default=FALSE, help="Scale matrix?")
+parser$add_argument('--center', metavar="TRUE or FALSE", type = "logical", 
+                    default=FALSE, help="Center matrix?")
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                         help="Print extra output [default]")
                                         
@@ -44,6 +48,9 @@ if ( args$verbose ) {
     print("Arguments:")
     print(args)
 }
+# # change int to logical
+# args$scale <- as.logical(args$scale)
+# args$center <- as.logical(args$center)
 
 dat <- fread(args$infile, header=FALSE)
 if (ncol(dat) == 8){
@@ -57,8 +64,9 @@ dat.mat <- as.data.frame(tidyr::spread(subset(dat.sum, select = -c(nsites)), mot
 Gene.ID <- dat.mat$peak
 rownames(dat.mat) <- dat.mat$peak; dat.mat$peak <- NULL
 
-# normalize
-dat.mat <- t(scale(t(scale(dat.mat, center=TRUE, scale=TRUE)), center=TRUE, scale=TRUE))
+# normalize?
+# dat.mat <- t(scale(t(scale(dat.mat, center=TRUE, scale=TRUE)), center=TRUE, scale=TRUE))
+dat.mat <- scale(dat.mat, center=args$center, scale=args$scale)
 
 dat.mat <- as.data.frame(dat.mat)
 dat.mat <- cbind(Gene.ID, dat.mat)

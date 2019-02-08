@@ -76,3 +76,4 @@ Gene.ID <- rownames(mat.norm)
 dat.out <- cbind(Gene.ID, mat.norm)
 
 data.table::fwrite(dat.out, file=args$outfile, sep="\t", row.names=FALSE)
+

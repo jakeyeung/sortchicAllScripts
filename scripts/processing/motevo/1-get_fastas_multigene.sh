@@ -5,7 +5,7 @@
 # process and run motevo 
 # 2016-07-24
 
-jmark="H3K4me1"
+jmark="H3K4me3"
 
 . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate py2
 

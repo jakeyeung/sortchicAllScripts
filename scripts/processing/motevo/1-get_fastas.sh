@@ -7,12 +7,15 @@
 
 . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate py2
 
-jmark="H3K4me1"
+# jmark="H3K4me1"
+jmark="H3K4me3"
+# jmark="H3K27me3"
+# jmark="H3K9me3"
 scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_singlegene/${jmark}"
 
 ## BEGIN GET FASTA ## 
 
-windowsf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output/BM_H3K4me1_merged.1000.cutoff/BM_H3K4me1_merged.1000.cutoff_analysis.blacklistfilt.annot.bed"
+windowsf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output/BM_${jmark}_merged.1000.cutoff/BM_${jmark}_merged.1000.cutoff_analysis.blacklistfilt.annot.bed"
 [[ ! -e $windowsf ]] && echo "$windowsf not found, exiting" && exit 1
 windowsbname=$(basename $windowsf)
 windowsnoext=${windowsbname%.*}
