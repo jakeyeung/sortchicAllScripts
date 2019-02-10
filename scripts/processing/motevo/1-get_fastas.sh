@@ -42,7 +42,8 @@ fastasplitdirtmp="$scratchmain/fastasplit"
 [[ ! -d $fastasplitdirtmp ]] && echo "$fastasplitdirtmp not found, exiting" && exit 1
 
 # use same number as in dhs_merged_tissue
-n=60000  # must be EVEN number because fasta
+# n=60000 # works for H3K4me1 and H3K4me3
+n=10000  # must be EVEN number because fasta
 rem=$(( $n % 2 ))
 if [ $rem -eq 0 ]
 then
