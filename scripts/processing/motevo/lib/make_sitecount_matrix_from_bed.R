@@ -32,10 +32,12 @@ parser$add_argument('infile', metavar='INFILE',
                                             help='In bed ~20 GB? 8 Columns. No strand')
 parser$add_argument('outfile', metavar='OUTFILE',
                                             help='Out sitecount matrix')
-parser$add_argument('--scale', metavar="TRUE or FALSE", type = "logical", 
-                    default=FALSE, help="Scale matrix?")
-parser$add_argument('--center', metavar="TRUE or FALSE", type = "logical", 
-                    default=FALSE, help="Center matrix?")
+parser$add_argument('--scale', metavar="TRUE or FALSE", type = "integer", 
+                    default=0, help="Scale matrix?")
+parser$add_argument('--center', metavar="TRUE or FALSE", type = "integer", 
+                    default=0, help="Center matrix?")
+parser$add_argument('--byrow', action="store_true", 
+                    default=FALSE, help="Also normalize matrix by row")
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                         help="Print extra output [default]")
                                         
@@ -43,14 +45,15 @@ parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
 # otherwise if options not found on command line then set defaults, 
 args <- parser$parse_args()
 
+# change int to logical
+args$scale <- as.logical(args$scale)
+args$center <- as.logical(args$center)
+
 # print some progress messages to stderr if "quietly" wasn't requested
 if ( args$verbose ) { 
     print("Arguments:")
     print(args)
 }
-# # change int to logical
-# args$scale <- as.logical(args$scale)
-# args$center <- as.logical(args$center)
 
 dat <- fread(args$infile, header=FALSE)
 if (ncol(dat) == 8){
@@ -67,6 +70,10 @@ rownames(dat.mat) <- dat.mat$peak; dat.mat$peak <- NULL
 # normalize?
 # dat.mat <- t(scale(t(scale(dat.mat, center=TRUE, scale=TRUE)), center=TRUE, scale=TRUE))
 dat.mat <- scale(dat.mat, center=args$center, scale=args$scale)
+
+if (args$byrow){
+  dat.mat <- t(scale(t(dat.mat), center=args$center, scale=args$scale))
+}
 
 dat.mat <- as.data.frame(dat.mat)
 dat.mat <- cbind(Gene.ID, dat.mat)

@@ -16,3 +16,5 @@ for d in $dnames; do
     [[ ! -d $jdir ]] && echo "$jdir not found, exiting" && exit 1
     # rm -r  $jdir
 done
+
+
