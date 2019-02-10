@@ -5,13 +5,23 @@
 # process and run motevo 
 # 2016-07-24
 
+# jmark="H3K4me1"
+jmark="H3K4me3"
+
 . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate py2
 
-# jmark="H3K4me1"
-# jmark="H3K4me3"
-jmark="H3K27me3"
+wmnames="/hpc/hub_oudenaarden/jyeung/data/databases/WMs/SwissRegulon/mm9_v1_WMs.list"
+# wmnames="/hpc/hub_oudenaarden/jyeung/data/databases/WMs/SwissRegulon/mm10_v2_WMs.list"
+[[ ! -e $wmnames ]] && echo "$wmnames not found, exiting" && exit 1
+# wmdir="/hpc/hub_oudenaarden/jyeung/data/databases/WMs/SwissRegulon/mm10_weight_matrices_v2_split"
+wmdir="/hpc/hub_oudenaarden/jyeung/data/databases/WMs/SwissRegulon/mm9_weight_matrices_v1_split"
+[[ ! -d $wmdir ]] && echo "$wmdir not found, exiting" && exit 1
+
+# jmark="H3K27me3"
 # jmark="H3K9me3"
-scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_singlegene/${jmark}"
+# scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_singlegene/${jmark}"
+scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_singlegene_mm9_v1/${jmark}"
+[[ ! -d $scratchmain ]] && mkdir -p $scratchmain
 
 ## BEGIN GET FASTA ## 
 
@@ -60,9 +70,6 @@ sed 's/>/>>mm10_/' $fastaftmp | split --lines=$n - $fastasplitdirtmp/$fastabase.
 
 ## BEGIN MOTEVO ## 
 
-# wmdir="/archive/epfl/upnae/jyeung/databases/WMs/SwissRegulon"  # motevo runs in vitalit dont use archive
-wmdir="/hpc/hub_oudenaarden/jyeung/data/databases/WMs/SwissRegulon/mm10_weight_matrices_v2_split"
-[[ ! -d $wmdir ]] && echo "$wmdir not found, exiting" && exit 1
 
 # sitecountscript="/Home/jyeung/projects/shared_tissue_specificity/calculate_sitecount.py"
 sitecountscript="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/motevo/lib/calculate_sitecount.py"
@@ -115,8 +122,6 @@ mergescript="/home/hub_oudenaarden/jyeung/projects/from_PhD/tissue-specificity-s
 
 # Run mergescript
 motevodirtmpmerged="$motevodirtmpbase/merged"
-# wmnames="/archive/epfl/upnae/jyeung/annotations/swissregulon/WMs.list"  # for checking we got all the motifs
-wmnames="/hpc/hub_oudenaarden/jyeung/data/databases/WMs/SwissRegulon/mm10_v2_WMs.list"
 if [[ -d $motevodirtmpmerged ]]
 then
 	echo "$motevodirtmpmerged exists, skipping"

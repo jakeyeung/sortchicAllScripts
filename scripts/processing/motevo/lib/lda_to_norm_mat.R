@@ -38,6 +38,8 @@ parser$add_argument("-t", "--thres", type = "double", default=0.995,
                         help="Threshold for picking top hits")
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                         help="Print extra output [default]")
+parser$add_argument("--center", action="store_true", default=FALSE,
+                        help="Center rows of the data")
                                         
 # get command line options, if help option encountered print help and exit,
 # otherwise if options not found on command line then set defaults, 
@@ -70,6 +72,11 @@ print(dim(mat.norm))
 
 # log? 
 mat.norm <- log2(mat.norm * 10^6 + 1)
+
+# most definitely center the matrix
+if (args$center){
+  mat.norm <- as.data.frame(t(scale(t(as.matrix(mat.norm)), center=TRUE, scale=FALSE)))
+}
 
 Gene.ID <- rownames(mat.norm)
 
