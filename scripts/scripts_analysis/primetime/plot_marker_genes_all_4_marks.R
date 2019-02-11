@@ -67,7 +67,7 @@ custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, se
 
 outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/marker_genes"
 dir.create(outdir)
-fname <- "marker_genes.pdf"
+fname <- paste0("marker_genes.binarize_", jbin, ".pdf")
 pdf(file.path(outdir, fname), useDingbats = FALSE)
 
 

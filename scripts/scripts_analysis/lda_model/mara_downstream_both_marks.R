@@ -58,7 +58,7 @@ PlotMotifInUmap <- function(jmotif, dat.merged, zscores){
 
 # Get dirs ----------------------------------------------------------------
 
-plotf <- "~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/mara/H3K4me1_and_H3K4me3_motifs.pdf"
+plotf <- "~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/mara/H3K4me1_and_H3K4me3_motifs_again.pdf"
 
 jchips <- c("H3K4me1", "H3K4me3")
 
@@ -91,11 +91,12 @@ zscores.merged$motif.lab <- apply(zscores.merged, 1, function(jrow){
 #   geom_point() + 
 #   geom_text()
 
-ggplot(zscores.merged, aes(x = zscore.x, y = zscore.y, label = motif.lab)) + 
+m.zscore <- ggplot(zscores.merged, aes(x = zscore.x, y = zscore.y, label = motif.lab)) + 
   geom_point(alpha = 0.5) + theme_bw() + geom_text_repel() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  xlab(paste("Motif Zscore:", jchips[[1]])) + ylab(paste("Motif Zscore:", jchips[[2]]))
-
+  xlab(paste("Motif Zscore:", jchips[[1]])) + ylab(paste("Motif Zscore:", jchips[[2]])) + 
+  xlim(c(0, 2.5)) + ylim(c(0, 2.5))
+print(m.zscore)
 
 # Cluster TFs by distances in cell space ----------------------------------
 
@@ -159,6 +160,7 @@ names(dat.merged.lst) <- jchips
 # jmotif <- "Spib"
 
 pdf(plotf, useDingbats = FALSE)
+print(m.zscore)
 print(m.tfclstr)
 # plot the UMAPs 
 for (jmotif in motifs.filt2){
