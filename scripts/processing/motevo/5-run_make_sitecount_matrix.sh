@@ -10,6 +10,7 @@ wmfile="/hpc/hub_oudenaarden/jyeung/data/databases/WMs/SwissRegulon/mm10_v2_WMs.
 
 # outf="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output/motevo_outputs/sitecount_mats/H3K4me1_sitecount_matrix.GeneID.txt"
 # outf="/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis/mara_input/count_mats_binned_norm/H3K4me1_sitecount_matrix.GeneID.txt"
+
 outf="/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis/mara_input/sitecount_mats/H3K4me1_sitecount_matrix.norm.GeneID.txt"
 
 wd="/home/hub_oudenaarden/jyeung/projects/scChiC"

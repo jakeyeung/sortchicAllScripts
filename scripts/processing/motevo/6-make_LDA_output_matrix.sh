@@ -6,9 +6,11 @@
 # 2019-02-04
 
 # jmark="H3K4me1"
-jmarks="H3K4me1 H3K4me3"
+# jmarks="H3K4me1 H3K4me3"
+jmarks="H3K27me3 H3K9me3"
 
 thres=0.99
+# jbin="TRUE"  # I used TRUE to make initial analysis looked good, should try on FALSE to see if it changes?
 jbin="FALSE"
 jcenter="TRUE"
 
@@ -22,7 +24,7 @@ for jmark in $jmarks; do
 
     # outf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats_binned_norm/cellmin_100-cellmax_500000-binarize_FALSE-BM_H3K4me1.filt_${thres}.txt"
     outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis/${jmark}/mara_input/count_mats_peaks_norm"
-    [[ ! -d $outdir ]] && mkdir $outdir
+    [[ ! -d $outdir ]] && mkdir $outdir  # no need -p because you should have run -p in the previous script making sitecounts?
     outname="hiddenDomains_cellmin_100-cellmax_500000-binarize_${jbin}-BM_${jmark}.filt_${thres}.center_${jcenter}.txt"
     outf=$outdir/$outname
 
