@@ -153,7 +153,6 @@ regions.annotated <- as.data.frame(annotatePeak(regions.range,
 regions.annotated$region_coord <- names(regions.range)
 
 top.peaks.annotated <- dplyr::left_join(top.peaks, subset(regions.annotated, select = c(region_coord, SYMBOL)), by = c("term" = "region_coord"))
-
 hit.peaks <- subset(regions.annotated, abs(distanceToTSS) < 50000 & grepl("Hbb", SYMBOL))$region_coord
 
 jpeak <- "chr7:103800000-103900000"
