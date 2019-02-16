@@ -1,3 +1,22 @@
+PlotUmapAllMarks <- function(jmarks, tm.result.lst, jpeak, juse.count.mat, dat.umap.lst, jgene, jsize, jcolvec, .log=TRUE){
+  m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks2(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]],
+                                                            use.count.mat = NULL,
+                                                            usettings=dat.umap.lst[[jmark]], 
+                                                            gname = jgene,
+                                                            jsize = jsize, jcolvec = jcolvec, .log = TRUE))
+  m.lst2 <- lapply(jmarks, function(jmark) PlotImputedPeaks2(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]],
+                                                             use.count.mat = juse.count.mat[[jmark]],
+                                                             usettings=dat.umap.lst[[jmark]], 
+                                                             gname = jgene,
+                                                             jsize = jsize, jcolvec = jcolvec, .log = TRUE))
+  multiplot(m.lst[[1]], m.lst2[[1]], 
+            m.lst[[2]], m.lst2[[2]], 
+            m.lst[[3]], m.lst2[[3]],
+            m.lst[[4]], m.lst2[[4]],
+            cols = 4)
+}
+
+
 PlotGTrack <- function(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = "auto", jtype = "mountain"){
   datheight <- 10
   trackheight <- 2
