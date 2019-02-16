@@ -62,7 +62,9 @@ custom.settings$metric <- "euclidean"
 custom.settings$min_dist <- 0.2
 custom.settings$random_state <- 0
 
-umap.out <- umap::umap(facs.merge, config = custom.settings)
+# umap.out <- umap::umap(facs.merge, config = custom.settings)
+
+pca.out <- prcomp(facs.merge)$x[, 1:2]; umap.out <- list(); umap.out$layout <- pca.out
 
 colvec <- as.numeric(as.factor(sapply(rnames, function(x) strsplit(x, "_")[[1]][[2]])))
 
