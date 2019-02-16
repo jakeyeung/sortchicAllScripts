@@ -29,8 +29,6 @@ library(org.Mm.eg.db)
 
 library(cowplot)
 
-
-
 library(GGally)
 
 # use Seurat v3
