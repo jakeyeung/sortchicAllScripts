@@ -9,8 +9,8 @@
 
 # jmark="H3K4me1"
 # jmark="H3K4me3"
-jmark="H3K27me3"
-# jmark="H3K9me3"
+# jmark="H3K27me3"
+jmark="H3K9me3"
 scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_singlegene/${jmark}"
 
 ## BEGIN GET FASTA ## 

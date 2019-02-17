@@ -6,7 +6,8 @@
 
 # jmark="H3K4me1"
 # jmark="H3K4me3"
-jmark="H3K27me3"
+# jmark="H3K27me3"
+jmark="H3K9me3"
 
 inscript="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/motevo/lib/annotate_bed_to_gene_and_distance.R"
 

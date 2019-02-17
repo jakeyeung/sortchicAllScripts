@@ -9,8 +9,8 @@
 # jtime='8:00:00'
 # if binarize
 
-jmem='96G'
-jtime='24:00:00'
+jmem='64G'
+jtime='48:00:00'
 
 workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 
@@ -20,28 +20,25 @@ rs="scripts/processing/lib/run_LDA_model.R"
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 
 marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
+# marks="H3K27me3"
 mindist="MetaCell"
-cell="BM"
+cell="K562-G1"
 
 K=20  # kind of useless parameter
-ncores=5
-topics="15,20,25,30,35"
+ncores=4
+topics="15,20,25,30"
 topicsName=`echo $topics | sed 's/,/_/g'`
 tunemodels="TRUE"
-binarize="TRUE"
+binarize="FALSE"
 cellmin="100"
 cellmax="500000"
+# relax assumptions to capture more H3K4me3 and H3K9me3 cells?
 meanmax="10"  # meanmax = 1 keeps the Erdr1 and Mid1 genes, which are probably real? But there may be some weird peaks as well that are skewing results.
 
 # marks="H3K27me3"
 for mark in $marks; do
-    inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats_binned/${cell}-${mark}.AvO_filt.Robj"
-    # inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}/PZ-${cell}-${mark}.merged.NoCountThres.hiddenDomains.Robj"
-    # meanmax="0.15"  # about 0.32 for pvalcutoff 0.5, 0.15 for pvalcutoff 0.3
-    # cellmin="1000"
-    # cellmax="50000"
-    # relax assumptions to capture more H3K4me3 and H3K9me3 cells?
-    outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_${mindist}/lda_outputs.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}"
+    inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/count_mat_K562/count_mats_binned/${cell}-${mark}.no_filt.Robj"
+    outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/LDA_out_K562/ldaAnalysisBins_${mindist}/lda_outputs.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}.no_filt"
     [[ ! -d $outdir ]] && mkdir -p $outdir
     [[ ! -e $inf ]] && echo "$inf not found, exiting" && exit 1
     [[ ! -d $outdir ]] && echo "$outdir not found, exiting" && exit 1
