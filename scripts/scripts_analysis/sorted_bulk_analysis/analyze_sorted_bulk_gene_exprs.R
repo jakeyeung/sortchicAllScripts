@@ -27,6 +27,7 @@ library(igraph)  # louvain
 library(Gviz)
 library(GenomicRanges)
 
+library(scales)
 
 source("scripts/Rfunctions/MetricsLDA.R")
 source("scripts/Rfunctions/AuxLDA.R")
@@ -89,10 +90,10 @@ topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 
 # settings for UMAP
-nn=30
+nn=40
 nnterms <- 15
 jmetric='euclidean' 
-jmindist=0.2
+jmindist=0.4
 jseed=123
 custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
 custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)
@@ -202,41 +203,147 @@ jsub2 <- subset(dat.long, Gene_Name == jgene) %>%
 dat.long %>% group_by(CellType) %>% filter(Gene_Name %in% top.genes) %>% ggplot(aes(x = zscore)) + geom_histogram() + facet_wrap(~CellType) + theme_classic() + geom_vline(xintercept = 2.25)
 
 
-# Summarize in logistic regression ----------------------------------------
+# Summaerize across all tpics ---------------------------------------------
 
-top.thres <- 0.999
-topic.regions <- lapply(seq(kchoose), function(clst){
-  return(SelectTopRegions(tm.result$terms[clst, ], colnames(tm.result$terms), method = "thres", method.val = top.thres))
+topn <- 500
+jtopics <- as.character(sort(unique(top.peaks.annotated$topic)))
+
+# get average zscore 
+top.genes.lst <- lapply(jtopics, function(jtopic){
+  subset(top.peaks.annotated, topic == jtopic)$SYMBOL[1:topn]
 })
-top.regions <- unique(unlist(topic.regions))
-top.peaks.sub <- subset(top.peaks.annotated, term %in% top.regions)
-genes.keep <- unique(top.peaks.sub$SYMBOL)
 
-print(length(genes.keep))
- 
-# subset exprs matrix and fit
-dat.sub <- subset(dat.long, Gene_Name %in% genes.keep)
-dat.sub$CellTypeY <- relevel(as.factor(dat.sub$CellType), ref = "fetal_liver_hematopoietic_progenitor_cell")
- 
-library(nnet)
-library(msgl)
-jfit <- multinom(CellTypeY ~ Gene_Name * zscore, data = dat.sub, MaxNWts = 80000)
+# get averag zscore across celltypes for each topic
+zscores.avg <- lapply(as.numeric(jtopics), function(jtopic){
+  top.genes <- top.genes.lst[[jtopic]]
+  jsub <- subset(dat.long, Gene_Name %in% top.genes) %>%
+    group_by(CellType) %>%
+    summarise(zscore = mean(zscore)) %>%
+    ungroup() %>%
+    mutate(weight = exp(zscore) / sum(exp(zscore)))
+  jsub$topic <- jtopic
+  return(jsub)
+}) %>%
+  bind_rows()
 
-X <- model.matrix(~ Gene_Name * zscore, data = dat.sub)
+# sort by range
+zscores.ranked <- zscores.avg %>%
+  group_by(topic) %>%
+  summarise(diffrange = diff(range(zscore)),
+            zscoremax = max(zscore)) %>%
+  arrange(desc(diffrange))
 
-Y <- dat.sub$CellTypeY
-library(doParallel); library(foreach)
-cl <- makeCluster(4)
-registerDoParallel(cl)
-jfit <- msgl::cv(x = X, classes = Y, standardize = FALSE, alpha = 1, lambda=0.1, use_parallel = TRUE)
-# test <- multinom(prog2 ~ ses + write, data = ml)
-# jfit <- glm(CellTypeY ~ Gene_Name * zscore, data = dat.sub, family = multinomial)
+zscores.ranked.bymax <- zscores.ranked %>%
+  arrange(desc(zscoremax))
+  
+# jtopics.reordered <- zscores.ranked$topic
+jtopics.reordered <- zscores.ranked.bymax$topic
 
-# predict 
-qplot(as.numeric(dat.sub$CellTypeY), as.numeric(predict(jfit))) + geom_jitter(width = 0.5, height = 0.5) + theme_bw() 
+# jtopics.keep <- subset(zscores.ranked, diffrange > 1.13)$topic
+# jtopics.keep <- zscores.ranked$topic[1:10]
+jtopics.keep <- zscores.ranked.bymax$topic[1:10]
 
-# accuracy
-length(which(dat.sub$CellTypeY == predict(jfit))) / length(dat.sub$CellTypeY)
+zscores.avg$topic <- factor(zscores.avg$topic, levels = jtopics.keep)
+
+# ggplot(zscores.avg %>% filter(topic %in% jtopics.keep), aes(y = as.character(topic), x = CellType, size = zscore, color = zscore)) + geom_point()
+m.summary <- ggplot(zscores.avg %>% filter(topic %in% jtopics.keep), 
+                    aes(y = topic, x = CellType, size = weight, color = weight)) + 
+  geom_point() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+m.summary.t <- ggplot(zscores.avg %>% filter(topic %in% jtopics.keep), 
+                    aes(x = topic, y = CellType, size = weight, color = weight)) + 
+  geom_point() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+topics.mat.named <- as.data.frame(topics.mat)
+topics.mat.named$cell <- rownames(topics.mat.named)
+
+dat.umap.long <- data.frame(umap1 = dat.umap$layout[, 1], umap2 = dat.umap$layout[, 2], cell = rownames(dat.umap$layout))
+dat.umap.long <- left_join(dat.umap.long, topics.mat.named)
+
+outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/sorted_bulk_correlation"
+dir.create(outdir)
+pdf(file.path(outdir, paste0(jmark, "_sorted_bulk_correlation.sortbyZmax.pdf")), useDingbats = FALSE)
+
+dat.umap.gather <- gather(dat.umap.long, key = "topic", value = "weight", c(-umap1, -umap2, -cell))
+dat.umap.gather$topic <- factor(dat.umap.gather$topic, levels = as.numeric(sort(unique(dat.umap.gather$topic))))
+
+dat.umap.gather$colval <- log10(dat.umap.gather$weight * 10^6 + 1)
+# plot all tpics
+m.umap.all <- ggplot(dat.umap.gather, aes(x = umap1, y = umap2, color = colval)) + geom_point(size = 0.1) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  scale_color_gradient2(low = muted('blue'), mid = "gray85", high = muted('red'), midpoint = mean(dat.umap.gather$colval)) + facet_wrap(~topic, scales = "free")
+print(m.umap.all)
+
+print(m.summary)
+print(m.summary.t)
+
+for (jtopic in as.character(jtopics.reordered)){
+  # top.genes.freq <- sort(table(subset(top.peaks.annotated, topic == jtopic)$SYMBOL[1:topn]), decreasing=TRUE)
+  # top.genes <- names(top.genes.freq)
+  print(jtopic)
+  top.genes <- subset(top.peaks.annotated, topic == jtopic)$SYMBOL[1:topn]
+  jsub <- subset(dat.long, Gene_Name %in% top.genes)
+  jsub.sorted.summarised <- jsub %>% group_by(CellType) %>% summarise(zscore = median(zscore)) %>% arrange(desc(zscore)) %>% dplyr::select(CellType)
+  jlevels <- as.character(jsub.sorted.summarised$CellType)
+  jsub$CellType <- factor(jsub$CellType, levels = jlevels)
+  # plot UMAP
+  m.umap <- ggplot(dat.umap.long, aes_string(x = "umap1", y = "umap2", color = paste0("`", jtopic, "`"))) + geom_point() +
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    scale_color_gradient2(low = muted('blue'), mid = "gray85", high = muted('red'), midpoint = mean(dat.umap.long[[jtopic]]), name = paste0("Topic ", jtopic, "\nWeight")) + 
+    ggtitle(paste("topic", jtopic))
+  print(m.umap)
+  m <- ggplot(jsub, 
+         aes(x = CellType , y = zscore)) + 
+    geom_boxplot() +
+    # geom_violin() +
+    geom_jitter(width = 0.1, size = 0.5) +
+    # geom_line() + 
+    theme_classic() + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    ggtitle(paste("topic", jtopic))
+  print(m)
+}
+dev.off()
+
+# 
+# # Summarize in logistic regression ----------------------------------------
+# 
+# top.thres <- 0.999
+# topic.regions <- lapply(seq(kchoose), function(clst){
+#   return(SelectTopRegions(tm.result$terms[clst, ], colnames(tm.result$terms), method = "thres", method.val = top.thres))
+# })
+# top.regions <- unique(unlist(topic.regions))
+# top.peaks.sub <- subset(top.peaks.annotated, term %in% top.regions)
+# genes.keep <- unique(top.peaks.sub$SYMBOL)
+# 
+# print(length(genes.keep))
+#  
+# # subset exprs matrix and fit
+# dat.sub <- subset(dat.long, Gene_Name %in% genes.keep)
+# dat.sub$CellTypeY <- relevel(as.factor(dat.sub$CellType), ref = "fetal_liver_hematopoietic_progenitor_cell")
+#  
+# library(nnet)
+# library(msgl)
+# jfit <- multinom(CellTypeY ~ Gene_Name * zscore, data = dat.sub, MaxNWts = 80000)
+# 
+# X <- model.matrix(~ Gene_Name * zscore, data = dat.sub)
+# 
+# Y <- dat.sub$CellTypeY
+# library(doParallel); library(foreach)
+# cl <- makeCluster(4)
+# registerDoParallel(cl)
+# jfit <- msgl::cv(x = X, classes = Y, standardize = FALSE, alpha = 1, lambda=0.1, use_parallel = TRUE)
+# # test <- multinom(prog2 ~ ses + write, data = ml)
+# # jfit <- glm(CellTypeY ~ Gene_Name * zscore, data = dat.sub, family = multinomial)
+# 
+# # predict 
+# qplot(as.numeric(dat.sub$CellTypeY), as.numeric(predict(jfit))) + geom_jitter(width = 0.5, height = 0.5) + theme_bw() 
+# 
+# # accuracy
+# length(which(dat.sub$CellTypeY == predict(jfit))) / length(dat.sub$CellTypeY)
 
 # Logistic regression? ----------------------------------------------------
 # 

@@ -90,10 +90,10 @@ top.peaks <- tidytext::tidy(out.lda, matrix = "beta") %>%
 
 subset(top.peaks, topic == 2)
 
-subset(top.peaks, topic == 26)
-subset(top.peaks, topic == 27)
-subset(top.peaks, topic == 21)
-subset(top.peaks, topic == 13)
+# subset(top.peaks, topic == 26)
+# subset(top.peaks, topic == 27)
+# subset(top.peaks, topic == 21)
+# subset(top.peaks, topic == 13)
 
 regions <- data.frame(seqnames = sapply(colnames(tm.result$terms), GetChromo),
                       start = sapply(colnames(tm.result$terms), GetStart),
@@ -116,6 +116,37 @@ print(subset(top.peaks.annotated, grepl("Hbb", SYMBOL)))
 print(subset(top.peaks.annotated, grepl("Hba", SYMBOL)))
 
 subset(top.peaks.annotated, topic == 2)
+
+
+# translate beta to log fold change?
+mat.norm <- t(tm.result$topics %*% tm.result$terms)  # this should give normalized signal, without the poisson noise?
+
+mart.obj <- useMart(biomart = 'ENSEMBL_MART_ENSEMBL', dataset = 'mmusculus_gene_ensembl', host="www.ensembl.org")
+
+# visualize a peak
+jpeak <- "chr12:115560000-115660000"
+
+# get clstring based on topic2 vs all
+jlab <- as.numeric(dat.umap$layout[, 1] < -3)
+clstr <- hash(rownames(dat.umap$layout), jlab)
+
+jchromo <- "chr12"
+# get data for chromo 7
+jpeaks <- grep(jchromo, rownames(mat.norm), value = TRUE)
+x <- as.data.frame(mat.norm[jpeaks, ])
+x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)),
+                     coord = rep(rownames(x), ncol(x)), stringsAsFactors = FALSE)
+x.long$louvain.orig <- sapply(x.long$cell, function(x) clstr[[x]])
+x.long$louvain <- x.long$louvain.orig
+x.long$exprs <- x.long$exprs * 10^6
+
+
+jstart <- as.numeric(GetStart(jpeak)) - 10 ^ 6
+jend <- as.numeric(GetEnd(jpeak)) + 10 ^ 6
+PlotGTrack(x.long,
+           jstart, 
+           jend, 
+           mart.obj, gen = "mm10", chr = jchromo, jheight = 1.5)
 
 
 # Load all 4 datasets -----------------------------------------------------

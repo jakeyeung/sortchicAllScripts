@@ -77,6 +77,5 @@ multicounts <- lapply(count.mat.lst, function(count.mat) length(which(count.mat 
 plot(density(unlist(as.matrix(count.mat.lst[[3]]))))
 
 # cells with large counts, what are they lonely ?
-
 indx <- which(count.mat.lst[[1]] > 50, arr.ind = TRUE)
 
