@@ -133,7 +133,8 @@ for (i in 1:length(x = bm.lst)) {
 reference.list <- bm.lst[sort(unique(coldat$tech))]
 
 bm.anchors <- FindIntegrationAnchors(object.list = reference.list, dims = 1:30)
-bm.integrated <- IntegrateData(anchorset = bm.anchors, dims = 1:30)
+
+bm.integrated <- IntegrateData(anchorset = bm.anchors, dims = 1:10)
 
 # switch to integrated assay. The variable features of this assay are
 # automatically set during IntegrateData
@@ -141,7 +142,7 @@ DefaultAssay(object = bm.integrated) <- "integrated"
 
 # Run the standard workflow for visualization and clustering
 bm.integrated <- ScaleData(object = bm.integrated, verbose = FALSE)
-bm.integrated <- RunPCA(object = bm.integrated, npcs = 100, verbose = FALSE)
+# bm.integrated <- RunPCA(object = bm.integrated, npcs = 100, verbose = FALSE)
 bm.integrated <- RunUMAP(object = bm.integrated, reduction = "pca", 
                                dims = 1:30)
 p1 <- DimPlot(object = bm.integrated, reduction = "umap", group.by = "tech")
