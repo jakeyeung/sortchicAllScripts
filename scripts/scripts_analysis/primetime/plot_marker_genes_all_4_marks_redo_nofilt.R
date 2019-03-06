@@ -15,6 +15,7 @@ library(TxDb.Mmusculus.UCSC.mm10.knownGene)
 library(org.Mm.eg.db)
 library(hash)
 library(umap)
+library(scales)
 
 source("scripts/Rfunctions/PlotFunctions.R")
 source("scripts/Rfunctions/AuxLDA.R")
@@ -107,7 +108,6 @@ umap.plots <- lapply(dat.umap.lst, function(dat.umap){
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   return(m)
 })
-multiplot(umap.plots[[1]], umap.plots[[2]], umap.plots[[3]], umap.plots[[4]], cols = 4)
 
 # top hits 
 top.peaks <- tidytext::tidy(out.objs[[4]]$out.lda, matrix = "beta") %>%
@@ -115,6 +115,8 @@ top.peaks <- tidytext::tidy(out.objs[[4]]$out.lda, matrix = "beta") %>%
   arrange(desc(beta)) %>%
   mutate(rnk = seq(length(beta)))
 
+
+# Plot all 4 marks for the shape 
 
 
 
@@ -125,6 +127,7 @@ dir.create(outdir)
 fname <- "marker_genes_redo_nofilt_rescale.pdf"
 pdf(file.path(outdir, fname), useDingbats = FALSE)
 
+multiplot(umap.plots[[1]], umap.plots[[2]], umap.plots[[3]], umap.plots[[4]], cols = 4)
 
 # find neutrophilmarkers
 

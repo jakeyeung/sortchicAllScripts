@@ -1,8 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-02-16
-# File: ~/projects/scchic/scripts/scripts_analysis/integrate_datasets/explore_MNN_on_bins.R
-# Integrate datasets by bins 
-
+# Date of Creation: 2019-02-22
+# File: ~/projects/scchic/scripts/scripts_analysis/integrate_datasets/explore_MNN_on_bins_scran.R
+# Use scran package
 
 # rm(list=ls())
 

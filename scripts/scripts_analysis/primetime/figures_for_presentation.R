@@ -25,6 +25,7 @@ library(biomaRt)
 library(igraph)  # louvain
 library(Gviz)
 library(GenomicRanges)
+library(Matrix)
 
 library(Cairo)
 library(ggrastr)
