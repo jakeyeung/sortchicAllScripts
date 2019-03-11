@@ -153,7 +153,7 @@ PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, retur
 PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL, 
                               usettings=NULL, gname = "", 
                               jsize = 3, jcolvec = c("blue", "white", "red"),
-                              .log = TRUE, scale.fac = 1, pseudocount = 10^-6){
+                              .log = TRUE, scale.fac = 1, pseudocount = 10^-6, cap.quantile= NA, midpoint = "auto"){
   if (.log){
     jlegend <- "Log10 counts"
   } else {
@@ -212,6 +212,22 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
   dat <- data.frame(umap1 = dat.umap$layout[, 1], 
                     umap2 = dat.umap$layout[, 2], 
                     counts.norm = jcounts.norm)
+  if (is.numeric(cap.quantile)){
+    # cap.quantile should be between 0 and 1
+    assertthat::assert_that(cap.quantile >= 0 & cap.quantile <= 1)
+    quant.min <- quantile(jcounts.norm, 1 - cap.quantile)
+    quant.max <- quantile(jcounts.norm, cap.quantile)
+    dat$counts.norm <- sapply(dat$counts.norm, function(x){
+      if (x > quant.max){
+        xnew <- quant.max
+      } else if (x < quant.min){
+        xnew <- quant.min
+      } else {
+        xnew <- x
+      }
+      return(xnew)
+    })
+  }
   m <- ggplot(dat, aes(x = umap1, y = umap2, col = counts.norm)) + 
     geom_point(size = jsize) + 
     theme_bw() + 
@@ -220,9 +236,15 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
           legend.title=element_text(size=8),
           legend.text = element_text(size=5)) +
     guides(colour = guide_colourbar(title.position="top", title.hjust = 0.5)) + 
-    ggtitle(jmain) + 
-    scale_color_gradient2(low = scales::muted(jcolvec[[1]]), mid = jcolvec[[2]], high = scales::muted(jcolvec[[3]]), name = jlegend, 
-                          midpoint = mean(jcounts.norm))
+    ggtitle(jmain)
+  if (midpoint == "auto"){
+    m <- m + scale_color_gradient2(low = jcolvec[[1]], mid = jcolvec[[2]], high = scales::muted(jcolvec[[3]]), name = jlegend, 
+                                       midpoint = median(jcounts.norm), limits = c(NA, NA))
+  } else {
+    m <- m + scale_color_gradient2(low = jcolvec[[1]], mid = jcolvec[[2]], high = scales::muted(jcolvec[[3]]), name = jlegend, 
+                                       midpoint = midpoint, limits = c(NA, NA))
+  }
+
   return(m)
 }
 

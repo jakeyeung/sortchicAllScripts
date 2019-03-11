@@ -298,7 +298,7 @@ mart.obj <- useMart(biomart = 'ENSEMBL_MART_ENSEMBL', dataset = 'mmusculus_gene_
 
 head(top.peaks.annotated)
 
-jtopn <- 20
+jtopn <- 5
 # erythrypoiesis peaks, topic 1
 jtopic <- 1
 jcelltype <- "nucleate_erythryocyte"
