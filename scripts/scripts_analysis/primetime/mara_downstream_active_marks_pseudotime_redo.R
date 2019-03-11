@@ -1,7 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-03-07
-# File: ~/projects/scchic/scripts/scripts_analysis/lda_model/mara_downstream_active_marks_pseudotime2.R
-# Do pseudotime on H3K4me1
+# Date of Creation: 2019-03-09
+# File: ~/projects/scchic/scripts/scripts_analysis/primetime/mara_downstream_active_marks_pseudotime_redo.R
+# Redo without breaking up clusters manually 
 
 rm(list=ls())
 
@@ -309,8 +309,8 @@ mat.norm <- t(tm.result$topics %*% tm.result$terms)  # this should give normaliz
 
 # dat.umap.fo
 
-nn.louv=27
-# nn.louv=15
+# nn.louv=27
+nn.louv=15
 jmetric.louv='euclidean' 
 jmindist.louv=0.4
 jseed.louv=123
@@ -355,7 +355,7 @@ remap.clstr <- hash(clstrs.orig, clstrs.new)
 
 dat.umap.long$louvain <- sapply(as.character(dat.umap.long$louvain), function(x) remap.clstr[[x]])
 dat.umap.long$louvain <- factor(as.character(dat.umap.long$louvain), levels = clstrs.orig)  # 1 to N
-m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 0.5) + 
+m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_brewer(palette = "Spectral")
 print(m.louvain)
@@ -400,42 +400,64 @@ print(m.louvain)
 # show granulocyte trajectory
 print(m.louvain)
 # clsts <- c("9", "3", "7")
-clsts <- c("7")
+# clsts <- c("7")
 # clsts <- c("8", "2", "6")
-
-m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 0.5) + 
+clsts <- c('1', '4', '5')
+m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), 
+                         aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 print(m.louvain.filt)
 
 # keep cells in granulocyte trajectory. Split louvain clstr 7 into two parts
-dat.sub.granu <- dat.umap.long %>% filter((louvain == 7 & umap2 > 0) | (louvain %in% c("9", "3")))
+dat.sub.granu <- dat.umap.long %>% filter(louvain %in% c('1', '4' ,'5'))
 cells.granu <- hash(dat.sub.granu$cell, TRUE)
 dat.umap.long$granu <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.granu[[x]]), cells.granu[[x]], FALSE))
 
 # do erythryocytes easy
-dat.sub.eryth <- dat.umap.long %>% filter(louvain == 1)
+clsts <- c('8', '7', '4')
+m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), 
+                         aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(m.louvain.filt)
+dat.sub.eryth <- dat.umap.long %>% filter(louvain %in% c('7', '8', '4'))
 cells.eryth <- hash(dat.sub.eryth$cell, TRUE)
 dat.umap.long$eryth <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.eryth[[x]]), cells.eryth[[x]], FALSE))
 
 # megakaryocytes
-dat.sub.mega <- dat.umap.long %>% filter(louvain == 7)
+clsts <- c('4', '2')
+m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), 
+                         aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(m.louvain.filt)
+dat.sub.mega <- dat.umap.long %>% filter(louvain %in% c('4', '2'))
 cells.mega <- hash(dat.sub.mega$cell, TRUE)
 dat.umap.long$mega <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.mega[[x]]), cells.mega[[x]], FALSE))
 
 # b lymphos
-dat.sub.bcell <- dat.umap.long %>% filter(louvain %in% c("8", "2", "6"))
+clsts <- c('6', '9', '10', '4')
+m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), 
+                         aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(m.louvain.filt)
+dat.sub.bcell <- dat.umap.long %>% filter(louvain %in% c('6', '9', '10', '4'))
 cells.bcell <- hash(dat.sub.bcell$cell, TRUE)
 dat.umap.long$bcell <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.bcell[[x]]), cells.bcell[[x]], FALSE))
 
-# tcells split cluster 8 into two parts
-dat.sub.tcell <- dat.umap.long %>% filter((louvain == 8 & umap1 > -3) | (louvain == 5))
+
+clsts <- c('10', '3', '4')
+m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), 
+                         aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(m.louvain.filt)
+
+dat.sub.tcell <- dat.umap.long %>% filter(louvain %in% c('10', '3', '4'))
 cells.tcell <- hash(dat.sub.tcell$cell, TRUE)
 dat.umap.long$tcell <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.tcell[[x]]), cells.tcell[[x]], FALSE))
 
-
-m.louvain.filt <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = granu)) + geom_point(size = 0.5) + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-print(m.louvain.filt)
+# 
+# m.louvain.filt <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = granu)) + geom_point(size = 0.5) + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# print(m.louvain.filt)
 
 
 traj.granu <- InferTrajOnUmap(dat.umap.long, cname = "granu", init.on = "umap1")
@@ -455,11 +477,107 @@ ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE
   geom_path(data = traj.mega, aes(color = lambda), size = jsize) 
 
 
-# Analyze on cell activities on pseudotime  -------------------------------
+# Summarize as plots  -----------------------------------------------------
 
+outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/analyses"
+dir.create(outdir)
+outplots <- file.path(outdir, "2019-03-10_Pseudotime.pdf")
+
+pdf(outplots, useDingbats = FALSE)
+
+jsize <- 2
+jalpha <- 0.5
+trajsize <- 3
+
+# Merve some louvain clusters
+dat.umap.long2 <- dat.umap.long %>%
+  mutate(
+         louvain = ifelse(louvain %in% c("7", "8"), "Erythrypoiesis", louvain),
+         louvain = ifelse(louvain %in% c("6", "9", "10"), "B cell", louvain),
+         louvain = ifelse(louvain %in% c("10", "3"), "T cell", louvain),
+         louvain = ifelse(louvain %in% c("2"), "Megakaryocytes", louvain),
+         louvain = ifelse(louvain %in% c("11"), "NK Cell", louvain),
+         louvain = ifelse(louvain %in% c("4"), "Hematopoietic progenitors", louvain),
+         louvain = ifelse(louvain %in% c("1", "5"), "Granulocytes", louvain))
+
+
+ggplot() + 
+  theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_point(data = dat.umap.long2, size = jsize, aes(color = louvain, x = umap1, y = umap2), inherit.aes = FALSE) + 
+  geom_path(data = traj.granu, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha) + 
+  geom_path(data = traj.eryth, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha) + 
+  geom_path(data = traj.bcell, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha) + 
+  geom_path(data = traj.tcell, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha) + 
+  geom_path(data = traj.mega, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha)
+
+
+# plot original
+
+# play with colors
+ggplot() + 
+  theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_path(data = traj.granu, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha) + 
+  geom_path(data = traj.eryth, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha) + 
+  geom_path(data = traj.bcell, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha) + 
+  geom_path(data = traj.tcell, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha) + 
+  geom_path(data = traj.mega, aes(x = umap1, y = umap2), size = trajsize, inherit.aes = FALSE, alpha = jalpha) + 
+  geom_point(data = dat.umap.long %>% mutate(louvain = ifelse(louvain %in% c("2", "4"), TRUE, FALSE)), size = jsize, aes(color = louvain, x = umap1, y = umap2), inherit.aes = FALSE)
+  # geom_point(data = dat.umap.long, size = jsize, aes(color = louvain, x = umap1, y = umap2), inherit.aes = FALSE)
+
+
+# Erythrypoiesis  ---------------------------------------------------------
+
+
+# eryhtyrpoiesis 
+jmotif <- "Tal1"
+jgene <- "Tal1"
+
+print(subset(top.peaks.annotated, grepl(jgene, SYMBOL)))
+(jpeak <- subset(top.peaks.annotated, grepl(jgene, SYMBOL))$term[[1]])
+
+# mat.imput <- t(tm.result$topics %*% tm.result$terms)
+peak.counts <- data.frame(peak = jpeak, 
+                          cell = colnames(mat.imput),
+                          counts = log10(mat.imput[jpeak, ]))
+act.counts <- subset(act.long.merged, motif == jmotif)
+
+dat.counts <- left_join(peak.counts, act.counts)
+
+act.counts$counts <- act.counts$activity
+
+act.counts <- left_join(act.counts, traj.eryth)
+peak.counts <- left_join(peak.counts, traj.eryth)
+
+# show umap, ad cebpb activity 
+dat.umap.long.cat <- left_join(dat.umap.long, act.counts %>% dplyr::select(cell, counts))
+jsize <- 2
+ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = counts)) + 
+  geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_path(data = traj.eryth, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Erythrypoiesis Trajectory")
+
+# merge the two data and replot
+dat.merge <- bind_rows(act.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "activity"), 
+                       peak.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "counts"))
+dat.merge <- dat.merge %>%
+  group_by(assay) %>%
+  mutate(counts = scale(counts))
+
+ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+  geom_point() + geom_smooth(se = FALSE) + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak)) +
+  xlab("Pseudotime") + ylab("Scaled expression or activity")
+
+
+
+# Granulocytes differentiation --------------------------------------------------
 
 jmotif <- "Cebpb"
 jgene <- "Cebpb"
+
 (jpeak <- subset(top.peaks.annotated, grepl(jgene, SYMBOL))$term[[1]])
 
 mat.imput <- t(tm.result$topics %*% tm.result$terms)
@@ -482,47 +600,17 @@ traj.granu2 <- left_join(traj.granu2, dat.counts)
 dat.umap.long.cat <- left_join(dat.umap.long, act.counts %>% dplyr::select(cell, counts))
 jsize <- 2
 ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = counts)) + 
-  geom_point(size = 0.5) + 
+  geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  geom_path(data = traj.granu, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE)
+  geom_path(data = traj.granu, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Granulocyte Trajectory")
 
 # plot pseudotime
-ggplot(traj.granu2, aes(x = lambda, y = counts, color = counts)) + geom_smooth(se = FALSE) + geom_point()
-ggplot(traj.granu2, aes(x = lambda, y = activity, color = activity)) + geom_smooth(se = FALSE) + geom_point()
+# ggplot(traj.granu2, aes(x = lambda, y = counts, color = counts)) + geom_smooth(se = FALSE) + geom_point()
+# ggplot(traj.granu2, aes(x = lambda, y = activity, color = activity)) + geom_smooth(se = FALSE) + geom_point()
 
-ggplot(act.counts %>% filter(!is.na(lambda)), aes(x = lambda, y = activity)) + geom_point() + geom_smooth(se = FALSE)
-ggplot(peak.counts %>% filter(!is.na(lambda)), aes(x = lambda, y = counts)) + geom_point() + geom_smooth(se = FALSE)
-
-# merge the two data and replot
-dat.merge <- bind_rows(act.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "activity"), peak.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "counts"))
-dat.merge <- dat.merge %>%
-  group_by(assay) %>%
-  mutate(counts = scale(counts))
-
-ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay)) + geom_point() + geom_smooth(se = FALSE)
-
-# Analyze on cell activities on pseudotime: eryth  -------------------------------
-
-jmotif <- "Tal1"
-jgene <- "Tal1"
-
-# jmotif <- "Pml"
-# jgene <- "Pml"
-
-(jpeak <- subset(top.peaks.annotated, grepl(jgene, SYMBOL))$term[[1]])
-
-# mat.imput <- t(tm.result$topics %*% tm.result$terms)
-peak.counts <- data.frame(peak = jpeak, 
-                          cell = colnames(mat.imput),
-                          counts = log10(mat.imput[jpeak, ]))
-act.counts <- subset(act.long.merged, motif == jmotif)
-
-dat.counts <- left_join(peak.counts, act.counts)
-
-act.counts$counts <- act.counts$activity
-
-act.counts <- left_join(act.counts, traj.eryth)
-peak.counts <- left_join(peak.counts, traj.eryth)
+# ggplot(act.counts %>% filter(!is.na(lambda)), aes(x = lambda, y = activity)) + geom_point() + geom_smooth(se = FALSE)
+# ggplot(peak.counts %>% filter(!is.na(lambda)), aes(x = lambda, y = counts)) + geom_point() + geom_smooth(se = FALSE)
 
 # merge the two data and replot
 dat.merge <- bind_rows(act.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "activity"), peak.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "counts"))
@@ -530,13 +618,24 @@ dat.merge <- dat.merge %>%
   group_by(assay) %>%
   mutate(counts = scale(counts))
 
-ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay)) + geom_point() + geom_smooth(se = FALSE)
+ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay)) + geom_point() + geom_smooth(se = FALSE) + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak))
 
-
-# Cell activities B cells  ------------------------------------------------
+# B-cell differentiation  -------------------------------------------------
 
 jmotif <- "Nfatc1"
-jgene <- "Nfatc3"
+jgene <- "Nfatc1"
+
+# jmotif <- "Atf2"
+# jgene <- "Atf2"
+
+ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = counts)) + 
+  geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_path(data = traj.bcell, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("B Cell Trajectory")
+
+
 
 (jpeak <- subset(top.peaks.annotated, grepl(jgene, SYMBOL))$term[[1]])
 
@@ -553,69 +652,18 @@ act.counts$counts <- act.counts$activity
 act.counts <- left_join(act.counts, traj.bcell)
 peak.counts <- left_join(peak.counts, traj.bcell)
 
-# merge the two data and replot
+# merge the two data and replosSpe
 dat.merge <- bind_rows(act.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "activity"), peak.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "counts"))
 dat.merge <- dat.merge %>%
   group_by(assay) %>%
   mutate(counts = scale(counts))
 
-ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay)) + geom_point() + geom_smooth(se = FALSE)
+ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay)) + geom_point() + geom_smooth(se = FALSE, method = "loess") + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak))
+
+dat.umap.long.cat <- left_join(dat.umap.long, act.counts %>% dplyr::select(cell, counts))
 
 
-# Make plots --------------------------------------------------------------
-
-# make through louvain 
-
-nn.louv=65
-jmetric.louv='euclidean' 
-jmindist.louv=0.2
-jseed.louv=123
-
-custom.settings.louv <- GetUmapSettings(nn=nn.louv, 
-                                        jmetric=jmetric.louv, 
-                                        jmindist=jmindist.louv, 
-                                        seed = jseed.louv)
-
-dat.umap.louv2 <- umap(topics.mat, config = custom.settings.louv)
-
-dat.umap.louv.long2 <- data.frame(umap1 = dat.umap.louv2$layout[, 1], umap2 = dat.umap.louv2$layout[, 2], cell = rownames(dat.umap.louv2$layout), 
-                                 stringsAsFactors = FALSE)
-
-cell.indx <- hash(rownames(dat.umap.louv2$knn$indexes), dat.umap.louv2$knn$indexes[, 1])
-cell.indx.rev <- hash(dat.umap.louv2$knn$indexes[, 1], rownames(dat.umap.louv2$knn$indexes))
-nr <- nrow(dat.umap.louv2$knn$indexes)
-nc <- ncol(dat.umap.louv2$knn$indexes)
-edgelist <- matrix(NA, nrow = nr * nc, ncol = 2)
-colnames(edgelist) <- c("from", "to")
-for (vertex.i in seq(nr)){
-  istart <- nc*(vertex.i - 1)+1
-  iend <- nc*vertex.i
-  edgelist[istart : iend, 1] <- cell.indx.rev[[as.character(vertex.i)]]
-  edgelist[istart : iend, 2] <- sapply(dat.umap.louv$knn$indexes[vertex.i, 1:nc], function(x) cell.indx.rev[[as.character(x)]])
-  # edgelist[istart : iend, 3] <- 1 / (dat.umap$knn$distances[vertex.i, 1:nc] + 0.1)
-}
-g <- graph_from_data_frame(edgelist, directed=FALSE)
-g.out <- cluster_louvain(g, weights = NULL)
-V(g)$color <- g.out$membership
-clstr <- hash(g.out$names, g.out$membership)
-
-dat.umap.long2 <- dat.umap.long
-dat.umap.long2$louvain <- sapply(dat.umap.long2$cell, function(x) clstr[[x]])
-
-jclst <- 6
-clstrs.orig <- as.character(sort(unique(as.numeric(dat.umap.long2$louvain))))
-# swap jclst with first element
-clstrs.new <- clstrs.orig
-# clstrs.new <- clstrs.orig
-# clstrs.new[c(1, which(clstrs.new == jclst))] <- clstrs.new[c(which(clstrs.new == jclst), 1)]
-remap.clstr <- hash(clstrs.orig, clstrs.new)
-
-
-dat.umap.long2$louvain <- sapply(as.character(dat.umap.long2$louvain), function(x) remap.clstr[[x]])
-dat.umap.long2$louvain <- factor(as.character(dat.umap.long2$louvain), levels = clstrs.orig)  # 1 to N
-m.louvain2 <- ggplot(dat.umap.long2, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 0.5) + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  scale_color_brewer(palette = "Spectral")
-print(m.louvain2)
+dev.off()
 
 

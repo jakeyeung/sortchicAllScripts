@@ -88,8 +88,10 @@ head(mara.outs[[1]]$act.long)
 # act.long.merged <- rbind(mara.outs[[1]]$act.long, mara.outs[[2]]$act.long, mara.outs[[3]]$act.long, mara.outs[[4]]$act.long)
 
 # Run for only 2 of these 
-act.long.merged <- rbind(mara.outs[[1]]$act.long, mara.outs[[2]]$act.long)
-# act.long.merged <- rbind(mara.outs[[3]]$act.long, mara.outs[[4]]$act.long)
+# act.long.merged <- rbind(mara.outs[[1]]$act.long, mara.outs[[2]]$act.long)
+act.long.merged <- rbind(mara.outs[[3]]$act.long, mara.outs[[4]]$act.long)
+# act.long.merged <- rbind(mara.outs[[1]]$act.long, mara.outs[[3]]$act.long)
+# act.long.merged <- rbind(mara.outs[[1]]$act.long, mara.outs[[4]]$act.long)
 
 
 # # check what data structure I need

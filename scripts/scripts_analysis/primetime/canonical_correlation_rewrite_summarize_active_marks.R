@@ -1,8 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-03-07
-# File: ~/projects/scchic/scripts/scripts_analysis/integrate_datasets/canonical_correlation_rewrite.R
-# Redo canonical correlation analysis and allow opposite signs to happen downstream
-
+# Date of Creation: 2019-03-11
+# File: ~/projects/scchic/scripts/scripts_analysis/primetime/canonical_correlation_rewrite_summarize_active_marks.R
+# Summarize active marks 
 
 rm(list=ls())
 
@@ -40,7 +39,6 @@ library(Seurat)
 source("scripts/Rfunctions/MaraDownstream.R")
 source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/Aux.R")
-
 
 
 
@@ -317,12 +315,92 @@ plot(loads[, 1], loads[, 2], pch = 20)
 text(loads[, 1], loads[, 2],
      labels = rownames(loads.min))
 
-
-# loads.umap <- umap(loads.min[, 1:10])
-# plot(loads.umap$layout[, 1], loads.umap$layout[, 2], pch = 20)
-# text(loads.umap$layout[, 1], loads.umap$layout[, 2], labels = rownames(loads.umap$layout))
-
-# Now let’s do multiCCA ---------------------------------------------------
+# Summaerize plots plot top hits -------------------------------------------------------
 
 
+loads.dat <- as.data.frame(loads)
+
+loads.dat$motif <- rownames(loads.dat)
+loads.dat <- loads.dat %>%
+  mutate(dist = sqrt(CC1^2 + CC2^2),
+         dist23 = sqrt(CC2^2 + CC3^2))
+
+loads.dat <- loads.dat %>%
+  mutate(motif.lab = ifelse(dist > 0.09, motif, NA),
+         motif.lab23 = ifelse(dist23 > 0.06, motif, NA))
+
+m.cca <- ggplot(loads.dat, aes(x = CC1, y = CC2, label = motif.lab)) + 
+  geom_point(alpha = 0.5) + theme_classic() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0) + geom_hline(yintercept = 0) +
+  geom_text_repel()
+
+m.cca23 <- ggplot(loads.dat, aes(x = CC2, y = CC3, label = motif.lab23)) + 
+  geom_point(alpha = 0.5) + theme_classic() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0)  + geom_hline(yintercept = 0)+ 
+  geom_text_repel()
+  
+# plot canonical correlations
+# SVD outputs singular values which are square roots of the eigenvalues of M*M. 
+# Eigenvalues are the canonical correlations squared.
+# Therefore, canonical correlations are just the singular values 
+m.summary <- qplot(x = seq(length(cca.results$d)), y = cca.results$d) + geom_line() + geom_point(size = 2.5)  + 
+    xlab("CCA components") + ylab("Canonical Correlations")
+
+topn <- 10
+jsize <- 1
+jcolvec <- c("gray95", "gray50", "darkblue")
+pdf("~/Dropbox/scCHiC_figs/FIG4_BM/analyses/2019-03-11_CCA_analysis_active_marks.pdf", useDingbats = FALSE)
+
+print(m.summary)
+print(m.cca)
+print(m.cca23)
+
+# Take top 5 hits from CC1 right and left. Take top from CC2
+
+# erythrypoiesis 
+eryth.motifs <- loads.dat %>% arrange(desc(CC1)) %>% 
+  dplyr::select(motif)
+eryth.motifs <- eryth.motifs[1:topn, ]
+
+# B-cell 
+bcell.motifs <- loads.dat %>% arrange(CC1) %>%
+  dplyr::select(motif)
+bcell.motifs <- bcell.motifs[1:topn, ]
+
+# Granulocytes
+granu.motifs <- loads.dat %>% arrange(desc(CC2)) %>%
+  dplyr::select(motif)
+granu.motifs <- granu.motifs[1:topn, ]
+
+
+print(m.cca + ggtitle("Now plotting erythrypoiesis motifs... (large CC1)"))
+# plot top hits
+for (jmotif in eryth.motifs){
+  print(jmotif)
+  m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark1]], mara.outs[[jmark1]]$zscores, jmark1, jsize = jsize, colvec = jcolvec)
+  m2 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark2]], mara.outs[[jmark2]]$zscores, jmark2, jsize = jsize, colvec = jcolvec)
+  multiplot(m1, m2)
+}
+
+print(m.cca + ggtitle("Now plotting B-cell motifs... (small CC2)"))
+# plot top hits
+for (jmotif in bcell.motifs){
+  print(jmotif)
+  m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark1]], mara.outs[[jmark1]]$zscores, jmark1, jsize = jsize, colvec = jcolvec)
+  m2 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark2]], mara.outs[[jmark2]]$zscores, jmark2, jsize = jsize, colvec = jcolvec)
+  multiplot(m1, m2)
+}
+
+print(m.cca + ggtitle("Now plotting Granulocyte motifs... (large CC3)"))
+# plot top hits
+for (jmotif in granu.motifs){
+  print(jmotif)
+  m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark1]], mara.outs[[jmark1]]$zscores, jmark1, jsize = jsize, colvec = jcolvec)
+  m2 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark2]], mara.outs[[jmark2]]$zscores, jmark2, jsize = jsize, colvec = jcolvec)
+  multiplot(m1, m2)
+}
+
+dev.off()
 

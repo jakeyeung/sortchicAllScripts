@@ -1,8 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-03-08
-# File: ~/projects/scchic/scripts/scripts_analysis/lda_model/mara_downstream_both_marks_prom_enh.R
-# Promoter and enhancer analysis
-
+# Date of Creation: 2019-03-11
+# File: ~/projects/scchic/scripts/scripts_analysis/lda_model/mara_downstream_both_marks_prom_enh_1kb_10kb.R
+# Do 3 arrow analysis 
 
 rm(list=ls())
 
@@ -30,13 +29,19 @@ source("scripts/Rfunctions/AuxLDA.R")
 jchips <- c("H3K4me1", "H3K4me3")
 
 # types <- "all"
-types <- c("enhancer", "all")
+types <- c("enhancer", "all", "promoter")
 zscore.thres <- 0.75
 
 zscores.merged.lst <- lapply(types, function(type){
   
   mdirs <- lapply(jchips, function(jchip){
     if (type == "all"){
+      mdir <- paste0("/Users/yeung/data/scchic/from_cluster/mara_analysis/hiddenDomains_cellmin_100-cellmax_500000-binarize_TRUE-BM_", 
+                     jchip, 
+                     ".filt_0.99.center_TRUE-hiddenDomains_motevo_merged.closest.long.scale_0.center_0.byrow_0-",
+                     "/",
+                     "hiddenDomains_cellmin_100-cellmax_500000-binarize_TRUE-BM_", jchip, ".filt_0.99.center_TRUE")
+    } else if (type == "promoter"){
       mdir <- paste0("/Users/yeung/data/scchic/from_cluster/mara_analysis/hiddenDomains_cellmin_100-cellmax_500000-binarize_TRUE-BM_", 
                      jchip, 
                      ".filt_0.99.center_TRUE-hiddenDomains_motevo_merged.closest.long.scale_0.center_0.byrow_0.bugfix.filt.1000-",
@@ -48,7 +53,6 @@ zscores.merged.lst <- lapply(types, function(type){
                      ".filt_0.99.center_TRUE-hiddenDomains_motevo_merged.closest.long.scale_0.center_0.byrow_0.bugfix.filt.10000-",
                      "/",
                      "hiddenDomains_cellmin_100-cellmax_500000-binarize_TRUE-BM_", jchip, ".filt_0.99.center_TRUE")
-      
     }
     assertthat::assert_that(dir.exists(mdir))
     return(mdir)
@@ -76,6 +80,8 @@ zscores.diff <- zscores.merged %>%
   group_by(motif) %>%
   summarise(zscore.x.enh = zscore.x[[1]], zscore.x.all = zscore.x[[2]], 
             zscore.y.enh = zscore.y[[1]], zscore.y.all = zscore.y[[2]],
+            zscore.x.prom = zscore.x[[3]], zscore.x.prom = zscore.x[[3]],
+            zscore.y.prom = zscore.y[[3]], zscore.y.prom = zscore.y[[3]],
               dist = sqrt((zscore.x.enh - zscore.x.all)^2 + (zscore.y.enh - zscore.y.all) ^ 2))
 
 m.zscore <- ggplot(zscores.merged, aes(x = zscore.x, y = zscore.y, label = motif.lab)) + 
@@ -86,14 +92,33 @@ m.zscore <- ggplot(zscores.merged, aes(x = zscore.x, y = zscore.y, label = motif
   xlim(c(0, 2.5)) + ylim(c(0, 2.5))
 print(m.zscore)
 
-m.zscore.arrows <- ggplot(zscores.diff, aes(x = zscore.x.all, xend = zscore.x.enh, y = zscore.y.all, yend = zscore.y.enh)) + 
-  geom_segment(arrow = arrow(), data = zscores.diff %>% filter(zscore.x.all > 1 | zscore.y.all > 1)) + geom_point() + 
-  geom_text_repel(data = zscores.diff %>% filter(zscore.x.all > 1 | zscore.y.all > 1), aes(label = motif)) + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+m.zscore.arrows <- ggplot() + 
+  geom_segment(mapping = aes(x = zscore.x.all, xend = zscore.x.prom, y = zscore.y.all, yend = zscore.y.prom), 
+               arrow = arrow(), data = zscores.diff %>% filter(zscore.x.all > 1 | zscore.y.all > 1)) + 
+  geom_point(data = zscores.diff, aes(x = zscore.x.all, y = zscore.y.all)) + 
+  geom_text_repel(data = zscores.diff %>% filter(zscore.x.all > 1 | zscore.y.all > 1), aes(label = motif, x = zscore.x.all, y = zscore.y.all)) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  ggtitle("Motif from all TFBS to removing 1kb from promoters")
 print(m.zscore.arrows)
+
+m.zscore.arrows.10kb <- ggplot() + 
+  geom_segment(mapping = aes(x = zscore.x.prom, xend = zscore.x.enh, y = zscore.y.prom, yend = zscore.y.enh), 
+               arrow = arrow(), data = zscores.diff %>% filter(zscore.x.all > 1 | zscore.y.all > 1)) + 
+  geom_segment(mapping = aes(x = zscore.x.all, xend = zscore.x.prom, y = zscore.y.all, yend = zscore.y.prom), 
+               data = zscores.diff %>% filter(zscore.x.all > 1 | zscore.y.all > 1)) + 
+  geom_point(data = zscores.diff, aes(x = zscore.x.all, y = zscore.y.all)) + 
+  geom_point(data = zscores.diff, aes(x = zscore.x.prom, y = zscore.y.prom)) + 
+  geom_text_repel(data = zscores.diff %>% filter(zscore.x.all > 1 | zscore.y.all > 1), aes(label = motif, x = zscore.x.all, y = zscore.y.all)) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  ggtitle("Motif from all TFBS, to removing 1kb from promoters, to removing 10kb from promoters")
+print(m.zscore.arrows.10kb)
 
 # what's the average change? 
 
+pdf("~/Dropbox/scCHiC_figs/FIG4_BM/analyses/zscore_promoter_enhancer_analysis.pdf", useDingbats = FALSE)
+print(m.zscore.arrows)
+print(m.zscore.arrows.10kb)
+dev.off()
 
 # Cluster TFs by distances in cell space ----------------------------------
 
