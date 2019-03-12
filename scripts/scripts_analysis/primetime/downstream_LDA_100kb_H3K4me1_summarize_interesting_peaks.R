@@ -381,6 +381,23 @@ library(heatmap3)
 library(gplots)
 library(made4)
 
-pdf("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/heatmap.pdf")
+pdf("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/topics_and_heatmap.pdf", useDingbats = FALSE)
+# plot topics
+
+for (topic in topics){
+  topic <- as.character(topic)
+  dat.tmp <- dat.umap.long %>% dplyr::select(c(umap1, umap2, topic))
+  dat.tmp[[topic]] <- CapQuantile(dat.tmp[[topic]], cap.quantile = 0.99)
+  midpt <- min(dat.tmp[[topic]]) + (max(dat.tmp[[topic]]) - min(dat.tmp[[topic]])) / 2
+  # compress 
+  # print(midpt)
+  dat.tmp <- RankOrder(dat.tmp, topic)
+  m.top <- ggplot(dat.tmp, aes_string(x = "umap1", y = "umap2", color = paste0("`", topic, "`")), order = orderrank) + geom_point() +
+    scale_color_gradient2(low = "gray95", mid = "gray50", high = "darkblue", midpoint = midpt)
+  print(m.top)
+}
+
+# pl t hits
+
 heatmap3(t(terms.sub), scale = "row", margins = c(5, 8), cexRow = 0.25)
 dev.off()

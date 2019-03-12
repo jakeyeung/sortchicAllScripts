@@ -409,19 +409,23 @@ m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% 
 print(m.louvain.filt)
 
 # keep cells in granulocyte trajectory. Split louvain clstr 7 into two parts
-dat.sub.granu <- dat.umap.long %>% filter(louvain %in% c('1', '4' ,'5'))
+dat.sub.granu <- dat.umap.long %>% filter(louvain %in% clsts)
 cells.granu <- hash(dat.sub.granu$cell, TRUE)
 dat.umap.long$granu <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.granu[[x]]), cells.granu[[x]], FALSE))
 
-# do erythryocytes easy
-clsts <- c('8', '7', '4')
+# do erythryocytes easy? There is an outlier need to remove???
+clsts <- c('8', '7')
 m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), 
                          aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 print(m.louvain.filt)
-dat.sub.eryth <- dat.umap.long %>% filter(louvain %in% c('7', '8', '4'))
+dat.sub.eryth <- dat.umap.long %>% filter(louvain %in% clsts & umap2 > 0.5)
 cells.eryth <- hash(dat.sub.eryth$cell, TRUE)
 dat.umap.long$eryth <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.eryth[[x]]), cells.eryth[[x]], FALSE))
+
+ggplot(dat.umap.long, 
+       aes(x = umap1, y = umap2, color = eryth)) + geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 # megakaryocytes
 clsts <- c('4', '2')
@@ -429,28 +433,28 @@ m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% 
                          aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 print(m.louvain.filt)
-dat.sub.mega <- dat.umap.long %>% filter(louvain %in% c('4', '2'))
+dat.sub.mega <- dat.umap.long %>% filter(louvain %in% clsts)
 cells.mega <- hash(dat.sub.mega$cell, TRUE)
 dat.umap.long$mega <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.mega[[x]]), cells.mega[[x]], FALSE))
 
 # b lymphos
-clsts <- c('6', '9', '10', '4')
+clsts <- c('6', '9', '10')
 m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), 
                          aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 print(m.louvain.filt)
-dat.sub.bcell <- dat.umap.long %>% filter(louvain %in% c('6', '9', '10', '4'))
+dat.sub.bcell <- dat.umap.long %>% filter(louvain %in% clsts)
 cells.bcell <- hash(dat.sub.bcell$cell, TRUE)
 dat.umap.long$bcell <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.bcell[[x]]), cells.bcell[[x]], FALSE))
 
 
-clsts <- c('10', '3', '4')
+clsts <- c('10', '3')
 m.louvain.filt <- ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), 
                          aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 print(m.louvain.filt)
 
-dat.sub.tcell <- dat.umap.long %>% filter(louvain %in% c('10', '3', '4'))
+dat.sub.tcell <- dat.umap.long %>% filter(louvain %in% clsts)
 cells.tcell <- hash(dat.sub.tcell$cell, TRUE)
 dat.umap.long$tcell <- sapply(as.character(dat.umap.long$cell), function(x) ifelse(!is.null(cells.tcell[[x]]), cells.tcell[[x]], FALSE))
 
@@ -468,10 +472,10 @@ traj.mega <- InferTrajOnUmap(dat.umap.long, cname = "mega", init.on = "umap2")
 
 # plot original
 jsize <- 2
-ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE)), aes(x = umap1, y = umap2)) + geom_point(size = 0.5) + 
+ggplot(dat.umap.long, aes(x = umap1, y = umap2)) + geom_point(size = 0.5) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_path(data = traj.granu, aes(color = lambda), size = jsize) + 
-  geom_path(data = traj.eryth, aes(color = lambda), size = jsize) + 
+  geom_path(data = traj.eryth, aes(color = lambda), size = jsize) +
   geom_path(data = traj.bcell, aes(color = lambda), size = jsize) + 
   geom_path(data = traj.tcell, aes(color = lambda), size = jsize) + 
   geom_path(data = traj.mega, aes(color = lambda), size = jsize) 
@@ -480,8 +484,10 @@ ggplot(dat.umap.long %>% mutate(louvain = ifelse(louvain %in% clsts, TRUE, FALSE
 # Summarize as plots  -----------------------------------------------------
 
 outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/analyses"
+
 dir.create(outdir)
-outplots <- file.path(outdir, "2019-03-10_Pseudotime.pdf")
+
+outplots <- file.path(outdir, paste0(Sys.Date(), "_Pseudotime.pdf"))
 
 pdf(outplots, useDingbats = FALSE)
 
@@ -662,7 +668,6 @@ ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay)) + g
   ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak))
 
 dat.umap.long.cat <- left_join(dat.umap.long, act.counts %>% dplyr::select(cell, counts))
-
 
 dev.off()
 

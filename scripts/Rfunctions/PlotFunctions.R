@@ -153,7 +153,7 @@ PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, retur
 PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL, 
                               usettings=NULL, gname = "", 
                               jsize = 3, jcolvec = c("blue", "white", "red"),
-                              .log = TRUE, scale.fac = 1, pseudocount = 10^-6, cap.quantile= NA, midpoint = "auto"){
+                              .log = TRUE, scale.fac = 1, pseudocount = 10^-6, cap.quantile= NA, midpoint = "auto", debug.plot=FALSE){
   if (.log){
     jlegend <- "Log10 counts"
   } else {
@@ -186,6 +186,7 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
     jcounts.norm <- mat.norm[row.i, ]
   }
   
+  
   # plot topics soft clustering weights
   topics.mat <- tm.result$topics
   
@@ -213,20 +214,33 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
                     umap2 = dat.umap$layout[, 2], 
                     counts.norm = jcounts.norm)
   if (is.numeric(cap.quantile)){
-    # cap.quantile should be between 0 and 1
-    assertthat::assert_that(cap.quantile >= 0 & cap.quantile <= 1)
-    quant.min <- quantile(jcounts.norm, 1 - cap.quantile)
-    quant.max <- quantile(jcounts.norm, cap.quantile)
-    dat$counts.norm <- sapply(dat$counts.norm, function(x){
-      if (x > quant.max){
-        xnew <- quant.max
-      } else if (x < quant.min){
-        xnew <- quant.min
-      } else {
-        xnew <- x
-      }
-      return(xnew)
-    })
+    if (length(cap.quantile) == 1){
+      # cap.quantile should be between 0 and 1
+      print(range(dat$counts.norm))
+      assertthat::assert_that(cap.quantile >= 0 & cap.quantile <= 1)
+      quant.min <- quantile(jcounts.norm, 1 - cap.quantile)
+      quant.max <- quantile(jcounts.norm, cap.quantile)
+    } else if (length(cap.quantile) == 2){
+      quant.min <- quantile(jcounts.norm, cap.quantile[[1]])
+      quant.max <- quantile(jcounts.norm, cap.quantile[[2]])
+    } else {
+      warning(paste(cap.quantile, "must be length 1 or 2"))
+    }
+      dat$counts.norm <- sapply(dat$counts.norm, function(x){
+        if (x > quant.max){
+          xnew <- quant.max
+        } else if (x < quant.min){
+          xnew <- quant.min
+        } else {
+          xnew <- x
+        }
+        return(xnew)
+      })
+    if (debug.plot){
+      print(range(dat$counts.norm))
+      plot(density(jcounts.norm))
+      abline(v = c(quant.min, quant.max))
+    }
   }
   m <- ggplot(dat, aes(x = umap1, y = umap2, col = counts.norm)) + 
     geom_point(size = jsize) + 
@@ -238,13 +252,39 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
     guides(colour = guide_colourbar(title.position="top", title.hjust = 0.5)) + 
     ggtitle(jmain)
   if (midpoint == "auto"){
+    jmid <- min(dat$counts.norm) + (max(dat$counts.norm) - min(dat$counts.norm)) / 2
+    print(paste("Midpiont:", jmid))
     m <- m + scale_color_gradient2(low = jcolvec[[1]], mid = jcolvec[[2]], high = scales::muted(jcolvec[[3]]), name = jlegend, 
-                                       midpoint = median(jcounts.norm), limits = c(NA, NA))
+                                       midpoint = jmid, limits = c(NA, NA), na.value = "orange")
   } else {
     m <- m + scale_color_gradient2(low = jcolvec[[1]], mid = jcolvec[[2]], high = scales::muted(jcolvec[[3]]), name = jlegend, 
-                                       midpoint = midpoint, limits = c(NA, NA))
+                                       midpoint = midpoint, limits = c(NA, NA), na.value = "orange")
   }
 
   return(m)
 }
 
+CapQuantile <- function(xvec, cap.quantile){
+  # cap.quantile should be between 0 and 1
+  assertthat::assert_that(cap.quantile >= 0 & cap.quantile <= 1)
+  quant.min <- quantile(xvec, 1 - cap.quantile)
+  quant.max <- quantile(xvec, cap.quantile)
+  xvec <- sapply(xvec, function(x){
+    if (x > quant.max){
+      xnew <- quant.max
+    } else if (x < quant.min){
+      xnew <- quant.min
+    } else {
+      xnew <- x
+    }
+    return(xnew)
+  })
+  return(xvec)
+}
+
+RankOrder <- function(dat.tmp, cname){
+  dat.tmp$orderrank <- rank(dat.tmp[[as.character(cname)]], ties.method = "first")
+  dat.tmp <- dat.tmp %>%
+    arrange(orderrank)
+  return(dat.tmp)
+}

@@ -302,6 +302,7 @@ jgenes <- names(peakgene.lst)
 jpeaks <- unlist(peakgene.lst)
 
   
+pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/H3K4me1_example_genes.", Sys.Date(), ".pdf"), useDingbats = FALSE)
 m.lst <- lapply(jgenes, function(jgene){
   jpeak <- peakgene.lst[[jgene]]
   print(jpeak)
@@ -309,10 +310,9 @@ m.lst <- lapply(jgenes, function(jgene){
                              use.count.mat = NULL,
                              usettings=dat.umap, 
                              gname = jgene,
-                             jsize = jsize, jcolvec = jcolvec, .log = TRUE, midpoint = "auto", cap.quantile = 0.95)
+                             jsize = jsize, jcolvec = jcolvec, .log = TRUE, midpoint = "auto", cap.quantile = c(0.25, 0.99), debug.plot=TRUE)
 })
 
-pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/H3K4me1_example_genes.", Sys.Date(), ".pdf"), useDingbats = FALSE)
   multiplot(m.lst[[1]], m.lst[[2]], m.lst[[3]], m.lst[[4]], m.lst[[5]], m.lst[[6]], cols = 3)
 dev.off()
 
