@@ -24,10 +24,13 @@ library(JFuncs)
 library(forcats)
 library(ggrepel)
 library(biomaRt)
+library(cowplot)
 
 library(igraph)  # louvain
 
 library(Gviz)
+
+library(princurve)
 
 source("scripts/Rfunctions/MetricsLDA.R")
 source("scripts/Rfunctions/AuxLDA.R")
@@ -89,6 +92,36 @@ InferTrajOnUmap <- function(dat, cname = "granu", init.on = "umap1"){
   return(dat.pca.proj)
 }
 
+
+CatActivityCountsTraj <- function(dat.umap.long, mat.imput, act.long.merged, traj, jpeak, jscale = TRUE, jscale.all = FALSE){
+  peak.counts <- data.frame(peak = jpeak, 
+                            cell = colnames(mat.imput),
+                            counts = log10(mat.imput[jpeak, ]))
+  if (jscale.all){
+    peak.counts$counts <- scale(peak.counts$counts, center = TRUE, scale = TRUE)
+  }
+  act.counts <- subset(act.long.merged, motif == jmotif)
+  if (jscale.all){
+    act.counts$activity <- scale(act.counts$activity, center = TRUE, scale = TRUE)
+  }
+  dat.counts <- left_join(peak.counts, act.counts)
+  act.counts$counts <- act.counts$activity
+  act.counts <- left_join(act.counts, traj)
+  peak.counts <- left_join(peak.counts, traj)
+  # show umap, ad cebpb activity 
+  # make dat.merge for activity and counts plot 
+  dat.umap.long.cat <- left_join(dat.umap.long, act.counts %>% dplyr::select(cell, counts))
+  dat.umap.long.cat <- left_join(dat.umap.long.cat, peak.counts %>% dplyr::rename(peak.counts = counts) %>% dplyr::select(cell, peak.counts))
+  dat.merge <- bind_rows(act.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "activity"), 
+                         peak.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "counts"))
+  if (jscale){
+    dat.merge <- dat.merge %>%
+      group_by(assay) %>%
+      mutate(counts = scale(counts))
+  }
+  return(list(dat.umap.long.cat=dat.umap.long.cat, dat.merge=dat.merge))
+}
+
 # Load bulk RNAseq data ---------------------------------------------------
 
 dat <- fread("/Users/yeung/data/scchic/public_data/E-MTAB-3079-query-results.fpkms.tsv", sep = "\t")
@@ -99,6 +132,10 @@ dat.long <- gather(dat, key = "CellType", value = "FPKM", -c("Gene_ID", "Gene_Na
   mutate(logFPKM = log2(FPKM + 1),
          zscore = scale(logFPKM, center = TRUE, scale = TRUE))
 
+
+# Plot params -------------------------------------------------------------
+
+jsize <- 2
 
 # Load MARA activities  ---------------------------------------------------
 
@@ -487,7 +524,12 @@ outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/analyses"
 
 dir.create(outdir)
 
-outplots <- file.path(outdir, paste0(Sys.Date(), "_Pseudotime.pdf"))
+outplots <- file.path(outdir, paste0(Sys.Date(), "_Pseudotime_MoreTrajectories.pdf"))
+
+
+
+jdotsize <- 0.5
+jalpha <- 0.2
 
 pdf(outplots, useDingbats = FALSE)
 
@@ -533,6 +575,8 @@ ggplot() +
   # geom_point(data = dat.umap.long, size = jsize, aes(color = louvain, x = umap1, y = umap2), inherit.aes = FALSE)
 
 
+
+
 # Erythrypoiesis  ---------------------------------------------------------
 
 
@@ -540,42 +584,73 @@ ggplot() +
 jmotif <- "Tal1"
 jgene <- "Tal1"
 
+mat.imput <- t(tm.result$topics %*% tm.result$terms)
+
 print(subset(top.peaks.annotated, grepl(jgene, SYMBOL)))
 (jpeak <- subset(top.peaks.annotated, grepl(jgene, SYMBOL))$term[[1]])
 
-# mat.imput <- t(tm.result$topics %*% tm.result$terms)
-peak.counts <- data.frame(peak = jpeak, 
-                          cell = colnames(mat.imput),
-                          counts = log10(mat.imput[jpeak, ]))
-act.counts <- subset(act.long.merged, motif == jmotif)
 
-dat.counts <- left_join(peak.counts, act.counts)
+# do for best trajectory
+cat.lst <- CatActivityCountsTraj(dat.umap.long, mat.imput, act.long.merged, 
+                                 traj.eryth, 
+                                 jpeak, jscale = FALSE, jscale.all = TRUE)
+dat.umap.long.cat <- cat.lst[["dat.umap.long.cat"]]
+dat.merge <- cat.lst[["dat.merge"]]
 
-act.counts$counts <- act.counts$activity
-
-act.counts <- left_join(act.counts, traj.eryth)
-peak.counts <- left_join(peak.counts, traj.eryth)
-
-# show umap, ad cebpb activity 
-dat.umap.long.cat <- left_join(dat.umap.long, act.counts %>% dplyr::select(cell, counts))
-jsize <- 2
 ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = counts)) + 
   geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_path(data = traj.eryth, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
-  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Erythrypoiesis Trajectory")
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Activity Values")
 
-# merge the two data and replot
-dat.merge <- bind_rows(act.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "activity"), 
-                       peak.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "counts"))
-dat.merge <- dat.merge %>%
-  group_by(assay) %>%
-  mutate(counts = scale(counts))
+ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = peak.counts)) + 
+  geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_path(data = traj.eryth, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Bin Values")
 
-ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+m.eryth.merge <- ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
   geom_point() + geom_smooth(se = FALSE) + 
   ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak)) +
   xlab("Pseudotime") + ylab("Scaled expression or activity")
+print(m.eryth.merge)
+
+
+# do it for all 3 trajectories
+traj.lst <- list(traj.eryth, traj.granu, traj.bcell)
+names(traj.lst) <- c("eryth", "granu", "bcell")
+
+cat.lst.lst <- lapply(names(traj.lst), function(trajname){
+  traj <- traj.lst[[trajname]]
+  cat.lst.tmp <- CatActivityCountsTraj(dat.umap.long, mat.imput, act.long.merged, traj, jpeak, jscale = FALSE, jscale.all = TRUE)
+  dat.umap.long.cat.tmp <- cat.lst.tmp[["dat.umap.long.cat"]]
+  dat.merge.tmp <- cat.lst.tmp[["dat.merge"]]
+  dat.merge.tmp$traj <- trajname
+  
+  ggplot(dat.umap.long.cat.tmp, aes(x = umap1, y = umap2, color = counts)) + 
+    geom_point(size = 2) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_path(data = traj, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+    scale_colour_gradient(low = "gray80", high = "darkblue") + 
+    ggtitle(trajname)
+  
+  m.merge <- ggplot(dat.merge.tmp, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+    geom_point() + geom_smooth(se = FALSE) + 
+    ggtitle(paste("Traj:", trajname, "Motif:", jmotif, "\nBin:", jpeak)) +
+    xlab("Pseudotime") + ylab("Scaled expression or activity")
+  print(m.merge)
+  return(dat.merge.tmp)
+})
+
+dat.merge.merge <- bind_rows(cat.lst.lst)
+m.merge <- ggplot(dat.merge.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+  geom_point(alpha = jalpha, size = jdotsize) + geom_smooth(se = FALSE) + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak)) + facet_wrap(~traj)  +
+  xlab("Pseudotime") + ylab("Scaled expression or activity") + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(m.merge)
+
+# show Tal1 
 
 
 
@@ -584,32 +659,95 @@ ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay, type
 jmotif <- "Cebpb"
 jgene <- "Cebpb"
 
+# jgene <- "Fam49b"
+# print(subset(top.peaks.annotated, grepl(jgene, SYMBOL)))
 (jpeak <- subset(top.peaks.annotated, grepl(jgene, SYMBOL))$term[[1]])
 
-mat.imput <- t(tm.result$topics %*% tm.result$terms)
-peak.counts <- data.frame(peak = jpeak, 
-                          cell = colnames(mat.imput),
-                          counts = log10(mat.imput[jpeak, ]))
-act.counts <- subset(act.long.merged, motif == jmotif)
+# jpeak <- "chr2:167680000-167780000"
 
-dat.counts <- left_join(peak.counts, act.counts)
+# do for best trajectory
+cat.lst <- CatActivityCountsTraj(dat.umap.long, mat.imput, act.long.merged, traj.granu, jpeak, jscale = FALSE, jscale.all = TRUE)
+dat.umap.long.cat <- cat.lst[["dat.umap.long.cat"]]
+dat.merge <- cat.lst[["dat.merge"]]
 
-act.counts$counts <- act.counts$activity
-
-act.counts <- left_join(act.counts, traj.granu)
-peak.counts <- left_join(peak.counts, traj.granu)
-
-traj.granu2 <- traj.granu
-traj.granu2 <- left_join(traj.granu2, dat.counts)
-
-# show umap, ad cebpb activity 
-dat.umap.long.cat <- left_join(dat.umap.long, act.counts %>% dplyr::select(cell, counts))
-jsize <- 2
 ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = counts)) + 
   geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_path(data = traj.granu, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
-  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Granulocyte Trajectory")
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Activity Values")
+
+ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = peak.counts)) + 
+  geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_path(data = traj.granu, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Bin Values")
+
+m.granu.merge <- ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+  geom_point() + geom_smooth(se = FALSE) + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak)) +
+  xlab("Pseudotime") + ylab("Scaled expression or activity")
+print(m.granu.merge)
+
+
+# do it for all 3 trajectories
+traj.lst <- list(traj.eryth, traj.granu, traj.bcell)
+names(traj.lst) <- c("eryth", "granu", "bcell")
+
+cat.lst.lst <- lapply(names(traj.lst), function(trajname){
+  traj <- traj.lst[[trajname]]
+  cat.lst.tmp <- CatActivityCountsTraj(dat.umap.long, mat.imput, act.long.merged, traj, jpeak, jscale = FALSE, jscale.all = TRUE)
+  dat.umap.long.cat.tmp <- cat.lst.tmp[["dat.umap.long.cat"]]
+  dat.merge.tmp <- cat.lst.tmp[["dat.merge"]]
+  dat.merge.tmp$traj <- trajname
+  
+  ggplot(dat.umap.long.cat.tmp, aes(x = umap1, y = umap2, color = counts)) + 
+    geom_point(size = 2) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_path(data = traj, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+    scale_colour_gradient(low = "gray80", high = "darkblue") + 
+    ggtitle(trajname)
+  
+  m.merge <- ggplot(dat.merge.tmp, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+    geom_point() + geom_smooth(se = FALSE) + 
+    ggtitle(paste("Traj:", trajname, "Motif:", jmotif, "\nBin:", jpeak)) +
+    xlab("Pseudotime") + ylab("Scaled expression or activity")
+  print(m.merge)
+  return(dat.merge.tmp)
+})
+
+
+dat.merge.merge <- bind_rows(cat.lst.lst)
+m.merge <- ggplot(dat.merge.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+  geom_point(alpha = jalpha, size = jdotsize) + geom_smooth(se = FALSE) + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak)) + facet_wrap(~traj)  +
+  xlab("Pseudotime") + ylab("Scaled expression or activity") + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(m.merge)
+
+# 
+# peak.counts <- data.frame(peak = jpeak, 
+#                           cell = colnames(mat.imput),
+#                           counts = log10(mat.imput[jpeak, ]))
+# act.counts <- subset(act.long.merged, motif == jmotif)
+# 
+# dat.counts <- left_join(peak.counts, act.counts)
+# 
+# act.counts$counts <- act.counts$activity
+# 
+# act.counts <- left_join(act.counts, traj.granu)
+# peak.counts <- left_join(peak.counts, traj.granu)
+# 
+# traj.granu2 <- traj.granu
+# traj.granu2 <- left_join(traj.granu2, dat.counts)
+# 
+# # show umap, ad cebpb activity 
+# dat.umap.long.cat <- left_join(dat.umap.long, act.counts %>% dplyr::select(cell, counts))
+# jsize <- 2
+# ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = counts)) + 
+#   geom_point(size = 2) + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+#   geom_path(data = traj.granu, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+#   scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Granulocyte Trajectory")
 
 # plot pseudotime
 # ggplot(traj.granu2, aes(x = lambda, y = counts, color = counts)) + geom_smooth(se = FALSE) + geom_point()
@@ -617,57 +755,160 @@ ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = counts)) +
 
 # ggplot(act.counts %>% filter(!is.na(lambda)), aes(x = lambda, y = activity)) + geom_point() + geom_smooth(se = FALSE)
 # ggplot(peak.counts %>% filter(!is.na(lambda)), aes(x = lambda, y = counts)) + geom_point() + geom_smooth(se = FALSE)
-
-# merge the two data and replot
-dat.merge <- bind_rows(act.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "activity"), peak.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "counts"))
-dat.merge <- dat.merge %>%
-  group_by(assay) %>%
-  mutate(counts = scale(counts))
-
-ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay)) + geom_point() + geom_smooth(se = FALSE) + 
-  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak))
+# 
+# # merge the two data and replot
+# dat.merge <- bind_rows(act.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "activity"), peak.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "counts"))
+# dat.merge <- dat.merge %>%
+#   group_by(assay) %>%
+#   mutate(counts = scale(counts))
+# 
+# m.granu.merge <- ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay)) + geom_point() + geom_smooth(se = FALSE) + 
+#   ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak))
+# print(m.granu.merge)
 
 # B-cell differentiation  -------------------------------------------------
 
 jmotif <- "Nfatc1"
+# jgene <- "Dusp22"
 jgene <- "Nfatc1"
 
-# jmotif <- "Atf2"
-# jgene <- "Atf2"
+print(subset(top.peaks.annotated, grepl(jgene, SYMBOL)))
+(jpeak <- subset(top.peaks.annotated, grepl(jgene, SYMBOL))$term[[1]])
+# topic 11?
+print(subset(top.peaks.annotated, topic == 11))
+print(subset(top.peaks.annotated, topic == 11 & grepl("Nfat", SYMBOL)))
+
+# do for best trajectory
+cat.lst <- CatActivityCountsTraj(dat.umap.long, mat.imput, act.long.merged, traj.bcell, jpeak, jscale = FALSE, jscale.all = TRUE)
+dat.umap.long.cat <- cat.lst[["dat.umap.long.cat"]]
+dat.merge <- cat.lst[["dat.merge"]]
 
 ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = counts)) + 
   geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_path(data = traj.bcell, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
-  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("B Cell Trajectory")
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Activity Values")
+
+ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = peak.counts)) + 
+  geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_path(data = traj.bcell, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Bin Values")
+
+m.bcell.merge <- ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+  geom_point() + geom_smooth(se = FALSE) + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak)) +
+  xlab("Pseudotime") + ylab("Scaled expression or activity")
+print(m.bcell.merge)
 
 
+# do it for all 3 trajectories
+traj.lst <- list(traj.eryth, traj.granu, traj.bcell)
+names(traj.lst) <- c("eryth", "granu", "bcell")
 
+cat.lst.lst <- lapply(names(traj.lst), function(trajname){
+  traj <- traj.lst[[trajname]]
+  cat.lst.tmp <- CatActivityCountsTraj(dat.umap.long, mat.imput, act.long.merged, traj, jpeak, jscale = FALSE, jscale.all = TRUE)
+  dat.umap.long.cat.tmp <- cat.lst.tmp[["dat.umap.long.cat"]]
+  dat.merge.tmp <- cat.lst.tmp[["dat.merge"]]
+  dat.merge.tmp$traj <- trajname
+  
+  ggplot(dat.umap.long.cat.tmp, aes(x = umap1, y = umap2, color = counts)) + 
+    geom_point(size = 2) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_path(data = traj, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+    scale_colour_gradient(low = "gray80", high = "darkblue") +
+    ggtitle(trajname)
+  
+  m.merge <- ggplot(dat.merge.tmp, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+    geom_point() + geom_smooth(se = FALSE) + 
+    ggtitle(paste("Traj:", trajname, "Motif:", jmotif, "\nBin:", jpeak)) +
+    xlab("Pseudotime") + ylab("Scaled expression or activity")
+  print(m.merge)
+  return(dat.merge.tmp)
+})
+
+
+dat.merge.merge <- bind_rows(cat.lst.lst)
+m.merge <- ggplot(dat.merge.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+  geom_point(alpha = jalpha, size = jdotsize) + geom_smooth(se = FALSE) + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak)) + facet_wrap(~traj)  +
+  xlab("Pseudotime") + ylab("Scaled expression or activity") + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(m.merge)
+
+
+# Try other Bcell trajectories --------------------------------------------
+
+
+jmotif <- "Ebf1"
+jgene <- "Ebf1"
+
+print(subset(top.peaks.annotated, grepl(jgene, SYMBOL)))
 (jpeak <- subset(top.peaks.annotated, grepl(jgene, SYMBOL))$term[[1]])
+# topic 11?
+print(subset(top.peaks.annotated, topic == 11))
+print(subset(top.peaks.annotated, topic == 11 & grepl("Nfat", SYMBOL)))
 
-# mat.imput <- t(tm.result$topics %*% tm.result$terms)
-peak.counts <- data.frame(peak = jpeak, 
-                          cell = colnames(mat.imput),
-                          counts = log10(mat.imput[jpeak, ]))
-act.counts <- subset(act.long.merged, motif == jmotif)
+# do for best trajectory
+cat.lst <- CatActivityCountsTraj(dat.umap.long, mat.imput, act.long.merged, traj.bcell, jpeak, jscale = FALSE, jscale.all = TRUE)
+dat.umap.long.cat <- cat.lst[["dat.umap.long.cat"]]
+dat.merge <- cat.lst[["dat.merge"]]
 
-dat.counts <- left_join(peak.counts, act.counts)
+ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = counts)) + 
+  geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_path(data = traj.bcell, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Activity Values")
 
-act.counts$counts <- act.counts$activity
+ggplot(dat.umap.long.cat, aes(x = umap1, y = umap2, color = peak.counts)) + 
+  geom_point(size = 2) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_path(data = traj.bcell, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+  scale_colour_gradient(low = "gray80", high = "darkblue") + ggtitle("Bin Values")
 
-act.counts <- left_join(act.counts, traj.bcell)
-peak.counts <- left_join(peak.counts, traj.bcell)
+m.bcell.merge <- ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+  geom_point() + geom_smooth(se = FALSE) + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak)) +
+  xlab("Pseudotime") + ylab("Scaled expression or activity")
+print(m.bcell.merge)
 
-# merge the two data and replosSpe
-dat.merge <- bind_rows(act.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "activity"), peak.counts %>% filter(!is.na(lambda)) %>% mutate(assay = "counts"))
-dat.merge <- dat.merge %>%
-  group_by(assay) %>%
-  mutate(counts = scale(counts))
 
-ggplot(dat.merge, aes(x = lambda, y = counts, color = assay, group = assay)) + geom_point() + geom_smooth(se = FALSE, method = "loess") + 
-  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak))
+# do it for all 3 trajectories
+traj.lst <- list(traj.eryth, traj.granu, traj.bcell)
+names(traj.lst) <- c("eryth", "granu", "bcell")
 
-dat.umap.long.cat <- left_join(dat.umap.long, act.counts %>% dplyr::select(cell, counts))
+cat.lst.lst <- lapply(names(traj.lst), function(trajname){
+  traj <- traj.lst[[trajname]]
+  cat.lst.tmp <- CatActivityCountsTraj(dat.umap.long, mat.imput, act.long.merged, traj, jpeak, jscale = FALSE, jscale.all = TRUE)
+  dat.umap.long.cat.tmp <- cat.lst.tmp[["dat.umap.long.cat"]]
+  dat.merge.tmp <- cat.lst.tmp[["dat.merge"]]
+  dat.merge.tmp$traj <- trajname
+  
+  ggplot(dat.umap.long.cat.tmp, aes(x = umap1, y = umap2, color = counts)) + 
+    geom_point(size = 2) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_path(data = traj, aes(x = umap1, y = umap2), size = jsize, alpha = 0.5, inherit.aes = FALSE) + 
+    scale_colour_gradient(low = "gray80", high = "darkblue") +
+    ggtitle(trajname)
+  
+  m.merge <- ggplot(dat.merge.tmp, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+    geom_point() + geom_smooth(se = FALSE) + 
+    ggtitle(paste("Traj:", trajname, "Motif:", jmotif, "\nBin:", jpeak)) +
+    xlab("Pseudotime") + ylab("Scaled expression or activity")
+  print(m.merge)
+  return(dat.merge.tmp)
+})
+
+
+dat.merge.merge <- bind_rows(cat.lst.lst)
+m.merge <- ggplot(dat.merge.merge, aes(x = lambda, y = counts, color = assay, group = assay, type = assay)) + 
+  geom_point(alpha = jalpha, size = jdotsize) + geom_smooth(se = FALSE) + 
+  ggtitle(paste("Motif:", jmotif, "\nBin:", jpeak)) + facet_wrap(~traj)  +
+  xlab("Pseudotime") + ylab("Scaled expression or activity") + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+print(m.merge)
+
 
 dev.off()
 

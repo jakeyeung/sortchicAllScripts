@@ -393,7 +393,7 @@ for (topic in topics){
   # print(midpt)
   dat.tmp <- RankOrder(dat.tmp, topic)
   m.top <- ggplot(dat.tmp, aes_string(x = "umap1", y = "umap2", color = paste0("`", topic, "`")), order = orderrank) + geom_point() +
-    scale_color_gradient2(low = "gray95", mid = "gray50", high = "darkblue", midpoint = midpt)
+    scale_color_gradient2(low = "gray95", mid = "gray50", high = "darkred", midpoint = midpt)
   print(m.top)
 }
 

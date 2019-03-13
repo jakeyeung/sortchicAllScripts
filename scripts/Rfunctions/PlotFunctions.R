@@ -213,6 +213,7 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
   dat <- data.frame(umap1 = dat.umap$layout[, 1], 
                     umap2 = dat.umap$layout[, 2], 
                     counts.norm = jcounts.norm)
+  dat <- RankOrder(dat, cname = "counts.norm", out.cname = "orderrank")
   if (is.numeric(cap.quantile)){
     if (length(cap.quantile) == 1){
       # cap.quantile should be between 0 and 1
@@ -242,7 +243,7 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
       abline(v = c(quant.min, quant.max))
     }
   }
-  m <- ggplot(dat, aes(x = umap1, y = umap2, col = counts.norm)) + 
+  m <- ggplot(dat, aes(x = umap1, y = umap2, col = counts.norm, order = orderrank)) + 
     geom_point(size = jsize) + 
     theme_bw() + 
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
@@ -282,9 +283,9 @@ CapQuantile <- function(xvec, cap.quantile){
   return(xvec)
 }
 
-RankOrder <- function(dat.tmp, cname){
-  dat.tmp$orderrank <- rank(dat.tmp[[as.character(cname)]], ties.method = "first")
+RankOrder <- function(dat.tmp, cname, out.cname = "orderrank"){
+  dat.tmp[[out.cname]] <- rank(dat.tmp[[as.character(cname)]], ties.method = "first")
   dat.tmp <- dat.tmp %>%
-    arrange(orderrank)
+    arrange_(.dots = out.cname)
   return(dat.tmp)
 }

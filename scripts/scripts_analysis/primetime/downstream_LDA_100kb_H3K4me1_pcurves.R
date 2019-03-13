@@ -282,7 +282,7 @@ plot.igraph(igraph::simplify(g),
             vertex.size = 1)
 
 
-# Plot example genes ------------------------------------------------------
+# Plot example genes ------------------------------------------------------ 
 
 jsize <- 0.25
 # jcolvec <- c("blue", "gray80", "red")
