@@ -1,8 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-03-07
-# File: ~/projects/scchic/scripts/scripts_analysis/integrate_datasets/canonical_correlation_rewrite.R
-# Redo canonical correlation analysis and allow opposite signs to happen downstream
-
+# Date of Creation: 2019-03-13
+# File: ~/projects/scchic/scripts/scripts_analysis/integrate_datasets/canonical_correlation_rewrite_repressive.R
+# Analyze repressive stuff
 
 rm(list=ls())
 
@@ -44,7 +43,6 @@ source("scripts/Rfunctions/IntegrateData.R")
 
 
 
-
 # Get dirs ----------------------------------------------------------------
 
 jmarks <- c("H3K4me1", "H3K4me3")
@@ -57,13 +55,18 @@ mdirs <- lapply(jmarks, function(jmark){
   assertthat::assert_that(dir.exists(mdir))
   return(mdir)
 })
+
 jmarks.repress <- c("H3K27me3", "H3K9me3")
+jbin <- "TRUE"
+suffixE<- ""
+suffixE1 <- ifelse(suffixE != "", paste0("--", suffixE), ".bugfix-")
+suffixE2 <- ifelse(suffixE != "", paste0("_", suffixE), "")
 mdirs.repress <- lapply(jmarks.repress, function(jmark){
-  mdir <- paste0("/Users/yeung/data/scchic/from_cluster/mara_analysis/hiddenDomains_cellmin_100-cellmax_500000-binarize_TRUE-BM_", 
+  mdir <- paste0("/Users/yeung/data/scchic/from_cluster/mara_analysis/hiddenDomains_cellmin_100-cellmax_500000-binarize_", jbin, "-BM_", 
                  jmark, 
-                 ".filt_0.99.center_TRUE-hiddenDomains_motevo_merged.closest.long.scale_0.center_0.byrow_0.bugfix-",
+                 ".filt_0.99.center_TRUE", suffixE2, "-hiddenDomains_motevo_merged.closest.long.scale_0.center_0.byrow_0", suffixE1, 
                  "/",
-                 "hiddenDomains_cellmin_100-cellmax_500000-binarize_TRUE-BM_", jmark, ".filt_0.99.center_TRUE")
+                 "hiddenDomains_cellmin_100-cellmax_500000-binarize_", jbin, "-BM_", jmark, ".filt_0.99.center_TRUE", suffixE2)
   print(mdir)
   assertthat::assert_that(dir.exists(mdir))
   return(mdir)
@@ -78,8 +81,8 @@ head(mara.outs[[1]]$act.long)
 
 # CCA analysis ------------------------------------------------------------
 
-jmark1 <- "H3K4me1"
-jmark2 <- "H3K4me3"
+jmark1 <- "H3K27me3"
+jmark2 <- "H3K9me3"
 # do on activation marks
 X <- as.matrix(mara.outs[[jmark1]]$act.mat %>% dplyr::select(-motif)); rownames(X) <- mara.outs[[jmark1]]$act.mat$motif
 # Y <- as.matrix(mara.outs$H3K4me3$act.mat %>% dplyr::select(-motif)); rownames(Y) <- mara.outs$H3K4me3$act.mat$motif
@@ -158,12 +161,15 @@ plot_grid(p1, p2)
 loadings <- marks.combined@reductions$cca@feature.loadings
 embeddings <- marks.combined@reductions$cca@cell.embeddings
 
+# reproduce cell embeddings: should be diagonalized SVD of CCA
+
 X <- k4me1@assays$scChIC@scale.data
 Y <- k4me3@assays$scChIC@scale.data
 
+# use your own X and Y??
 
-cca.results <- jCanonCor(X, Y, k = 20, l2.norm = FALSE)
-print(head(cca.results$u))
+
+cca.results <- jCanonCor(X, Y, k = 20, l2.norm = TRUE)
 
 cca.data <- rbind(cca.results$u, cca.results$v)
 
@@ -177,6 +183,11 @@ cca.data.flip <- apply(cca.data, MARGIN = 2, function(x){
   }
   return(x)
 })
+
+# get minimum absolute number, return with actual sign
+Vectorize(SelectAbsMin <- function(x1, x2){
+  return(c(x1, x2)[[which.min(c(x1, x2))]])
+}, vectorize.args = c("x1", "x2"), SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 
 # how are these feature loadings calculated? Just projection
@@ -193,27 +204,52 @@ loads2 <- t(t(embeds2) %*% t(Y))
 loads.min <- matrix(mapply(SelectAbsMin, loads1, loads2), nrow = nrow(loads1), ncol = ncol(loads1), dimnames = list(rownames(loads1), colnames(loads1)))
 
 
-# # compare embeds and loads
-# par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-# plot(marks.combined@reductions$cca@feature.loadings[, 1], marks.combined@reductions$cca@feature.loadings[, 2], pch = 20)
-# text(marks.combined@reductions$cca@feature.loadings[, 1], marks.combined@reductions$cca@feature.loadings[, 2], 
-#      labels = rownames(marks.combined@reductions$cca@feature.loadings))
+# compare embeds and loads
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+plot(marks.combined@reductions$cca@feature.loadings[, 1], marks.combined@reductions$cca@feature.loadings[, 2], pch = 20)
+text(marks.combined@reductions$cca@feature.loadings[, 1], marks.combined@reductions$cca@feature.loadings[, 2], 
+     labels = rownames(marks.combined@reductions$cca@feature.loadings))
 
 cca1 <- 1
 cca2 <- 2
 plot(loads[, cca1], loads[, cca2], pch = 20)
 text(loads[, cca1], loads[, cca2], 
      labels = rownames(loads))
+abline(v = 0, h = 0)
+# 
+# plot(loads.min[, 1], loads.min[, 2], pch = 20)
+# text(loads.min[, 1], loads.min[, 2], 
+#      labels = rownames(loads.min))
+# abline(v = 0, h = 0)
 
-plot(loads.min[, 1], loads.min[, 2], pch = 20)
-text(loads.min[, 1], loads.min[, 2], 
-     labels = rownames(loads.min))
 
+# Show zscore in both -----------------------------------------------------
+
+mark1 <- "H3K27me3"
+mark2 <- "H3K9me3"
+act.long.merged <- rbind(mara.outs[[mark1]]$act.long, mara.outs[[mark2]]$act.long)
+zscores.merged <- purrr::reduce(list(mara.outs[[mark1]]$zscores, mara.outs[[mark2]]$zscores), left_join, by = "motif")
+
+cnames <- c("motif", paste("zscore", c(mark1, mark2), sep = "."))
+colnames(zscores.merged) <- cnames
+
+zscore.thres <- 0.75
+zscores.merged$motif.lab <- apply(zscores.merged, 1, function(jrow){
+  ifelse(max(jrow[[2]], jrow[[3]]) > zscore.thres, jrow[[1]], NA)
+})
+
+
+# pairs plot??
+m.zscore <- ggpairs(zscores.merged, columns = paste("zscore", c(mark1, mark2), sep = "."), 
+                    lower = list(continuous = wrap("points", alpha = 0.2))) + theme_classic()
+
+m.zscore.both <- ggplot(zscores.merged, aes(x = zscore.H3K27me3, y = zscore.H3K9me3, label = motif.lab)) + 
+  geom_point() + geom_text_repel()
 
 # Plot hits ---------------------------------------------------------------
 
-nn.vec <- c(40, 35)
-jmindist.vec <- c(0.2, 0.1)
+nn.vec <- c(40, 40)
+jmindist.vec <- c(0.2, 0.2)
 jmetric <- "euclidean"
 jmindist=0.1
 jseed=123
@@ -251,50 +287,78 @@ names(mara.outs) <- jmarks.all
 dat.merged.lst <- lapply(c(jmark1, jmark2), function(jmark) left_join(umap.lda.lst[[jmark]], mara.outs[[jmark]]$act.long))
 names(dat.merged.lst) <- c(jmark1, jmark2)
 
-jmotif <- "Hoxc6"
+jmotif <- "Ezh2"
+jmotif <- "Brca1"
 
-jmotif <- "Cebpb"
 
-jmotif <- "Gata3"
-jmotif <- "Gfi1"
-jmotif <- "Hoxa2"
-jmotif <- "Bcl3"
+jmotif <- "Sox14"
 
-jmotif <- "Tal1"
-jmotif <- "Zbtb16"
-jmotif <- "Hoxa2"
-jmotif <- "Hoxa1"
-jmotif <- "Zfp110"
-jmotif <- "Gfi1"
-jmotif <- "Foxc1"
+# jmotif <- "Ebf1"  # explains different cells?
+jmotif <- "Irf1"
+
+jmotif <- "Klf4"
+
+jmotif <- "Lhx4"
+
+jmotif <- "Nkx2.4"
+
+jmotif <- "Zfp740"
+
+jmotif <- "Pax8"
+
 jmotif <- "Mecp2"
-jmotif <- "Hic1"
-jmotif <- "Atf2"
 
-jmotif <- "Gata3"
-jmotif <- "Ebf1"
-jmotif <- "Cebpb"
-jmotif <- "Nkx2.2"
-jmotif <- "Tfdp1"
-jmotif <- "Mbd2"
-m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark1]], mara.outs[[jmark1]]$zscores, jmark1, jsize = 0.75)
-m2 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark2]], mara.outs[[jmark2]]$zscores, jmark2, jsize = 0.75)
+jmotif <- "Zfx"
+jmotif <- "Tfap2d"
+jmotif <- "Zfp"
+
+jmotif <- "Pax5"
+
+jmotif <- "Tcf7"
+
+jmotif <- "Six4"
+jcolvec <- c("gray95", "gray50", "darkblue")
+m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark1]], mara.outs[[jmark1]]$zscores, jmark1, jsize = 0.75, colvec = jcolvec)
+m2 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark2]], mara.outs[[jmark2]]$zscores, jmark2, jsize = 0.75, colvec = jcolvec)
 multiplot(m1, m2)
 
-plot(loads.min[, 1], loads.min[, 2], pch = 20)
-text(loads.min[, 1], loads.min[, 2],
-     labels = rownames(loads.min))
+# plot(loads.min[, 1], loads.min[, 2], pch = 20)
+# text(loads.min[, 1], loads.min[, 2],
+#      labels = rownames(loads.min))
 
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0, pty = "s")
 plot(loads[, 1], loads[, 2], pch = 20)
 text(loads[, 1], loads[, 2],
-     labels = rownames(loads.min))
+     labels = rownames(loads))
 
+# highlihgt one motif
+jmot <- "Ebf1"
+plot(loads[, 1], loads[, 2], pch = 20)
+text(loads[, 1], loads[, 2],
+     labels = sapply(rownames(loads), function(x) ifelse(x == jmot, x, "")))
 
-# loads.umap <- umap(loads.min[, 1:10])
-# plot(loads.umap$layout[, 1], loads.umap$layout[, 2], pch = 20)
-# text(loads.umap$layout[, 1], loads.umap$layout[, 2], labels = rownames(loads.umap$layout))
+print(m.zscore.both)
 
-# Now let’s do multiCCA ---------------------------------------------------
+# plot with radius 
+loads.long <- data.frame(load1 = loads[, 1], load2 = loads[, 2], motif = rownames(loads), stringsAsFactors = FALSE) %>%
+  rowwise() %>%
+  mutate(dist = sqrt(load1 ^ 2 + load2 ^ 2)) %>%
+  mutate(motif.lab = ifelse(dist > 0.01 | abs(load2) > 0.005, motif, NA))
+m.cca <- ggplot(loads.long, aes(x = load1, y = load2, label = motif.lab)) + geom_point() + geom_text_repel() + geom_vline(xintercept = 0) + geom_hline(yintercept = 0)
 
+# Make plots from zscore merged and CCA -----------------------------------
 
+jmotifs <- unlist(loads.long %>% arrange(load1) %>% filter(!is.na(motif.lab)) %>% dplyr::select(motif.lab), use.names = FALSE)
 
+pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/motif_analysis/mara/repressive_marks_analysis.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+
+print(m.zscore.both)
+print(m.cca)
+for (jmotif in jmotifs){
+  print(jmotif)
+  m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark1]], mara.outs[[jmark1]]$zscores, jmark1, jsize = 0.75, colvec = jcolvec)
+  m2 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark2]], mara.outs[[jmark2]]$zscores, jmark2, jsize = 0.75, colvec = jcolvec)
+  multiplot(m1, m2)
+}
+                                                   
+dev.off() 

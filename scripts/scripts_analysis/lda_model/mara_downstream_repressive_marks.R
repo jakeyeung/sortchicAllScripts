@@ -86,7 +86,6 @@ act.long.merged <- rbind(mara.outs[[1]]$act.long, mara.outs[[2]]$act.long)
 # zscores.merged <- purrr::reduce(list(mara.outs[[1]]$zscores, mara.outs[[2]]$zscores, mara.outs[[3]]$zscores, mara.outs[[4]]$zscores), left_join, by = "motif")
 zscores.merged <- purrr::reduce(list(mara.outs[[1]]$zscores, mara.outs[[2]]$zscores), left_join, by = "motif")
 cnames <- c("motif", paste("zscore", jmarks.all, sep = "."))
-
 colnames(zscores.merged) <- cnames
 
 

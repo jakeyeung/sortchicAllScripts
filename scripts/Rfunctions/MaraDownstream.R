@@ -71,8 +71,9 @@ PlotMotifInUmap <- function(jmotif, dat.merged, zscores, jmark, jsize = 1, colve
     theme_bw() + 
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   if (length(colvec) == 3){
+    midpt <- min(dat.sub$activity) + (max(dat.sub$activity) - min(dat.sub$activity)) / 2
     m <- m + 
-      scale_color_gradient2(low = colvec[[1]], mid = colvec[[2]], high = muted(colvec[[3]]), midpoint = mean(dat.sub$activity))
+      scale_color_gradient2(low = colvec[[1]], mid = colvec[[2]], high = muted(colvec[[3]]), midpoint = midpt)
   } else if (length(colvec) == 2){
     m <- m + 
       scale_color_gradient(low = colvec[[1]], high = muted(colvec[[2]]), space = "Lab")
