@@ -1,7 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-02-15
-# File: ~/projects/scchic/scripts/scripts_analysis/primetime/plot_marker_genes_all_4_marks_redo_nofilt.R
-# Redo without filtering by metacell 
+# Date of Creation: 2019-03-12
+# File: ~/projects/scchic/scripts/scripts_analysis/primetime/plot_marker_genes_repressive_marks.R
+# Summarize repressive marks also show the other genes 
 
 jstart <- Sys.time()
 
@@ -34,7 +34,7 @@ jpseudo <- 1
 jsize <- 0.5
 # jcolvec <- c("blue", "yellow", "red")
 # jcolvec <- c("blue", "gray80", "red")
-jcolvec <- c("gray90", "gray50", "darkblue")
+jcolvec <- c("gray95", "gray50", "darkblue")
 
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
@@ -100,28 +100,15 @@ dat.umap.lst <- mapply(function(custom.settings, topics.mat){
 }, custom.settings.lst, topics.mat.lst, SIMPLIFY = FALSE)
 names(dat.umap.lst) <- jmarks
 
-
-colsvec <- list(H3K4me1 = "cyan1", H3K4me3 = "darkblue", H3K9me3 = "red1", H3K27me3 = "darkorange1")
-
-umap.plots <- mapply(function(dat.umap, jcol){
+umap.plots <- lapply(dat.umap.lst, function(dat.umap){
   dat <- data.frame(umap1 = dat.umap$layout[, 1], 
                     umap2 = dat.umap$layout[, 2])
   m <- ggplot(dat, aes(x = umap1, y = umap2)) + 
-    geom_point(size = 0.5, alpha = 0.2, color = jcol) + 
+    geom_point(size = 0.5, alpha = 0.2) + 
     theme_bw() + 
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   return(m)
-}, dat.umap.lst, colsvec, SIMPLIFY = FALSE)
-# 
-# umap.plots <- lapply(dat.umap.lst, function(dat.umap){
-#   dat <- data.frame(umap1 = dat.umap$layout[, 1], 
-#                     umap2 = dat.umap$layout[, 2])
-#   m <- ggplot(dat, aes(x = umap1, y = umap2)) + 
-#     geom_point(size = 0.5, alpha = 0.2) + 
-#     theme_bw() + 
-#     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-#   return(m)
-# })
+})
 
 # top hits 
 top.peaks <- tidytext::tidy(out.objs[[4]]$out.lda, matrix = "beta") %>%
@@ -129,8 +116,8 @@ top.peaks <- tidytext::tidy(out.objs[[4]]$out.lda, matrix = "beta") %>%
   arrange(desc(beta)) %>%
   mutate(rnk = seq(length(beta)))
 
-
 # Plot all 4 marks for the shape 
+
 
 
 
@@ -138,7 +125,7 @@ top.peaks <- tidytext::tidy(out.objs[[4]]$out.lda, matrix = "beta") %>%
 
 outdir <- "~/Dropbox/scCHiC_figs/FIG4_BM/marker_genes"
 dir.create(outdir)
-fname <- "marker_genes_redo_nofilt_rescale.pdf"
+fname <- "marker_genes_redo_nofilt_rescale_repressive.pdf"
 pdf(file.path(outdir, fname), useDingbats = FALSE)
 
 multiplot(umap.plots[[1]], umap.plots[[2]], umap.plots[[3]], umap.plots[[4]], cols = 4)
@@ -149,28 +136,28 @@ ref.mark <- "H3K4me1"
 jgene <- "S100a8"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
 jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # Hbb gene
 ref.mark <- "H3K4me1"
 jgene <- "Hbb"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot, dist = 50000)
 jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # Random gene
 set.seed(jseed)
 ref.mark <- "H3K4me1"
 gene <- "RandomlyPickedPeak"
 jpeak <- sample(out.objs[[ref.mark]]$regions.annot$region_coord, size = 1)
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # Random gene
 set.seed(jseed)
 ref.mark <- "H3K9me3"
 jgene <- "IgH region"
 jpeak <- "chr12:115560000-115660000"
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 
 
@@ -183,13 +170,13 @@ PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, d
 jgene <- "Sox6"
 jpeak <- "chr7:115420000-115520000"  # hand-picked by Alexander
 # jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # Car1
 jgene <- "Car1"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot, dist = 10000)
 jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 
 jgenes <- c("Cebpe", "Cebpa", "Elane", "Prtn3", "Mpo", "Flt3", "Ifitm1", "Lmo4", "Ccl5", "Prss34", "Meis1", "Cd74", "Gata2", "Car1", "Car2")
@@ -197,7 +184,7 @@ jgenes <- c("Cebpe", "Cebpa", "Elane", "Prtn3", "Mpo", "Flt3", "Ifitm1", "Lmo4",
 for (jgene in jgenes){
   out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot, dist = 10000)
   jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 }
 
 # Plot Hoxc13
@@ -206,7 +193,7 @@ ref.mark <- "H3K27me3"
 jgene <- "Hoxc13"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
 (jpeak <- SelectBestPeak(out.sub$peaks, out.objs[[ref.mark]]$regions.annot, tm.result.lst[[ref.mark]]))
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # do Sox cluster, all numbers
 ref.mark <- "H3K4me1"
@@ -219,7 +206,7 @@ jgenes <- unique(jsub$SYMBOL)
 for (jgene in jgenes){
   out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
   jpeak <- SelectBestPeak(out.sub$peaks, out.objs[[ref.mark]]$regions.annot, tm.result.lst[[ref.mark]])
-  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 }
 
 # plot whole Hoxc cluster, 4 to 13
@@ -234,7 +221,7 @@ for (jgene in jgenes){
   out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
   jpeak <- SelectBestPeak(out.sub$peaks, out.objs[[ref.mark]]$regions.annot, tm.result.lst[[ref.mark]])
   print(jpeak)
-  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 }
 dev.off()
 
