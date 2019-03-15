@@ -149,28 +149,28 @@ ref.mark <- "H3K4me1"
 jgene <- "S100a8"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
 jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # Hbb gene
 ref.mark <- "H3K4me1"
 jgene <- "Hbb"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot, dist = 50000)
 jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # Random gene
 set.seed(jseed)
 ref.mark <- "H3K4me1"
 gene <- "RandomlyPickedPeak"
 jpeak <- sample(out.objs[[ref.mark]]$regions.annot$region_coord, size = 1)
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # Random gene
 set.seed(jseed)
 ref.mark <- "H3K9me3"
 jgene <- "IgH region"
 jpeak <- "chr12:115560000-115660000"
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 
 
@@ -183,13 +183,13 @@ PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, d
 jgene <- "Sox6"
 jpeak <- "chr7:115420000-115520000"  # hand-picked by Alexander
 # jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # Car1
 jgene <- "Car1"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot, dist = 10000)
 jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 
 jgenes <- c("Cebpe", "Cebpa", "Elane", "Prtn3", "Mpo", "Flt3", "Ifitm1", "Lmo4", "Ccl5", "Prss34", "Meis1", "Cd74", "Gata2", "Car1", "Car2")
@@ -197,7 +197,7 @@ jgenes <- c("Cebpe", "Cebpa", "Elane", "Prtn3", "Mpo", "Flt3", "Ifitm1", "Lmo4",
 for (jgene in jgenes){
   out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot, dist = 10000)
   jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]])
-  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 }
 
 # Plot Hoxc13
@@ -206,7 +206,7 @@ ref.mark <- "H3K27me3"
 jgene <- "Hoxc13"
 out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
 (jpeak <- SelectBestPeak(out.sub$peaks, out.objs[[ref.mark]]$regions.annot, tm.result.lst[[ref.mark]]))
-PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 
 # do Sox cluster, all numbers
 ref.mark <- "H3K4me1"
@@ -219,7 +219,7 @@ jgenes <- unique(jsub$SYMBOL)
 for (jgene in jgenes){
   out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
   jpeak <- SelectBestPeak(out.sub$peaks, out.objs[[ref.mark]]$regions.annot, tm.result.lst[[ref.mark]])
-  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 }
 
 # plot whole Hoxc cluster, 4 to 13
@@ -234,7 +234,7 @@ for (jgene in jgenes){
   out.sub <- GetPeaksFromGene(jgene, out.objs[[ref.mark]]$regions.annot)
   jpeak <- SelectBestPeak(out.sub$peaks, out.objs[[ref.mark]]$regions.annot, tm.result.lst[[ref.mark]])
   print(jpeak)
-  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, jcolvec = jcolvec)
+  PlotUmapAllMarks(jmarks, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, dat.umap.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
 }
 dev.off()
 

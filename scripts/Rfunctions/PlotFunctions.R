@@ -9,11 +9,17 @@ PlotUmapAllMarks <- function(jmarks, tm.result.lst, jpeak, juse.count.mat, dat.u
                                                              usettings=dat.umap.lst[[jmark]], 
                                                              gname = jgene,
                                                              jsize = jsize, jcolvec = jcolvec, .log = .log, scale.fac = scale.fac, pseudocount = pseudocount))
-  multiplot(m.lst[[1]], m.lst2[[1]], 
-            m.lst[[2]], m.lst2[[2]], 
-            m.lst[[3]], m.lst2[[3]],
-            m.lst[[4]], m.lst2[[4]],
-            cols = 4)
+  if (length(jmarks) == 4){
+    multiplot(m.lst[[1]], m.lst2[[1]], 
+              m.lst[[2]], m.lst2[[2]], 
+              m.lst[[3]], m.lst2[[3]],
+              m.lst[[4]], m.lst2[[4]],
+              cols = length(jmarks))
+  } else if (length(jmarks) == 2) {
+    multiplot(m.lst[[1]], m.lst2[[1]], 
+              m.lst[[2]], m.lst2[[2]], 
+              cols = length(jmarks))
+  }
 }
 
 
