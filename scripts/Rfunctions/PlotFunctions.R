@@ -1,3 +1,22 @@
+PlotUmapAllMarks <- function(jmarks, tm.result.lst, jpeak, juse.count.mat, dat.umap.lst, jgene, jsize, jcolvec, .log=TRUE, scale.fac = 1, pseudocount = 10^-6){
+  m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks2(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]],
+                                                            use.count.mat = NULL,
+                                                            usettings=dat.umap.lst[[jmark]], 
+                                                            gname = jgene,
+                                                            jsize = jsize, jcolvec = jcolvec, .log = .log, scale.fac = scale.fac, pseudocount = pseudocount))
+  m.lst2 <- lapply(jmarks, function(jmark) PlotImputedPeaks2(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]],
+                                                             use.count.mat = juse.count.mat[[jmark]],
+                                                             usettings=dat.umap.lst[[jmark]], 
+                                                             gname = jgene,
+                                                             jsize = jsize, jcolvec = jcolvec, .log = .log, scale.fac = scale.fac, pseudocount = pseudocount))
+  multiplot(m.lst[[1]], m.lst2[[1]], 
+            m.lst[[2]], m.lst2[[2]], 
+            m.lst[[3]], m.lst2[[3]],
+            m.lst[[4]], m.lst2[[4]],
+            cols = 4)
+}
+
+
 PlotGTrack <- function(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = "auto", jtype = "mountain"){
   datheight <- 10
   trackheight <- 2
@@ -134,7 +153,7 @@ PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, retur
 PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL, 
                               usettings=NULL, gname = "", 
                               jsize = 3, jcolvec = c("blue", "white", "red"),
-                              .log = TRUE){
+                              .log = TRUE, scale.fac = 1, pseudocount = 10^-6){
   if (.log){
     jlegend <- "Log10 counts"
   } else {
@@ -149,7 +168,7 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
   if (is.null(use.count.mat)){
     mat.norm <- log10(t(tm.result$topics %*% tm.result$terms))
   } else {
-    mat.norm <- log10(use.count.mat + 10^-6)
+    mat.norm <- log10(use.count.mat * scale.fac + pseudocount)
   }
   jlab <- peaks.keep
   # run on imputed matrix

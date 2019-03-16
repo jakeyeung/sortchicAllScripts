@@ -135,3 +135,8 @@ bm.integrated <- RunUMAP(object = bm.integrated, reduction = "pca",
                          dims = 1:30)
 p1 <- DimPlot(object = bm.integrated, reduction = "umap", group.by = "tech")
 print(p1)
+
+
+# Go deeper: what is the anchor cells and stuff/ --------------------------
+
+

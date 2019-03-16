@@ -1,3 +1,4 @@
+
 GetPeaksFromGene <- function(jgene, regions.annot, dist = 50000){
   jsub <- subset(regions.annot, grepl(jgene, SYMBOL)) %>% arrange(abs(distanceToTSS)) %>% filter(distanceToTSS <= dist)
   jpeaks <- jsub$region_coord
