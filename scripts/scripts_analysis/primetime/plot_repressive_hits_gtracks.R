@@ -1,9 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-03-14
-# File: ~/projects/scchic/scripts/scripts_analysis/primetime/downstream_LDA_100kb_H3K9me3.R
-# Analyze H3K9me3
-
-rm(list=ls())
+# Date of Creation: 2019-03-16
+# File: ~/projects/scchic/scripts/scripts_analysis/primetime/plot_repressive_hits_gtracks.R
+# Plot GTracks on repressive marks
 
 
 jtime <- Sys.time() 
@@ -59,7 +57,8 @@ jbin <- "FALSE"; kstr <- "15_20_25_30"
 # jmark <- "H3K27me3"
 # jmark <- "H3K4me1"
 # jmark <- "H3K4me3"
-jmark <- "H3K9me3"
+# jmark <- "H3K9me3"
+jmark <- "H3K27me3"
 
 indir <- paste0("lda_outputs.meanfilt_", 
                 meanfilt,
@@ -221,9 +220,9 @@ jmindist.louv=0.4
 jseed.louv=123
 
 custom.settings.louv <- GetUmapSettings(nn=nn.louv, 
-                                           jmetric=jmetric.louv, 
-                                           jmindist=jmindist.louv, 
-                                           seed = jseed.louv)
+                                        jmetric=jmetric.louv, 
+                                        jmindist=jmindist.louv, 
+                                        seed = jseed.louv)
 
 dat.umap.louv <- umap(topics.mat, config = custom.settings.louv)
 
@@ -247,7 +246,6 @@ g <- graph_from_data_frame(edgelist, directed=FALSE)
 g.out <- cluster_louvain(g, weights = NULL)
 V(g)$color <- g.out$membership
 clstr <- hash(g.out$names, g.out$membership)
-louvains <- sort(unique(hash::values(clstr)))
 
 dat.umap.long$louvain <- sapply(dat.umap.long$cell, function(x) clstr[[x]])
 
@@ -257,6 +255,7 @@ clstrs.orig <- as.character(sort(unique(as.numeric(dat.umap.long$louvain))))
 clstrs.new <- clstrs.orig
 clstrs.new[c(1, which(clstrs.new == jclst))] <- clstrs.new[c(which(clstrs.new == jclst), 1)]
 remap.clstr <- hash(clstrs.orig, clstrs.new)
+
 
 dat.umap.long$louvain <- sapply(as.character(dat.umap.long$louvain), function(x) remap.clstr[[x]])
 dat.umap.long$louvain <- factor(as.character(dat.umap.long$louvain), levels = clstrs.orig)  # 1 to N
@@ -313,169 +312,51 @@ mart.obj <- useMart(biomart = 'ENSEMBL_MART_ENSEMBL', dataset = 'mmusculus_gene_
 
 jpeaks <- unique(top.peaks.annotated$term)
 
-# filter out some peaks to play with
-# jpeaks <- jpeaks[grepl(pattern = "chr21:", jpeaks)]  # for debugging
 
-x <- as.data.frame(mat.norm[jpeaks, ])
+# Read xlong --------------------------------------------------------------
 
-# test in a locus
-x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)), 
-                     coord = rep(rownames(x), ncol(x)), stringsAsFactors = FALSE)
-x.long$louvain <- sapply(x.long$cell, function(x) clstr[[x]])
-# x.long$louvain <- x.long$louvain.orig
-# x.long$louvain <- sapply(as.character(x.long$louvain.orig), function(x) remap.clstr[[x]])
-# x.long$exprs <- x.long$exprs * 10^6
-# x.long$coord <- sub("\\.", ":", x.long$coord)
-# x.long$coord <- sub("\\.", "-", x.long$coord)
-# x.long$coord <- gsub("chr21", "chrY", x.long$coord)
-# x.long$coord <- gsub("chr20", "chrX", x.long$coord)
-# 
-# x.long <- x.long %>%
-#   rowwise() %>%
-#   mutate(start = as.numeric(GetStart(coord)),
-#          end = as.numeric(GetEnd(coord)),
-#          seqnames = GetChromo(coord))
+louvains <- sort(unique(hash::values(clstr)))
+inf.xlong <- paste0("/Users/yeung/data/scchic/robjs/x_sum.", jmark, ".rds")
+x.sum <- readRDS(inf.xlong)
 
-x.sum <- x.long %>%
-  group_by(louvain, coord) %>%
-  summarise(exprs = mean(exprs))
-x.sum$exprs <- x.sum$exprs * 10^6
-x.sum$coord <- sub("\\.", ":", x.sum$coord)
-x.sum$coord <- sub("\\.", "-", x.sum$coord)
-x.sum$coord <- gsub("chr21", "chrY", x.sum$coord)
-x.sum$coord <- gsub("chr20", "chrX", x.sum$coord)
-x.sum <- x.sum %>%
-  rowwise() %>%
-  mutate(start = as.numeric(GetStart(coord)),
-         end = as.numeric(GetEnd(coord)),
-         seqnames = GetChromo(coord))
-
-
-# # take subset and plot
-
-# jpeak <- "chr12:115560000-115660000"
-# jgene <- as.character(subset(top.peaks.annotated, term == jpeak)$SYMBOL[[1]])
-# jstart <- as.numeric(GetStart(jpeak)) - 5*10^5
-# jend <- as.numeric(GetEnd(jpeak)) + 5*10^5
-# jchromo <- GetChromo(jpeak)
-# if (jchromo == "chr20"){
-#   jchromo <- "chrX"
-# } else if (jchromo == "chr21"){
-#   jchromo <- "chrY"
-# }
-# xsub <- x.sum %>% filter(seqnames == jchromo & start >= jstart & end <= jend) %>% mutate(exprs = exprs / 10^6)
-# PlotGTrack2(xsub, jstart, jend, mart.obj, louvains, gen = "mm10", chr = jchromo, jheight = "auto")
-
-pdf(plotout, useDingbats = FALSE)
-
-print(m.all)
-print(m.louvain)
-
-par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1), pty = "s")
-mapply(function(jcol.rgb, jtopic){
-  plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.75, cex = 0.2)
-}, jcol.rgbs, seq(kchoose))
-
-par(mfrow=c(1, 1), mar=c(1,0.5,0.5,1))
-plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, asp = 0.75, cex = 0.2)
-# plot topics
-par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
-mapply(function(jcol.rgb, jtopic){
-  plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.75, cex = 0.2)
-}, jcol.rgbs, seq(kchoose))
-
-# show top hits of betas
-topn <- 250
-# show top hits of betas
-
-# order topics before iterating
-
-jtopics <- as.character(sort(unique(top.peaks.annotated$topic)))
-
-# get average zscore 
-top.genes.lst <- lapply(jtopics, function(jtopic){
-  jtmp <- top.peaks.annotated %>% group_by(SYMBOL, topic) %>% filter(beta == max(beta)) %>% top_n(topn)
-})
-
-zscores.avg <- lapply(as.numeric(jtopics), function(jtopic){
-  top.genes <- top.genes.lst[[jtopic]]$SYMBOL
-  jsub <- subset(dat.long, Gene_Name %in% top.genes) %>%
-    group_by(CellType) %>%
-    summarise(zscore = mean(zscore)) %>%
-    ungroup() %>%
-    mutate(weight = exp(zscore) / sum(exp(zscore)))
-  jsub$topic <- jtopic
-  return(jsub)
-}) %>%
-  bind_rows()
-
-# sort by range
-zscores.ranked <- zscores.avg %>%
-  group_by(topic) %>%
-  summarise(diffrange = diff(range(zscore)),
-            zscoremax = max(zscore)) %>%
-  arrange(desc(diffrange))
-
-zscores.ranked.bymax <- zscores.ranked %>%
-  arrange(desc(zscoremax))
-
-# jtopics.reordered <- zscores.ranked$topic
-jtopics.reordered <- zscores.ranked.bymax$topic
-
-for (i in as.character(jtopics.reordered)){
-  m.top <- subset(top.peaks.annotated, topic == i) %>% top_n(n=jtopn, wt = beta) %>% 
-    mutate(term = forcats::fct_reorder(term, dplyr::desc(beta))) %>%
-    ggplot(aes(x = term, y = log10(beta), label = SYMBOL)) + 
-    geom_point() + theme_bw(14) + geom_text_repel() + 
-    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-          axis.text.x = element_text(angle = 45, hjust = 1)) + 
-    xlab("") + ylab("Log10 Bin Weight") + 
-    ggtitle(paste("Top peak weights for topic:", i))
-  print(m.top)
-  # plot RNAseq bulk gene expression
-  top.genes <- unique(subset(top.peaks.annotated, topic == i)$SYMBOL[1:topn])
-  jsub <- subset(dat.long, Gene_Name %in% top.genes)
-  jsub.sorted.summarised <- jsub %>% group_by(CellType) %>% summarise(zscore = median(zscore)) %>% arrange(desc(zscore)) %>% dplyr::select(CellType)
-  jlevels <- as.character(jsub.sorted.summarised$CellType)
-  jsub$CellType <- factor(jsub$CellType, levels = jlevels)
-  
-  m.exprs <- ggplot(jsub, 
-              aes(x = CellType , y = zscore)) + 
-    geom_boxplot(outlier.shape = NA) +
-    # geom_violin() +
-    geom_jitter(width = 0.1, size = 0.5) +
-    # geom_line() + 
-    theme_classic() + 
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-    ggtitle(paste("topic", i, "Top:", topn, "N Unique Genes", length(top.genes)))
-  print(m.exprs)
-  
+# jtopic <- 9
+# (jpeak <- subset(top.peaks.annotated, topic == jtopic)$term[[2]])
+# jpeak <- "chr11:96360000-96460000"  # Hoxb1
+jpeak <- "chr15:102860000-102960000"  # Hoxc13
+jgene <- as.character(subset(top.peaks.annotated, term == jpeak)$SYMBOL[[1]])
+m1 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = NULL, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec)
+m2 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = count.mat, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec, scale.fac = 10^6, pseudocount = 1)
+multiplot(m1, m2, cols = 2)
+jstart <- as.numeric(GetStart(jpeak)) - 6*10^5
+jend <- as.numeric(GetEnd(jpeak)) + 6*10^5
+jchromo <- GetChromo(jpeak)
+if (jchromo == "chr20"){
+  jchromo <- "chrX"
+} else if (jchromo == "chr21"){
+  jchromo <- "chrY"
 }
 
-for (jtopic in jtopics.reordered){
-  jpeak <- subset(top.peaks.annotated, topic == jtopic)$term[[1]]
-  jgene <- as.character(subset(top.peaks.annotated, term == jpeak)$SYMBOL[[1]])
-  m1 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = NULL, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec)
-  m2 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = count.mat, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec, scale.fac = 10^6, pseudocount = 1)
-  multiplot(m1, m2, cols = 2)
-  jstart <- as.numeric(GetStart(jpeak)) - 5*10^5
-  jend <- as.numeric(GetEnd(jpeak)) + 5*10^5
-  jchromo <- GetChromo(jpeak)
-  if (jchromo == "chr20"){
-    jchromo <- "chrX"
-  } else if (jchromo == "chr21"){
-    jchromo <- "chrY"
-  }
+system.time(
   PlotGTrack2(x.sum, jstart, jend, mart.obj, louvains, gen = "mm10", chr = jchromo, jheight = "auto")
-}
-dev.off()
-print(Sys.time() - jtime)
-
-# write database 
+) 
+print(m.louvain)
 # 
-# tbl.name <- "exprs_by_cell_genome_wide"
-# indx <- list("seqnames", "start", "end", "louvain")
-# outf <- paste0("~/data/scchic/databases/exprs_by_cell_genome_wide.", jmark, ".sqlite")
-# my_db <- DBI::dbConnect(RSQLite::SQLite(), dbname = outf)
-# mat.tbl <- copy_to(my_db, x.long, tbl.name, temporary = FALSE, indexes = indx)
+# jsub <- subset(x.sum, seqnames == jchromo & start >= jstart & end <= jend)
+# ggplot(jsub, aes(x = (start + end) / 2, y = exprs)) + geom_line() + facet_wrap(~louvain)
 # 
+# dat <- makeGRangesFromDataFrame(jsub, keep.extra.columns = TRUE)
+# ymin <- 0
+# ymax <- 150
+# chr <- jchromo
+# # jtype <- "confint"
+# jtype <- "mountain"
+# # jtype <- "l"
+# dtrack <- DataTrack(range=subset(dat, louvain == 3, select = c(exprs)), ylim = c(ymin,ymax), 
+#                                      start = jstart, 
+#                                      end = jend, 
+#                                      chromo = chr,
+#                                      genome = gen, name = paste("Clstr", 3),
+#                       span = 0.1, degree = 1,
+#                                      type=jtype)
+# jsizes <- NULL
+# plotTracks(dtrack, from = jstart, to = jend, collapseTranscripts="meta", sizes = jsizes)

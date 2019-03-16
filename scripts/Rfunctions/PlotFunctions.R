@@ -24,6 +24,7 @@ PlotUmapAllMarks <- function(jmarks, tm.result.lst, jpeak, juse.count.mat, dat.u
 
 
 PlotGTrack <- function(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7", jheight = "auto", jtype = "mountain"){
+  # x.long <- subset(x.long, grepl(paste0("^", chr, ":"), coord))
   datheight <- 10
   trackheight <- 2
   itrack <- IdeogramTrack(genome=gen, chromosome=chr)
@@ -50,6 +51,67 @@ PlotGTrack <- function(x.long, jstart, jend, mart.obj, gen = "mm10", chr = "chr7
   
   ymin <- min(x.sum$exprs)
   ymax <- max(x.sum$exprs)
+  
+  dlst <- list()
+  dlst[["itrack"]] <- itrack
+  dlst[["gtrack"]] <- gtrack
+  for (l in louvains){
+    print(paste("Iterating cluster", l))
+    dlst[[as.character(l)]] <- DataTrack(range=subset(dat, louvain == l, select = c(exprs)), ylim = c(ymin,ymax),
+                                         start = jstart, 
+                                         end = jend, 
+                                         chromo = chr,
+                                         genome = gen, name = paste("Clstr", l),
+                                         type=jtype)
+  }
+  if (jheight != "auto"){
+    jsizes <- rep(jheight, length(dlst))
+    jsizes[1:2] <- c(0.25, 1)
+  } else {
+    jsizes <- NULL
+  }
+  plotTracks(dlst, from = jstart, to = jend, collapseTranscripts="meta", sizes = jsizes)
+  # plotTracks(dlst, collapseTranscripts="meta", from = jstart, to = jend)
+}
+
+PlotGTrack2 <- function(x.sum, jstart, jend, mart.obj, louvains, gen = "mm10", chr = "chr7", jheight = "auto", jtype = "mountain"){
+  # rewrite faster. expect x.long to have start, end, seqnames
+  # x.long <- subset(x.long, grepl(paste0("^", chr, ":"), coord))
+  # print(head(x.long))
+  # x.sub <- x.long %>% filter(seqnames == chr & start >= jstart & end <= jend)
+  # print("Subsetting..")
+  # x.sub <- subset(x.long, seqnames == chr & start >= jstart & end <= jend)
+  # print("Subsetting..done")
+  # print(head(x.sub))
+  datheight <- 10
+  trackheight <- 2
+  itrack <- IdeogramTrack(genome=gen, chromosome=chr)
+  gtrack <- BiomartGeneRegionTrack(genome=gen, chromosome=chr, start = jstart, end = jend, collapseTranscript="meta",
+                                   # symbol = "Sox6", 
+                                   stacking = "squish",
+                                   biomart = mart.obj,
+                                   name="Genes",showId=T, max.height = 3)
+  
+  # x.sum <- x.sub %>%
+  #   group_by(louvain, coord) %>%
+  #   summarise(exprs = mean(exprs))
+  
+  
+    # rowwise() %>%
+    # mutate(start = as.numeric(GetStart(coord)),
+    #        end = as.numeric(GetEnd(coord)),
+    #        seqnames = GetChromo(coord))
+  
+  x.sub <- x.sum %>% filter(seqnames == chr & start >= jstart & end <= jend)
+  dat <- makeGRangesFromDataFrame(x.sub, keep.extra.columns = TRUE)
+  
+  # add one track first, then another
+  # louvains <- sort(unique(hash::values(clstr)))
+  # louvains <- sort(unique(x.sum$louvain))
+  
+  ymin <- floor(min(x.sub$exprs))
+  ymax <- ceiling(max(x.sub$exprs))
+  print(paste(ymin, ymax))
   
   dlst <- list()
   dlst[["itrack"]] <- itrack

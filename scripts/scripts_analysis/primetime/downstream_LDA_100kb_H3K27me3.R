@@ -249,6 +249,7 @@ g <- graph_from_data_frame(edgelist, directed=FALSE)
 g.out <- cluster_louvain(g, weights = NULL)
 V(g)$color <- g.out$membership
 clstr <- hash(g.out$names, g.out$membership)
+louvains <- sort(unique(hash::values(clstr)))
 
 dat.umap.long$louvain <- sapply(dat.umap.long$cell, function(x) clstr[[x]])
 
@@ -319,16 +320,52 @@ jpeaks <- unique(top.peaks.annotated$term)
 # jpeaks <- jpeaks[grepl(pattern = "chr21:", jpeaks)]  # for debugging
 
 x <- as.data.frame(mat.norm[jpeaks, ])
+
+# 
+# x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)), 
+#                      coord = rep(rownames(x), ncol(x)), stringsAsFactors = FALSE)
+# x.long$louvain.orig <- sapply(x.long$cell, function(x) clstr[[x]])
+# x.long$louvain <- x.long$louvain.orig
+# # x.long$louvain <- sapply(as.character(x.long$louvain.orig), function(x) remap.clstr[[x]])
+# x.long$exprs <- x.long$exprs * 10^6
+# x.long$coord <- sub("\\.", ":", x.long$coord)
+# x.long$coord <- sub("\\.", "-", x.long$coord)
+# x.long$coord <- gsub("chr21", "chrY", x.long$coord)
+# x.long$coord <- gsub("chr20", "chrX", x.long$coord)
+
+# test in a locus
 x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)), 
                      coord = rep(rownames(x), ncol(x)), stringsAsFactors = FALSE)
-x.long$louvain.orig <- sapply(x.long$cell, function(x) clstr[[x]])
-x.long$louvain <- x.long$louvain.orig
+x.long$louvain <- sapply(x.long$cell, function(x) clstr[[x]])
+# x.long$louvain <- x.long$louvain.orig
 # x.long$louvain <- sapply(as.character(x.long$louvain.orig), function(x) remap.clstr[[x]])
-x.long$exprs <- x.long$exprs * 10^6
-x.long$coord <- sub("\\.", ":", x.long$coord)
-x.long$coord <- sub("\\.", "-", x.long$coord)
-x.long$coord <- gsub("chr21", "chrY", x.long$coord)
-x.long$coord <- gsub("chr20", "chrX", x.long$coord)
+# x.long$exprs <- x.long$exprs * 10^6
+# x.long$coord <- sub("\\.", ":", x.long$coord)
+# x.long$coord <- sub("\\.", "-", x.long$coord)
+# x.long$coord <- gsub("chr21", "chrY", x.long$coord)
+# x.long$coord <- gsub("chr20", "chrX", x.long$coord)
+# 
+# x.long <- x.long %>%
+#   rowwise() %>%
+#   mutate(start = as.numeric(GetStart(coord)),
+#          end = as.numeric(GetEnd(coord)),
+#          seqnames = GetChromo(coord))
+
+x.sum <- x.long %>%
+  group_by(louvain, coord) %>%
+  summarise(exprs = mean(exprs))
+x.sum$exprs <- x.sum$exprs * 10^6
+x.sum$coord <- sub("\\.", ":", x.sum$coord)
+x.sum$coord <- sub("\\.", "-", x.sum$coord)
+x.sum$coord <- gsub("chr21", "chrY", x.sum$coord)
+x.sum$coord <- gsub("chr20", "chrX", x.sum$coord)
+x.sum <- x.sum %>%
+  rowwise() %>%
+  mutate(start = as.numeric(GetStart(coord)),
+         end = as.numeric(GetEnd(coord)),
+         seqnames = GetChromo(coord))
+
+
 
 pdf(plotout, useDingbats = FALSE)
 
@@ -430,7 +467,8 @@ for (jtopic in jtopics.reordered){
   } else if (jchromo == "chr21"){
     jchromo <- "chrY"
   }
-  PlotGTrack(x.long, jstart, jend, mart.obj, gen = "mm10", chr = jchromo, jheight = "auto")
+  PlotGTrack2(x.sum, jstart, jend, mart.obj, louvains, gen = "mm10", chr = jchromo, jheight = "auto")
+  # PlotGTrack(x.long, jstart, jend, mart.obj, gen = "mm10", chr = jchromo, jheight = "auto")
 }
 dev.off()
 print(Sys.time() - jtime)
