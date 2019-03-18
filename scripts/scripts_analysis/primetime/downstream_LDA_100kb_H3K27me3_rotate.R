@@ -85,22 +85,26 @@ jtopic <- 1
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 
-nn.vec <- c(1, 5, 8, 10, 12, 15, 18, 20, 22, 25, 30, 40, 50, 60, 70, 80, 90, 100)
-# nn=8  # 40 for normal, 90 for island in north
-jmetric='euclidean' 
-jmindist=0.4
+
+jmetric='euclidean'
+jmindist=0.2
 jseed=123
-
-custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
-
-dat.umap <- umap(topics.mat, config = custom.settings)
-rownames(dat.umap$layout) <- rownames(topics.mat)
-jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
-
-# check your umap settings
-# jpeak <- "chr7:103800000-103900000"
 jpeak <- "chr6:69560000-69660000"  # Rprl1 Bcell 
-PlotImputedPeaks(tm.result, jpeak, nn, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
+# nn.vec <- c(2, 5, 8, 10, 12, 15, 18, 20, 22, 25, 30, 40, 50, 60, 70, 80, 90, 100)
+# for (nn in nn.vec){
+
+  nn=27  # 40 for normal, 90 for island in north
+  
+  custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
+  
+  dat.umap <- umap(topics.mat, config = custom.settings)
+  rownames(dat.umap$layout) <- rownames(topics.mat)
+  jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
+  
+  # check your umap settings
+  # jpeak <- "chr7:103800000-103900000"
+  PlotImputedPeaks(tm.result, jpeak, nn, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
+# }
 
 nnterms <- 5
 custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)

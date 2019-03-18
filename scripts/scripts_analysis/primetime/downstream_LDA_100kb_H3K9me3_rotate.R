@@ -1,8 +1,7 @@
 # Jake Yeung
 # Date of Creation: 2019-03-14
-# File: ~/projects/scchic/scripts/scripts_analysis/primetime/downstream_LDA_100kb_H3K27me3.R
-# Redo stuff
-
+# File: ~/projects/scchic/scripts/scripts_analysis/primetime/downstream_LDA_100kb_H3K9me3.R
+# Analyze H3K9me3
 
 rm(list=ls())
 
@@ -38,8 +37,7 @@ source("scripts/Rfunctions/GetMetaCellHash.R")
 source("scripts/Rfunctions/PlotFunctions.R")
 
 jcolvec <- c("gray95", "gray50", "darkblue")
-topn <- 250
-jtopn <- 50
+
 # Load bulk RNAseq data ---------------------------------------------------
 
 dat <- fread("/Users/yeung/data/scchic/public_data/E-MTAB-3079-query-results.fpkms.tsv", sep = "\t")
@@ -58,10 +56,10 @@ meanfilt <- 10
 # jbin <- "TRUE"; kstr <- "15_20_25_30_35"
 jbin <- "FALSE"; kstr <- "15_20_25_30"
 # jmark <- "H3K4me3"
-jmark <- "H3K27me3"
+# jmark <- "H3K27me3"
 # jmark <- "H3K4me1"
 # jmark <- "H3K4me3"
-# jmark <- "H3K9me3"
+jmark <- "H3K9me3"
 
 indir <- paste0("lda_outputs.meanfilt_", 
                 meanfilt,
@@ -85,25 +83,30 @@ jtopic <- 1
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 
-nn.vec <- c(1, 5, 8, 10, 12, 15, 18, 20, 22, 25, 30, 40, 50, 60, 70, 80, 90, 100)
-# nn=8  # 40 for normal, 90 for island in north
+# nn=40
+
+nnterms <- 15
 jmetric='euclidean' 
-jmindist=0.4
+jmindist=0.1
 jseed=123
-
-custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
-
-dat.umap <- umap(topics.mat, config = custom.settings)
-rownames(dat.umap$layout) <- rownames(topics.mat)
-jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
-
-# check your umap settings
-# jpeak <- "chr7:103800000-103900000"
-jpeak <- "chr6:69560000-69660000"  # Rprl1 Bcell 
-PlotImputedPeaks(tm.result, jpeak, nn, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
-
-nnterms <- 5
 custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)
+jpeak <- "chr6:69560000-69660000"  # Rprl1 Bcell 
+# nn.vec <- c(3, 5, 8, 10, 12, 15, 18, 20, 22, 24, 27, 30, 33, 35, 38, 41, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100)
+# for (nn in nn.vec){
+nn <- 40
+  custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
+  
+  dat.umap <- umap(topics.mat, config = custom.settings)
+  rownames(dat.umap$layout) <- rownames(topics.mat)
+  jmain <- paste("Neighbors", nn, "Metric", jmetric, "MinDist", jmindist)
+  
+  # check your umap settings
+  # jpeak <- "chr7:103800000-103900000"
+  PlotImputedPeaks(tm.result, jpeak, nn, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
+  
+# }
+
+
 print(sessionInfo())
 
 # Plot dat umap -----------------------------------------------------------
@@ -176,10 +179,10 @@ top.sum <- top.peaks.annotated %>%
 print(top.sum)
 
 
-hit.peaks <- subset(regions.annotated, abs(distanceToTSS) < 50000 & grepl("Hbb", SYMBOL))$region_coord
+# hit.peaks <- subset(regions.annotated, abs(distanceToTSS) < 50000 & grepl("Hbb", SYMBOL))$region_coord
+print(top.peaks.annotated)
 
-# jpeak <- "chr11:96360000-96460000"
-jpeak <- "chr14:70680000-70780000"
+(jpeak <- top.peaks.annotated$term[[1]])
 PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
 
 # how top hits for specific topics
@@ -219,7 +222,7 @@ mat.norm <- t(tm.result$topics %*% tm.result$terms)  # this should give normaliz
 
 # dat.umap.fo
 
-nn.louv=100
+nn.louv=60
 jmetric.louv='euclidean' 
 jmindist.louv=0.4
 jseed.louv=123
@@ -262,7 +265,6 @@ clstrs.new <- clstrs.orig
 clstrs.new[c(1, which(clstrs.new == jclst))] <- clstrs.new[c(which(clstrs.new == jclst), 1)]
 remap.clstr <- hash(clstrs.orig, clstrs.new)
 
-
 dat.umap.long$louvain <- sapply(as.character(dat.umap.long$louvain), function(x) remap.clstr[[x]])
 dat.umap.long$louvain <- factor(as.character(dat.umap.long$louvain), levels = clstrs.orig)  # 1 to N
 m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
@@ -285,15 +287,17 @@ print(m.louvain)
 
 # Merge cells and plot hits -----------------------------------------------
 
-par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1), pty = "s")
-mapply(function(jcol.rgb, jtopic){
-  plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.75, cex = 0.2)
-}, jcol.rgbs, seq(kchoose))
 
 # show topic 16
+jtopn <- 50
+i <- 28
+i <- 27
+i <- 30
+i <- 5
 
-i <- 14
+i <- 7
 (jsub <- subset(top.peaks.annotated, topic == i) %>% top_n(n=jtopn, wt = beta))
+
 m.top <- jsub %>%
   mutate(term = forcats::fct_reorder(term, dplyr::desc(beta))) %>%
   ggplot(aes(x = term, y = log10(beta), label = SYMBOL)) +
@@ -304,17 +308,15 @@ m.top <- jsub %>%
   ggtitle(paste("Top peak weights for topic:", i))
 print(m.top)
 
+
 # show IgH region
 subset(top.peaks.annotated, SYMBOL == "Mir6388")
-
 gen <- "mm10"
 # chr <- "chr7"
-
 mart.obj <- useMart(biomart = 'ENSEMBL_MART_ENSEMBL', dataset = 'mmusculus_gene_ensembl', host="www.ensembl.org")
 
 # get data for chromo 7
 # redo for top 1000 peaks probably??
-
 
 jpeaks <- unique(top.peaks.annotated$term)
 
@@ -322,18 +324,6 @@ jpeaks <- unique(top.peaks.annotated$term)
 # jpeaks <- jpeaks[grepl(pattern = "chr21:", jpeaks)]  # for debugging
 
 x <- as.data.frame(mat.norm[jpeaks, ])
-
-# 
-# x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)), 
-#                      coord = rep(rownames(x), ncol(x)), stringsAsFactors = FALSE)
-# x.long$louvain.orig <- sapply(x.long$cell, function(x) clstr[[x]])
-# x.long$louvain <- x.long$louvain.orig
-# # x.long$louvain <- sapply(as.character(x.long$louvain.orig), function(x) remap.clstr[[x]])
-# x.long$exprs <- x.long$exprs * 10^6
-# x.long$coord <- sub("\\.", ":", x.long$coord)
-# x.long$coord <- sub("\\.", "-", x.long$coord)
-# x.long$coord <- gsub("chr21", "chrY", x.long$coord)
-# x.long$coord <- gsub("chr20", "chrX", x.long$coord)
 
 # test in a locus
 x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)), 
@@ -368,6 +358,20 @@ x.sum <- x.sum %>%
          seqnames = GetChromo(coord))
 
 
+# # take subset and plot
+
+# jpeak <- "chr12:115560000-115660000"
+# jgene <- as.character(subset(top.peaks.annotated, term == jpeak)$SYMBOL[[1]])
+# jstart <- as.numeric(GetStart(jpeak)) - 5*10^5
+# jend <- as.numeric(GetEnd(jpeak)) + 5*10^5
+# jchromo <- GetChromo(jpeak)
+# if (jchromo == "chr20"){
+#   jchromo <- "chrX"
+# } else if (jchromo == "chr21"){
+#   jchromo <- "chrY"
+# }
+# xsub <- x.sum %>% filter(seqnames == jchromo & start >= jstart & end <= jend) %>% mutate(exprs = exprs / 10^6)
+# PlotGTrack2(xsub, jstart, jend, mart.obj, louvains, gen = "mm10", chr = jchromo, jheight = "auto")
 
 pdf(plotout, useDingbats = FALSE)
 
@@ -388,6 +392,7 @@ mapply(function(jcol.rgb, jtopic){
 }, jcol.rgbs, seq(kchoose))
 
 # show top hits of betas
+topn <- 250
 # show top hits of betas
 
 # order topics before iterating
@@ -424,7 +429,6 @@ zscores.ranked.bymax <- zscores.ranked %>%
 # jtopics.reordered <- zscores.ranked$topic
 jtopics.reordered <- zscores.ranked.bymax$topic
 
-
 for (i in as.character(jtopics.reordered)){
   m.top <- subset(top.peaks.annotated, topic == i) %>% top_n(n=jtopn, wt = beta) %>% 
     mutate(term = forcats::fct_reorder(term, dplyr::desc(beta))) %>%
@@ -457,9 +461,9 @@ for (i in as.character(jtopics.reordered)){
 
 for (jtopic in jtopics.reordered){
   jpeak <- subset(top.peaks.annotated, topic == jtopic)$term[[1]]
-  jgene <- subset(top.peaks.annotated, term == jpeak)$SYMBOL[[1]]
+  jgene <- as.character(subset(top.peaks.annotated, term == jpeak)$SYMBOL[[1]])
   m1 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = NULL, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec)
-  m2 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = count.mat, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec)
+  m2 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = count.mat, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec, scale.fac = 10^6, pseudocount = 1)
   multiplot(m1, m2, cols = 2)
   jstart <- as.numeric(GetStart(jpeak)) - 5*10^5
   jend <- as.numeric(GetEnd(jpeak)) + 5*10^5
@@ -470,8 +474,15 @@ for (jtopic in jtopics.reordered){
     jchromo <- "chrY"
   }
   PlotGTrack2(x.sum, jstart, jend, mart.obj, louvains, gen = "mm10", chr = jchromo, jheight = "auto")
-  # PlotGTrack(x.long, jstart, jend, mart.obj, gen = "mm10", chr = jchromo, jheight = "auto")
 }
 dev.off()
 print(Sys.time() - jtime)
 
+# write database 
+# 
+# tbl.name <- "exprs_by_cell_genome_wide"
+# indx <- list("seqnames", "start", "end", "louvain")
+# outf <- paste0("~/data/scchic/databases/exprs_by_cell_genome_wide.", jmark, ".sqlite")
+# my_db <- DBI::dbConnect(RSQLite::SQLite(), dbname = outf)
+# mat.tbl <- copy_to(my_db, x.long, tbl.name, temporary = FALSE, indexes = indx)
+# 
