@@ -323,6 +323,7 @@ x.sum <- readRDS(inf.xlong)
 # (jpeak <- subset(top.peaks.annotated, topic == jtopic)$term[[2]])
 # jpeak <- "chr11:96360000-96460000"  # Hoxb1
 jpeak <- "chr15:102860000-102960000"  # Hoxc13
+
 jgene <- as.character(subset(top.peaks.annotated, term == jpeak)$SYMBOL[[1]])
 m1 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = NULL, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec)
 m2 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = count.mat, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec, scale.fac = 10^6, pseudocount = 1)

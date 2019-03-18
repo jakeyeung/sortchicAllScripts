@@ -1,16 +1,17 @@
 # Jake Yeung
-# Date of Creation: 2019-03-06
-# File: ~/projects/scchic/scripts/scripts_analysis/integrate_datasets/canonical_correlation_bins.R
-# On bins 
+# Date of Creation: 2019-03-18
+# File: ~/projects/scchic/scripts/scripts_analysis/integrate_datasets/canonical_correlation_bins_rewrite_H3K4me1_H3K9me3.R
+# H3K9me3
 
 # https://satijalab.org/seurat/immune_alignment.html
 # https://satijalab.org/seurat/Seurat_AlignmentTutorial.html
 
 rm(list=ls())
 
+setwd("~/projects/scchic")
+
 jstart <- Sys.time()
 
-setwd("~/projects/scchic")
 
 library(GGally)
 library(purrr)
@@ -50,10 +51,15 @@ source("scripts/Rfunctions/IntegrateData.R")
 # Load active marks LDA output --------------------------------------------
 
 
+# marks.keep <- c("H3K4me1", "H3K4me3")
+# marks.keep <- c("H3K27me3", "H3K9me3")
+marks.keep <- c("H3K4me1", "H3K9me3")
+jmark <- marks.keep[[1]]  # reference mark for later 
 
 jsize <- 0.5
 # jcolvec <- c("blue", "yellow", "red")
-jcolvec <- c("blue", "gray80", "red")
+# jcolvec <- c("blue", "gray80", "red")
+jcolvec <- c("gray70", "gray50", "darkblue")
 
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
@@ -99,7 +105,7 @@ print(lapply(mat.impute.lst, dim))
 
 # Wrangle data ------------------------------------------------------------
 
-top.thres <- 0.9999
+# top.thres <- 0.999
 top.regions.lst <- lapply(jmarks, function(jmark){
   topic.regions <- out.objs[[jmark]]$topic.regions  # for each cluster
   # topic.regions <- lapply(out.objs[[jmark]]$out.lda, function(clst){
@@ -132,8 +138,9 @@ mat.merged.lst <- lapply(mat.merged.lst, function(mat.merged){
 
 library(Seurat)
 
-X <- as.matrix(mat.merged.lst[[1]])
-Y <- as.matrix(mat.merged.lst[[2]])
+
+X <- as.matrix(mat.merged.lst[[marks.keep[[1]]]])
+Y <- as.matrix(mat.merged.lst[[marks.keep[[2]]]])
 
 X <- scale(X, center = TRUE, scale = FALSE)
 Y <- scale(Y, center = TRUE, scale = FALSE)
@@ -189,6 +196,7 @@ loads.long <- data.frame(loads, bin = rownames(loads), stringsAsFactors = FALSE)
   mutate(dist = sqrt(CC1 ^ 2 + CC2 ^ 2)) %>%
   mutate(bin.lab = ifelse(dist > distfilt, bin, NA))
 # add gene info
+
 loads.long <- left_join(loads.long, out.objs[[jmark]]$regions.annot %>% dplyr::select(c(SYMBOL, region_coord)), by = c("bin" = "region_coord"))
 loads.long$bingene <- paste(loads.long$bin, loads.long$SYMBOL, sep = ";")
 
@@ -202,7 +210,6 @@ print(m.cca)
 
 jscale.fac <- 10^6
 jpseudo <- 1
-jcolvec <- c("gray70", "gray50", "darkblue")
 
 # can save time by precalculating the UMAP and feeding it into the plot functions, also can customize for each UMAP
 # custom settings for each UMAP
@@ -221,8 +228,7 @@ dat.umap.lst <- mapply(function(custom.settings, topics.mat){
 }, custom.settings.lst, topics.mat.lst, SIMPLIFY = FALSE)
 names(dat.umap.lst) <- jmarks
 
-marks.keep <- c("H3K4me1", "H3K4me3")
-jmark <- "H3K4me1"
+# jmark <- "H3K4me1"
 jpeak <- "chr7:73520000-73620000"  # top loads1 peak
 
 # jpeak <- (loads.long %>% arrange(desc(load2)))$bin[[1]]  # highest load peak
@@ -245,21 +251,33 @@ system.time(
 
 # plot CCA outputs
 # plot top CC1s
-jtopn <- 30
-loads.dat %>% arrange(desc(CC1))
+jtopn <- 15
+# loads.dat %>% arrange(desc(CC1))
 # take top 30 unique genes
 bins.to.plot1 <- (loads.long %>% arrange(desc(CC1)) %>% group_by(SYMBOL) %>% filter(CC1 == max(CC1)))$bingene[1:jtopn]
+bins.to.plot1b <- (loads.long %>% arrange(CC1) %>% group_by(SYMBOL) %>% filter(CC1 == max(CC1)))$bingene[1:jtopn]
 bins.to.plot2 <- (loads.long %>% arrange(desc(CC2)) %>% group_by(SYMBOL) %>% filter(CC2 == max(CC2)))$bingene[1:jtopn]
 bins.to.plot2b <- (loads.long %>% arrange(CC2) %>% group_by(SYMBOL) %>% filter(CC2 == min(CC2)))$bingene[1:jtopn]
 bins.to.plot3 <- (loads.long %>% arrange(CC3) %>% group_by(SYMBOL) %>% filter(CC3 == min(CC3)))$bingene[1:jtopn]
+bins.to.plot3b <- (loads.long %>% arrange(desc(CC3)) %>% group_by(SYMBOL) %>% filter(CC3 == min(CC3)))$bingene[1:jtopn]
 
-bins.to.plot.lst <- list(bins.to.plot1, bins.to.plot2, bins.to.plot2b, bins.to.plot3)
+jsize <- 0.1
+m.cca <- ggplot(loads.long %>% mutate(bin.lab = ifelse(bingene %in% bins.to.plot1, bingene, NA)) %>% filter(!is.na(bingene)), aes(x = CC1, y = CC2, label = bin.lab)) + 
+  # geom_point(alpha = 0.2) + 
+  geom_point_rast(alpha = 0.2, color = "blue", size = jsize) +
+  geom_text_repel() + geom_vline(xintercept = 0) + geom_hline(yintercept = 0)
+print(m.cca)
 
-pdf("~/Dropbox/scCHiC_figs/FIG4_BM/analyses/2019-03-17_cca_output_active_marks.pdf", useDingbats = FALSE)
+
+bins.to.plot.lst <- list(bins.to.plot1, bins.to.plot1b, bins.to.plot2, bins.to.plot2b, bins.to.plot3, bins.to.plot3b)
+
+
+
+pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/analyses/2019-03-18_cca_output_", paste(marks.keep, collapse = "-"), "_output.pdf"), useDingbats = FALSE)
 lapply(bins.to.plot.lst, function(bins.to.plot){
   m.cca <- ggplot(loads.long %>% mutate(bin.lab = ifelse(bingene %in% bins.to.plot, bingene, NA)), aes(x = CC1, y = CC2, label = bin.lab)) + 
     # geom_point(alpha = 0.2) + 
-    geom_point_rast(alpha = 0.2, color = "pink") + 
+    geom_point_rast(alpha = 0.2, color = "pink", size = jsize) + 
     geom_text_repel() + geom_vline(xintercept = 0) + geom_hline(yintercept = 0)
   print(m.cca)
   for (jpeak in bins.to.plot){
@@ -272,5 +290,4 @@ lapply(bins.to.plot.lst, function(bins.to.plot){
   }
 })
 dev.off()
-
 print(Sys.time() - jstart)
