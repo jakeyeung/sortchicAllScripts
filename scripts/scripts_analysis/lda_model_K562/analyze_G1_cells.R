@@ -137,6 +137,11 @@ for (jmark in jmarks){
     plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.5)
   }, jcol.rgbs, seq(kchoose))
   
+  # Do plots with alpha no color, ggplot2 style 
+  
+  dat.umap.long <- data.frame(umap1 = dat.umap$layout[, 1], umap2 = dat.umap$layout[, 2], stringsAsFactors = FALSE)
+  
+  # m1 <- ggplot(dat.umap.long, aes(x = umap1, y = umap2)) + geom_point(alpha = 0.5, size = 4)
   
   # Check top hits ----------------------------------------------------------
   
@@ -189,6 +194,7 @@ for (jmark in jmarks){
   m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = as.character(louvain))) + geom_point() +
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_brewer(palette = "Spectral")
   print(m.louvain)
+  
   
   
   # What are the fold changes??? --------------------------------------------
@@ -252,7 +258,7 @@ for (jmark in jmarks){
   pdf(plotf, useDingbats = FALSE)
   
   jcounts <- Matrix::colSums(count.mat)
-  jcol.counts <- ColorsByCounts(jcounts, nbreaks = 100)
+  jcol.counts <- ColorsByCounts(jcounts, nbreaks = 100, colvec = c("gray90", "gray50", "darkblue"))
   
   par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1))
   
@@ -268,6 +274,11 @@ for (jmark in jmarks){
   m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = as.character(louvain))) + geom_point() +
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_brewer(palette = "Spectral")
   print(m.louvain)
+  
+  # plot without color
+  m.nocolor <- ggplot(dat.umap.long, aes(x = umap1, y = umap2)) + geom_point(alpha = 0.5, size = 3) +
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  print(m.nocolor)
   
   PlotGTrack(x.long, jstart, jend, mart.obj, gen = "hg38", chr = jchromo, jheight = "auto")
   

@@ -92,8 +92,8 @@ out.lda <- ChooseBestLDA(out.lda)
 (kchoose <- out.lda@k)
 tm.result <- posterior(out.lda)
 
-outmain <- "~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots"
-plotout <- file.path(outmain, paste0(jmark, "_LDA_summarized_bins.pdf"))
+# outmain <- "~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots"
+# plotout <- file.path(outmain, paste0(jmark, "_LDA_summarized_bins.pdf"))
 
 jtopic <- 1
 
@@ -282,10 +282,11 @@ plot.igraph(igraph::simplify(g),
             vertex.size = 1)
 
 
-# Plot example genes ------------------------------------------------------
+# Plot example genes ------------------------------------------------------ 
 
 jsize <- 0.25
-jcolvec <- c("blue", "gray80", "red")
+# jcolvec <- c("blue", "gray80", "red")
+jcolvec <- c("gray95", "gray50", "darkblue")
 
 jpeak <- c("chr7:103820000-103920000")
 jgene <- "Hbb-bs"
@@ -301,6 +302,7 @@ jgenes <- names(peakgene.lst)
 jpeaks <- unlist(peakgene.lst)
 
   
+pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/H3K4me1_example_genes.", Sys.Date(), ".pdf"), useDingbats = FALSE)
 m.lst <- lapply(jgenes, function(jgene){
   jpeak <- peakgene.lst[[jgene]]
   print(jpeak)
@@ -308,10 +310,9 @@ m.lst <- lapply(jgenes, function(jgene){
                              use.count.mat = NULL,
                              usettings=dat.umap, 
                              gname = jgene,
-                             jsize = jsize, jcolvec = jcolvec, .log = TRUE)
+                             jsize = jsize, jcolvec = jcolvec, .log = TRUE, midpoint = "auto", cap.quantile = c(0.25, 0.99), debug.plot=TRUE)
 })
 
-pdf("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/H3K4me1_example_genes.pdf", useDingbats = FALSE)
   multiplot(m.lst[[1]], m.lst[[2]], m.lst[[3]], m.lst[[4]], m.lst[[5]], m.lst[[6]], cols = 3)
 dev.off()
 

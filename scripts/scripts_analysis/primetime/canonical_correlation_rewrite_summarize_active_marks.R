@@ -1,8 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-03-07
-# File: ~/projects/scchic/scripts/scripts_analysis/integrate_datasets/canonical_correlation_rewrite.R
-# Redo canonical correlation analysis and allow opposite signs to happen downstream
-
+# Date of Creation: 2019-03-11
+# File: ~/projects/scchic/scripts/scripts_analysis/primetime/canonical_correlation_rewrite_summarize_active_marks.R
+# Summarize active marks 
 
 rm(list=ls())
 
@@ -40,8 +39,6 @@ library(Seurat)
 source("scripts/Rfunctions/MaraDownstream.R")
 source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/Aux.R")
-source("scripts/Rfunctions/IntegrateData.R")
-
 
 
 
@@ -158,12 +155,36 @@ plot_grid(p1, p2)
 loadings <- marks.combined@reductions$cca@feature.loadings
 embeddings <- marks.combined@reductions$cca@cell.embeddings
 
+# reproduce cell embeddings: should be diagonalized SVD of CCA
+
+# Run the diagonal canonical correlation procedure
+#
+# @param mat1         First matrix
+# @param mat2         Second matrix
+# @param standardize  Standardize matrices - scales columns to have unit
+#                     variance and mean 0
+# @param k            Number of canonical correlation vectors (CCs) to calculate
+#
+# @return             Returns the canonical correlation vectors - corresponding
+#                     to the left and right singular vectors after SVD - as well
+#                     as the singular values.
+#
+library(irlba)
+jCanonCor <- function(mat1, mat2, k = 20) {
+  set.seed(seed = 42)
+  # if (standardize) {
+  #   mat1 <- Standardize(mat = mat1, display_progress = FALSE)
+  #   mat2 <- Standardize(mat = mat2, display_progress = FALSE)
+  # }
+  # mat3 <- FastMatMult(m1 = t(x = mat1), m2 = mat2)
+  mat3 <- t(mat1) %*% mat2
+  cca.svd <- irlba::irlba(A = mat3, nv = k)
+  return(list(u = cca.svd$u, v = cca.svd$v, d = cca.svd$d))
+}
+
 X <- k4me1@assays$scChIC@scale.data
 Y <- k4me3@assays$scChIC@scale.data
-
-
-cca.results <- jCanonCor(X, Y, k = 20, l2.norm = FALSE)
-print(head(cca.results$u))
+cca.results <- jCanonCor(X, Y, k = 20)
 
 cca.data <- rbind(cca.results$u, cca.results$v)
 
@@ -177,6 +198,11 @@ cca.data.flip <- apply(cca.data, MARGIN = 2, function(x){
   }
   return(x)
 })
+
+# get minimum absolute number, return with actual sign
+Vectorize(SelectAbsMin <- function(x1, x2){
+  return(c(x1, x2)[[which.min(c(x1, x2))]])
+}, vectorize.args = c("x1", "x2"), SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
 
 # how are these feature loadings calculated? Just projection
@@ -193,11 +219,11 @@ loads2 <- t(t(embeds2) %*% t(Y))
 loads.min <- matrix(mapply(SelectAbsMin, loads1, loads2), nrow = nrow(loads1), ncol = ncol(loads1), dimnames = list(rownames(loads1), colnames(loads1)))
 
 
-# # compare embeds and loads
-# par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-# plot(marks.combined@reductions$cca@feature.loadings[, 1], marks.combined@reductions$cca@feature.loadings[, 2], pch = 20)
-# text(marks.combined@reductions$cca@feature.loadings[, 1], marks.combined@reductions$cca@feature.loadings[, 2], 
-#      labels = rownames(marks.combined@reductions$cca@feature.loadings))
+# compare embeds and loads
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+plot(marks.combined@reductions$cca@feature.loadings[, 1], marks.combined@reductions$cca@feature.loadings[, 2], pch = 20)
+text(marks.combined@reductions$cca@feature.loadings[, 1], marks.combined@reductions$cca@feature.loadings[, 2], 
+     labels = rownames(marks.combined@reductions$cca@feature.loadings))
 
 cca1 <- 1
 cca2 <- 2
@@ -289,12 +315,92 @@ plot(loads[, 1], loads[, 2], pch = 20)
 text(loads[, 1], loads[, 2],
      labels = rownames(loads.min))
 
-
-# loads.umap <- umap(loads.min[, 1:10])
-# plot(loads.umap$layout[, 1], loads.umap$layout[, 2], pch = 20)
-# text(loads.umap$layout[, 1], loads.umap$layout[, 2], labels = rownames(loads.umap$layout))
-
-# Now let’s do multiCCA ---------------------------------------------------
+# Summaerize plots plot top hits -------------------------------------------------------
 
 
+loads.dat <- as.data.frame(loads)
+
+loads.dat$motif <- rownames(loads.dat)
+loads.dat <- loads.dat %>%
+  mutate(dist = sqrt(CC1^2 + CC2^2),
+         dist23 = sqrt(CC2^2 + CC3^2))
+
+loads.dat <- loads.dat %>%
+  mutate(motif.lab = ifelse(dist > 0.09, motif, NA),
+         motif.lab23 = ifelse(dist23 > 0.06, motif, NA))
+
+m.cca <- ggplot(loads.dat, aes(x = CC1, y = CC2, label = motif.lab)) + 
+  geom_point(alpha = 0.5) + theme_classic() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0) + geom_hline(yintercept = 0) +
+  geom_text_repel()
+
+m.cca23 <- ggplot(loads.dat, aes(x = CC2, y = CC3, label = motif.lab23)) + 
+  geom_point(alpha = 0.5) + theme_classic() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0)  + geom_hline(yintercept = 0)+ 
+  geom_text_repel()
+  
+# plot canonical correlations
+# SVD outputs singular values which are square roots of the eigenvalues of M*M. 
+# Eigenvalues are the canonical correlations squared.
+# Therefore, canonical correlations are just the singular values 
+m.summary <- qplot(x = seq(length(cca.results$d)), y = cca.results$d) + geom_line() + geom_point(size = 2.5)  + 
+    xlab("CCA components") + ylab("Canonical Correlations")
+
+topn <- 10
+jsize <- 1
+jcolvec <- c("gray95", "gray50", "darkblue")
+pdf("~/Dropbox/scCHiC_figs/FIG4_BM/analyses/2019-03-11_CCA_analysis_active_marks.pdf", useDingbats = FALSE)
+
+print(m.summary)
+print(m.cca)
+print(m.cca23)
+
+# Take top 5 hits from CC1 right and left. Take top from CC2
+
+# erythrypoiesis 
+eryth.motifs <- loads.dat %>% arrange(desc(CC1)) %>% 
+  dplyr::select(motif)
+eryth.motifs <- eryth.motifs[1:topn, ]
+
+# B-cell 
+bcell.motifs <- loads.dat %>% arrange(CC1) %>%
+  dplyr::select(motif)
+bcell.motifs <- bcell.motifs[1:topn, ]
+
+# Granulocytes
+granu.motifs <- loads.dat %>% arrange(desc(CC2)) %>%
+  dplyr::select(motif)
+granu.motifs <- granu.motifs[1:topn, ]
+
+
+print(m.cca + ggtitle("Now plotting erythrypoiesis motifs... (large CC1)"))
+# plot top hits
+for (jmotif in eryth.motifs){
+  print(jmotif)
+  m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark1]], mara.outs[[jmark1]]$zscores, jmark1, jsize = jsize, colvec = jcolvec)
+  m2 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark2]], mara.outs[[jmark2]]$zscores, jmark2, jsize = jsize, colvec = jcolvec)
+  multiplot(m1, m2)
+}
+
+print(m.cca + ggtitle("Now plotting B-cell motifs... (small CC2)"))
+# plot top hits
+for (jmotif in bcell.motifs){
+  print(jmotif)
+  m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark1]], mara.outs[[jmark1]]$zscores, jmark1, jsize = jsize, colvec = jcolvec)
+  m2 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark2]], mara.outs[[jmark2]]$zscores, jmark2, jsize = jsize, colvec = jcolvec)
+  multiplot(m1, m2)
+}
+
+print(m.cca + ggtitle("Now plotting Granulocyte motifs... (large CC3)"))
+# plot top hits
+for (jmotif in granu.motifs){
+  print(jmotif)
+  m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark1]], mara.outs[[jmark1]]$zscores, jmark1, jsize = jsize, colvec = jcolvec)
+  m2 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark2]], mara.outs[[jmark2]]$zscores, jmark2, jsize = jsize, colvec = jcolvec)
+  multiplot(m1, m2)
+}
+
+dev.off()
 

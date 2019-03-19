@@ -1,11 +1,8 @@
 # Jake Yeung
-# Date of Creation: 2019-03-05
-# Jake Yeung
-# Date of Creation: 2019-03-05
-# File: ~/projects/scchic/scripts/scripts_analysis/primetime/downstream_LDA_100kb_H3K4me1_summarize_interesting_peaks.R
-# Show interesting peaks related to specific cell types 
+# Date of Creation: 2019-03-16
+# File: ~/projects/scchic/scripts/scripts_analysis/primetime/plot_repressive_hits_gtracks.R
+# Plot GTracks on repressive marks
 
-rm(list=ls())
 
 jtime <- Sys.time() 
 
@@ -37,27 +34,7 @@ source("scripts/Rfunctions/GetMetaCellHash.R")
 
 source("scripts/Rfunctions/PlotFunctions.R")
 
-GetTopGenes <- function(dat.long, jcelltype, jtopic, topn = 20){
-  jsub <- dat.long %>% 
-    rowwise() %>%
-    mutate(CellType2 = ifelse(CellType == "nucleate_erythrocyte", TRUE, FALSE)) %>% 
-    group_by(CellType2, Gene_Name) %>%
-    summarise(zscore = mean(logFPKM)) %>%
-    group_by(Gene_Name) %>% 
-    summarise(zscore.diff = diff(range(zscore)))
-  # jsub.hash <- hash(jsub$Gene_Name, jsub$zscore.diff)
-  # get top genes
-  jsub.top <- top.peaks.annotated %>% 
-    filter(topic == jtopic & rnk <= 100) %>%
-    group_by(topic, SYMBOL) %>%
-    filter(beta == max(beta)) %>%
-    arrange(rnk)
-  jsub.top <- left_join(jsub.top, jsub, by = c("SYMBOL" = "Gene_Name")) %>% 
-    arrange(desc(zscore.diff))
-  jsub.sub <- jsub.top[1:topn, ]
-  # genes <- jsub.top$SYMBOL[1:topn]
-  return(jsub.sub)
-}
+jcolvec <- c("gray95", "gray50", "darkblue")
 
 # Load bulk RNAseq data ---------------------------------------------------
 
@@ -74,12 +51,15 @@ dat.long <- gather(dat, key = "CellType", value = "FPKM", -c("Gene_ID", "Gene_Na
 top.thres <- 0.995
 inmain <- "/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell"
 meanfilt <- 10
-jbin <- "TRUE"; kstr <- "15_20_25_30_35"
-# jbin <- "FALSE"; kstr <- "15_20_25_30"
+# jbin <- "TRUE"; kstr <- "15_20_25_30_35"
+jbin <- "FALSE"; kstr <- "15_20_25_30"
 # jmark <- "H3K4me3"
 # jmark <- "H3K27me3"
-jmark <- "H3K4me1"
+# jmark <- "H3K4me1"
+# jmark <- "H3K4me3"
 # jmark <- "H3K9me3"
+jmark <- "H3K27me3"
+
 indir <- paste0("lda_outputs.meanfilt_", 
                 meanfilt,
                 ".cellmin_100.cellmax_500000.binarize.", jbin, 
@@ -95,10 +75,9 @@ out.lda <- ChooseBestLDA(out.lda)
 tm.result <- posterior(out.lda)
 
 outmain <- "~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots"
-plotout <- file.path(outmain, paste0(jmark, "_LDA_summarized_bins.pdf"))
+plotout <- file.path(outmain, paste0(jmark, paste0("_LDA_bins_top_regions.", Sys.Date(), ".pdf")))
 
 jtopic <- 1
-
 
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
@@ -127,6 +106,7 @@ print(sessionInfo())
 jcol.rgbs <- lapply(seq(kchoose), ColorsByGamma, topics.mat, c("pink", "darkred"))
 nb.col <- 5
 nb.row <- ceiling(kchoose / nb.col)
+
 
 plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, asp = 0.75, cex = 0.2)
 par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1), pty = "s")
@@ -178,9 +158,23 @@ regions.annotated$region_coord <- names(regions.range)
 
 top.peaks.annotated <- dplyr::left_join(top.peaks, subset(regions.annotated, select = c(region_coord, SYMBOL)), by = c("term" = "region_coord"))
 
-hit.peaks <- subset(regions.annotated, abs(distanceToTSS) < 50000 & grepl("Hbb", SYMBOL))$region_coord
+# order topics by the amount of variance they explain ??
 
-jpeak <- "chr7:103800000-103900000"
+# get top 200 beta distributions??
+ggplot(top.peaks.annotated, aes(x = log10(beta))) + facet_wrap(~topic) + geom_density()
+
+top.sum <- top.peaks.annotated %>%
+  group_by(topic) %>%
+  top_n(250) %>%
+  summarise(beta = mean(beta)) %>%
+  arrange(desc(beta))
+print(top.sum)
+
+
+# hit.peaks <- subset(regions.annotated, abs(distanceToTSS) < 50000 & grepl("Hbb", SYMBOL))$region_coord
+print(top.peaks.annotated)
+
+(jpeak <- top.peaks.annotated$term[[1]])
 PlotImputedPeaks(tm.result, jpeak, jmark, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
 
 # how top hits for specific topics
@@ -206,9 +200,9 @@ print(subset(top.peaks.annotated, topic == 12), n = 50)
 print(subset(top.peaks.annotated, topic == 10), n = 50)
 print(subset(top.peaks.annotated, topic == 7), n = 50)
 
-jgene <- c("Tgm2", "Mmrn1", "Trim48", "Pdzk1ip1", "Mllt3", "Mecom")
-jgene <- c("Vldlr", "Uhrf1", "Rrm2", "Lig1", "Tipin")
-jgene <- c("F2r", "Itga2b", "Zfp385a", "Zfpm1", "Plek", "Cd9", "Zeb2")
+# jgene <- c("Tgm2", "Mmrn1", "Trim48", "Pdzk1ip1", "Mllt3", "Mecom")
+# jgene <- c("Vldlr", "Uhrf1", "Rrm2", "Lig1", "Tipin")
+# jgene <- c("F2r", "Itga2b", "Zfp385a", "Zfpm1", "Plek", "Cd9", "Zeb2")
 
 # translate beta to log fold change?
 mat.norm <- t(tm.result$topics %*% tm.result$terms)  # this should give normalized signal, without the poisson noise?
@@ -220,15 +214,15 @@ mat.norm <- t(tm.result$topics %*% tm.result$terms)  # this should give normaliz
 
 # dat.umap.fo
 
-nn.louv=27
+nn.louv=60
 jmetric.louv='euclidean' 
 jmindist.louv=0.4
 jseed.louv=123
 
 custom.settings.louv <- GetUmapSettings(nn=nn.louv, 
-                                           jmetric=jmetric.louv, 
-                                           jmindist=jmindist.louv, 
-                                           seed = jseed.louv)
+                                        jmetric=jmetric.louv, 
+                                        jmindist=jmindist.louv, 
+                                        seed = jseed.louv)
 
 dat.umap.louv <- umap(topics.mat, config = custom.settings.louv)
 
@@ -255,7 +249,7 @@ clstr <- hash(g.out$names, g.out$membership)
 
 dat.umap.long$louvain <- sapply(dat.umap.long$cell, function(x) clstr[[x]])
 
-jclst <- 6
+jclst <- 1
 clstrs.orig <- as.character(sort(unique(as.numeric(dat.umap.long$louvain))))
 # swap jclst with first element
 clstrs.new <- clstrs.orig
@@ -265,139 +259,105 @@ remap.clstr <- hash(clstrs.orig, clstrs.new)
 
 dat.umap.long$louvain <- sapply(as.character(dat.umap.long$louvain), function(x) remap.clstr[[x]])
 dat.umap.long$louvain <- factor(as.character(dat.umap.long$louvain), levels = clstrs.orig)  # 1 to N
-m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 0.5) + 
+m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 2) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_brewer(palette = "Spectral")
 print(m.louvain)
 
 # plot graph with edges?
 # https://stackoverflow.com/questions/5364264/how-to-control-the-igraph-plot-layout-with-fixed-positions
-
-par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
-coords <- layout.auto(g)
-plot.igraph(igraph::simplify(g),
-            layout = dat.umap$layout[V(g)$name, ],
-            vertex.label = NA,
-            edge.curved=FALSE,
-            label = NA,
-            edge.width = 0.5,
-            vertex.size = 1)
-
+# par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+# coords <- layout.auto(g)
+# plot.igraph(igraph::simplify(g),
+#             layout = dat.umap$layout[V(g)$name, ],
+#             vertex.label = NA,
+#             edge.curved=FALSE,
+#             label = NA,
+#             edge.width = 0.5,
+#             vertex.size = 1)
 
 
 # Merge cells and plot hits -----------------------------------------------
 
 
-gen <- "mm10"
-chr <- "chr7"
+# show topic 16
+jtopn <- 50
+i <- 28
+i <- 27
+i <- 30
+i <- 5
 
+i <- 7
+(jsub <- subset(top.peaks.annotated, topic == i) %>% top_n(n=jtopn, wt = beta))
+
+m.top <- jsub %>%
+  mutate(term = forcats::fct_reorder(term, dplyr::desc(beta))) %>%
+  ggplot(aes(x = term, y = log10(beta), label = SYMBOL)) +
+  geom_point() + theme_bw(14) + geom_text_repel() +
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlab("") + ylab("Log10 Bin Weight") +
+  ggtitle(paste("Top peak weights for topic:", i))
+print(m.top)
+
+
+# show IgH region
+subset(top.peaks.annotated, SYMBOL == "Mir6388")
+gen <- "mm10"
+# chr <- "chr7"
 mart.obj <- useMart(biomart = 'ENSEMBL_MART_ENSEMBL', dataset = 'mmusculus_gene_ensembl', host="www.ensembl.org")
 
+# get data for chromo 7
+# redo for top 1000 peaks probably??
 
-# Cherry pick regions  ----------------------------------------------------
-
-head(top.peaks.annotated)
-
-jtopn <- 5
-# erythrypoiesis peaks, topic 1
-jtopic <- 1
-jcelltype <- "nucleate_erythryocyte"
-genes.eryth <- GetTopGenes(dat.long, jcelltype, jtopic, topn = jtopn)
-
-# granulocyte peaks, topic 21 or topic 13?
-# jtopic <- 21
-jtopic <- 13
-jcelltype <- "granulocyte"
-genes.gran <- GetTopGenes(dat.long, jcelltype, jtopic, topn = jtopn)
-genes.gran2 <- GetTopGenes(dat.long, jcelltype, 13, topn = jtopn)
-
-# B-cells
-# jtopic <- 22
-jtopic <- 11
-jcelltype <- "lymphocyte_of_B_lineage"
-genes.b <- GetTopGenes(dat.long, jcelltype, jtopic, topn = jtopn)
-# genes.bcells <- c("Irf4", "Irf8", "Il7r", "Ppp1r16b", "Bach2")
-
-# T-cells
-jtopic <- 14
-jcelltype <- "T_cell"
-# 14 is T-cells
-genes.t <- GetTopGenes(dat.long, jcelltype, jtopic, topn = jtopn)
-ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `14`)) + geom_point() 
-# interesting genes: Ly6c2 by https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4039991/ Teichmann
-
-# Natural killer cells
-jtopic <- 27
-jcelltype <- "natural_killer_cell"
-genes.nk <- GetTopGenes(dat.long, jcelltype, jtopic, topn = jtopn)
-ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `27`)) + geom_point() 
-
-# Megakaryocytes
-jtopic <- 15
-jcelltype <- "megakaryocyte"
-genes.mega <- GetTopGenes(dat.long, jcelltype, jtopic, topn = jtopn)
-ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `15`)) + geom_point() 
-
-# Monocytes
-# jtopic <- 13
-jtopic <- 5
-jcelltype <- "monocyte"
-genes.mono <- GetTopGenes(dat.long, jcelltype, jtopic, topn = jtopn)
-ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `5`)) + geom_point() 
-
-# Dendritic cells
-jtopic <- 9
-jcelltype <- "dendritic_cell"
-genes.den <- GetTopGenes(dat.long, jcelltype, jtopic, topn = jtopn)
-ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `9`)) + geom_point() 
-
-# Stem cells??
-jtopic <- 12
-jcelltype <- "Kit_and_Sca1−positive_hematopoietic_stem_cell"
-genes.stem <- GetTopGenes(dat.long, jcelltype, jtopic, topn = jtopn)
-ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = `12`)) + geom_point() 
+jpeaks <- unique(top.peaks.annotated$term)
 
 
-# Heatmap of peaks?  ------------------------------------------------------
+# Read xlong --------------------------------------------------------------
 
-# heatmap of peak weights for each topic 
-peaks <- c(genes.eryth$term, genes.gran$term, genes.b$term, genes.t$term, genes.nk$term, genes.mega$term, genes.mono$term, genes.den$term, genes.stem$term)
-# add Hbb
-peaks.more <- subset(top.peaks.annotated, grepl("Hbb|Hba", SYMBOL))[1:2, ]$term
-peaks <- c(peaks, peaks.more)
+louvains <- sort(unique(hash::values(clstr)))
+inf.xlong <- paste0("/Users/yeung/data/scchic/robjs/x_sum.", jmark, ".rds")
+x.sum <- readRDS(inf.xlong)
 
-peaks.i <- which(colnames(tm.result$terms) %in% peaks)
-topics <- c(1, 13, 11, 14, 27, 15, 5, 9, 12)
-topics.i <- which(rownames(tm.result$terms) %in% topics)
-terms.sub <- tm.result$terms[topics.i, peaks.i]
+# jtopic <- 9
+# (jpeak <- subset(top.peaks.annotated, topic == jtopic)$term[[2]])
+# jpeak <- "chr11:96360000-96460000"  # Hoxb1
+jpeak <- "chr15:102860000-102960000"  # Hoxc13
 
-# rename peaks
-peaks.hash <- hash(top.peaks.annotated$term, paste(top.peaks.annotated$term, top.peaks.annotated$SYMBOL, sep = ";"))
-
-colnames(terms.sub) <- sapply(colnames(terms.sub), function(x) peaks.hash[[x]])
-
-# plot heatmap
-library(heatmap3)
-library(gplots)
-library(made4)
-
-pdf("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/topics_and_heatmap.pdf", useDingbats = FALSE)
-# plot topics
-
-for (topic in topics){
-  topic <- as.character(topic)
-  dat.tmp <- dat.umap.long %>% dplyr::select(c(umap1, umap2, topic))
-  dat.tmp[[topic]] <- CapQuantile(dat.tmp[[topic]], cap.quantile = 0.99)
-  midpt <- min(dat.tmp[[topic]]) + (max(dat.tmp[[topic]]) - min(dat.tmp[[topic]])) / 2
-  # compress 
-  # print(midpt)
-  dat.tmp <- RankOrder(dat.tmp, topic)
-  m.top <- ggplot(dat.tmp, aes_string(x = "umap1", y = "umap2", color = paste0("`", topic, "`")), order = orderrank) + geom_point() +
-    scale_color_gradient2(low = "gray95", mid = "gray50", high = "darkred", midpoint = midpt)
-  print(m.top)
+jgene <- as.character(subset(top.peaks.annotated, term == jpeak)$SYMBOL[[1]])
+m1 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = NULL, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec)
+m2 <- PlotImputedPeaks2(tm.result = tm.result, peaks.keep = jpeak, jchip = jmark, use.count.mat = count.mat, usettings = custom.settings, gname = jgene, jsize = 1, jcolvec = jcolvec, scale.fac = 10^6, pseudocount = 1)
+multiplot(m1, m2, cols = 2)
+jstart <- as.numeric(GetStart(jpeak)) - 6*10^5
+jend <- as.numeric(GetEnd(jpeak)) + 6*10^5
+jchromo <- GetChromo(jpeak)
+if (jchromo == "chr20"){
+  jchromo <- "chrX"
+} else if (jchromo == "chr21"){
+  jchromo <- "chrY"
 }
 
-# pl t hits
-
-heatmap3(t(terms.sub), scale = "row", margins = c(5, 8), cexRow = 0.25)
-dev.off()
+system.time(
+  PlotGTrack2(x.sum, jstart, jend, mart.obj, louvains, gen = "mm10", chr = jchromo, jheight = "auto")
+) 
+print(m.louvain)
+# 
+# jsub <- subset(x.sum, seqnames == jchromo & start >= jstart & end <= jend)
+# ggplot(jsub, aes(x = (start + end) / 2, y = exprs)) + geom_line() + facet_wrap(~louvain)
+# 
+# dat <- makeGRangesFromDataFrame(jsub, keep.extra.columns = TRUE)
+# ymin <- 0
+# ymax <- 150
+# chr <- jchromo
+# # jtype <- "confint"
+# jtype <- "mountain"
+# # jtype <- "l"
+# dtrack <- DataTrack(range=subset(dat, louvain == 3, select = c(exprs)), ylim = c(ymin,ymax), 
+#                                      start = jstart, 
+#                                      end = jend, 
+#                                      chromo = chr,
+#                                      genome = gen, name = paste("Clstr", 3),
+#                       span = 0.1, degree = 1,
+#                                      type=jtype)
+# jsizes <- NULL
+# plotTracks(dtrack, from = jstart, to = jend, collapseTranscripts="meta", sizes = jsizes)

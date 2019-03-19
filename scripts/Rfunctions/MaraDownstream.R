@@ -55,15 +55,32 @@ DoUmapFromLDA <- function(out.lda, custom.settings){
   return(dat.umap.long)
 }
 
-PlotMotifInUmap <- function(jmotif, dat.merged, zscores, jmark, jsize = 1){
+PlotMotifInUmap <- function(jmotif, dat.merged, zscores, jmark, jsize = 1, colvec = c("blue", "gray95", "red")){
   dat.sub <- subset(dat.merged, motif == jmotif)
   jzscore <- signif(subset(zscores, motif == jmotif)$zscore, digits = 2)
   jtitle <- paste(jmotif, "zscore:", jzscore, jmark)
-  m <- ggplot(dat.sub, aes(x = umap1, y = umap2, color = activity)) + geom_point(size = jsize) + 
+  # add ordering statistic
+  # https://stackoverflow.com/questions/11805354/geom-point-put-overlapping-points-with-highest-values-on-top-of-others
+  dat.sub <- dat.sub %>%
+    group_by(motif) %>%
+    mutate(orderrank = rank(activity, ties.method = "first")) %>%
+    arrange(orderrank)
+  m <- ggplot(dat.sub, aes(x = umap1, y = umap2, color = activity, order = orderrank)) + geom_point(size = jsize) +
+  # m <- ggplot(dat.sub, aes(x = umap1, y = umap2, color = activity)) + geom_point(size = jsize) + 
     ggtitle(jtitle) + 
     theme_bw() + 
-    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-    scale_color_gradient2(low = muted("blue"), mid = "grey95", high = muted("red"), midpoint = mean(dat.sub$activity))
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  if (length(colvec) == 3){
+    midpt <- min(dat.sub$activity) + (max(dat.sub$activity) - min(dat.sub$activity)) / 2
+    m <- m + 
+      scale_color_gradient2(low = colvec[[1]], mid = colvec[[2]], high = muted(colvec[[3]]), midpoint = midpt)
+  } else if (length(colvec) == 2){
+    m <- m + 
+      scale_color_gradient(low = colvec[[1]], high = muted(colvec[[2]]), space = "Lab")
+  } else {
+    warning(paste("Colvec must be length 2 or 3"))
+    print(colvec)
+  }
   return(m)
 }
 
