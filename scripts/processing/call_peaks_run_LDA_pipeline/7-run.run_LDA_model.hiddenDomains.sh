@@ -9,7 +9,7 @@
 # jtime='8:00:00'
 # if binarize
 jmem='24G'
-jtime='6:00:00'
+jtime='60:00:00'
 
 workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 
@@ -18,28 +18,31 @@ cd $workdir
 rs="scripts/processing/lib/run_LDA_model.R"
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 
-marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
+# marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
+marks="H3K27me3"
 mindist="1000"
 cell="BM"
 
 K=20  # kind of useless parameter
+# ncores=5
+# topics="5,10,15,20,25"
 ncores=5
-topics="5,10,15,20,25"
+topics="50,100,150,250,500"
 topicsName=`echo $topics | sed 's/,/_/g'`
 tunemodels="TRUE"
 binarize="TRUE"
 cellmin="100"
 cellmax="500000"
+meanmax="1"  # meanmax = 1 keeps the Erdr1 and Mid1 genes, which are probably real? But there may be some weird peaks as well that are skewing results.
 
 # marks="H3K27me3"
 for mark in $marks; do
     inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}/PZ-${cell}-${mark}.merged.NoCountThres.hiddenDomains.Robj"
     # meanmax="0.15"  # about 0.32 for pvalcutoff 0.5, 0.15 for pvalcutoff 0.3
-    meanmax="1"  # meanmax = 1 keeps the Erdr1 and Mid1 genes, which are probably real? But there may be some weird peaks as well that are skewing results.
     # cellmin="1000"
     # cellmax="50000"
     # relax assumptions to capture more H3K4me3 and H3K9me3 cells?
-    outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisHiddenDomains_${mindist}/lda_outputs.AutosomesOnly.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}"
+    outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisHiddenDomains_${mindist}_2019-02-17/lda_outputs.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}"
     [[ ! -d $outdir ]] && mkdir -p $outdir
 
     [[ ! -e $inf ]] && echo "$inf not found, exiting" && exit 1
