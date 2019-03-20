@@ -7,10 +7,14 @@
 rm(list=ls())
 
 library(ggplot2)
-library(ggrepel)
+# library(ggrepel)
 
 library(dplyr)
-library(hash)
+# library(hash)
+
+library(JFuncs)
+library(scales)
+library(umap)
 
 source("scripts/Rfunctions/MaraDownstream.R")
 source("scripts/Rfunctions/AuxLDA.R")
@@ -36,16 +40,21 @@ plts.lst <- lapply(jmarks.all, function(jmark){
 multiplot(plts.lst[[1]], plts.lst[[3]], plts.lst[[2]], plts.lst[[4]], cols = 2)
 
 
+names(count.mat.lst) <- jmarks.all
 
 # plot a gene
 ref.mark <- "H3K4me1"
-jgene <- "Rprl1"
+jgene <- "Hoxc13"
 out.sub <- GetPeaksFromGene(jgene, annots.lst[[ref.mark]])
 (jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]]))
 jscale.fac <- 1
 jpseudo <- 10^-6
 jsize <- 1
-PlotUmapAllMarks(jmarks.all, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, custom.settings.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
+
+jmarks.sub <- c("H3K27me3" = "H3K27me3", "H3K9me3" = "H3K9me3")
+system.time(
+  PlotUmapAllMarks(jmarks.sub, tm.result.lst, jpeak, juse.count.mat = count.mat.lst, custom.settings.lst, jgene, jsize, jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo)
+)
 
 
 
