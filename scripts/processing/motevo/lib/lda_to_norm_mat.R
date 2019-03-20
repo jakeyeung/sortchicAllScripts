@@ -38,6 +38,8 @@ parser$add_argument("-t", "--thres", type = "double", default=0.995,
                         help="Threshold for picking top hits")
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                         help="Print extra output [default]")
+parser$add_argument("--choose_highest_K", action="store_true", default=FALSE,
+                        help="Chooest highest K rather than best K")
 parser$add_argument("--center", action="store_true", default=FALSE,
                         help="Center rows of the data")
                                         
@@ -54,7 +56,13 @@ if ( args$verbose ) {
 load(args$infile, v=T)  # out.lda, counts.mat
 
 if (length(out.lda) > 1){
-  out.lda <- ChooseBestLDA(out.lda)
+  if (args$choose_highest_K){
+    klst <- sapply(out.lda, function(x) x@k)
+    klst.i <- which.max(klst)
+    out.lda <- out.lda[[klst.i]]
+  } else {
+    out.lda <- ChooseBestLDA(out.lda)
+  }
 }
 kchoose <- out.lda@k
 
