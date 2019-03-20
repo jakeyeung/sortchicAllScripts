@@ -51,6 +51,10 @@ kchoose <- best.K
 out.lda <- out.lda.lst[[which(Kvec == kchoose)]]
 tmResult <- posterior(out.lda)
 
+# change chr20 to chrX, chr21 to chrY
+colnames(tmResult$terms) <- gsub("chr20", "chrX", colnames(tmResult$terms))
+colnames(tmResult$terms) <- gsub("chr21", "chrY", colnames(tmResult$terms))
+
 # if (is.null(colnames(tmResult$terms))){
 #   colnames(tmResult$terms) <- rownames(count.mat)
 # }
@@ -76,7 +80,8 @@ regions.annotated$region_coord <- names(regions.range)
 
 print(paste("Running great multicore", ncores))
 out.great.lst <- mclapply(seq(best.K), function(i){
-  gr.in <- regions.range[topic.regions[[i]], ]
+  # gr.in <- regions.range[topic.regions[[i]], ]
+  gr.in <- regions.range[names(topic.regions[[i]]), ]  # for running on bins 2019-03-15
   out.great <- submitGreatJob(gr.in, species="mm10", request_interval = 30)
   return(out.great)
 }, mc.cores = ncores)
