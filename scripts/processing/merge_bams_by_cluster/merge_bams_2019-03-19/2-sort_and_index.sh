@@ -4,7 +4,8 @@
 # After merging, sort and index 
 # 2019-02-04
 
-indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged"
+# indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged"
+indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/sorted_bams_2019-03-20"
 
 n=0
 maxjobs=4
@@ -20,6 +21,6 @@ maxjobs=4
 #     fi
 # done
 
-for bsorted in `ls -d $indir/*.sorted.bam`; do
+for bsorted in `ls -d $indir/*.bam`; do
     samtools index $bsorted
 done
