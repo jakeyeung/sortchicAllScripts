@@ -60,7 +60,7 @@ PlotAllMarks <- function(jgene, jpeak, jmarks, out.objs, custom.settings){
 }
 
 
-LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995, inf = NULL){
+LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995, inf = NULL, convert.chr20.21.to.X.Y = TRUE){
   # jbin <- "TRUE"
   # top.thres <- 0.995
   if (is.null(inf)){
@@ -75,6 +75,11 @@ LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995, inf = NULL){
   out.lda <- ChooseBestLDA(out.lda)
   kchoose <- out.lda@k
   tm.result <- posterior(out.lda)
+  
+  if (convert.chr20.21.to.X.Y){
+    colnames(tm.result$terms) <- gsub("chr20", "chrX", colnames(tm.result$terms))
+    colnames(tm.result$terms) <- gsub("chr21", "chrY", colnames(tm.result$terms))
+  }
   
   regions <- data.frame(seqnames = sapply(colnames(tm.result$terms), GetChromo),
                         start = sapply(colnames(tm.result$terms), GetStart),

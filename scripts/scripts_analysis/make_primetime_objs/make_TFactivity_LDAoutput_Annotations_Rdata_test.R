@@ -33,11 +33,13 @@ jmarks.all <- list("H3K4me1" = "H3K4me1", "H3K4me3" = "H3K4me3", "H3K27me3" = "H
 
 
 jcolvec <- c("gray80", "gray50", "darkblue")
+jmotif <- "Sox6"
 jmotif <- "Cebpb"
 plts.lst <- lapply(jmarks.all, function(jmark){
   return(PlotMotifInUmap(jmotif, dat.merged.lst[[jmark]], mara.outs[[jmark]]$zscores, jmark, jsize = 0.75, colvec = jcolvec))
 })
 multiplot(plts.lst[[1]], plts.lst[[3]], plts.lst[[2]], plts.lst[[4]], cols = 2)
+
 
 
 names(count.mat.lst) <- jmarks.all

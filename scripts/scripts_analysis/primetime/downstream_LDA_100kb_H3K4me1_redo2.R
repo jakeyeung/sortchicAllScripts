@@ -15,6 +15,8 @@ library(ggplot2)
 library(umap)
 library(GenomicRanges)
 library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(TxDb.Mmusculus.UCSC.mm10.ensGene)
+library(EnsDb.Mmusculus.v79)
 library(org.Mm.eg.db)
 library(ChIPseeker)
 library(rGREAT)
@@ -51,12 +53,12 @@ dat.long <- gather(dat, key = "CellType", value = "FPKM", -c("Gene_ID", "Gene_Na
 top.thres <- 0.995
 inmain <- "/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_MetaCell"
 meanfilt <- 10
-jbin <- "TRUE"; kstr <- "15_20_25_30_35"
-# jbin <- "FALSE"; kstr <- "15_20_25_30"
+# jbin <- "TRUE"; kstr <- "15_20_25_30_35"
+jbin <- "FALSE"; kstr <- "15_20_25_30"
 # jmark <- "H3K4me3"
-# jmark <- "H3K27me3"
+jmark <- "H3K27me3"
 # jmark <- "H3K4me1"
-jmark <- "H3K9me3"
+# jmark <- "H3K9me3"
 indir <- paste0("lda_outputs.meanfilt_", 
                 meanfilt,
                 ".cellmin_100.cellmax_500000.binarize.", jbin, 
@@ -70,6 +72,14 @@ load(inf, v=T)
 out.lda <- ChooseBestLDA(out.lda)
 (kchoose <- out.lda@k)
 tm.result <- posterior(out.lda)
+
+# convert chr20 to chrX, chr21 to chrY
+print(tail(colnames(tm.result$terms)))
+colnames(tm.result$terms) <- gsub("chr20", "chrX", colnames(tm.result$terms))
+colnames(tm.result$terms) <- gsub("chr21", "chrY", colnames(tm.result$terms))
+# names(colnames(tm.result$terms)) <- gsub("chr20", "chrX", names(colnames(tm.result$terms)))
+# names(colnames(tm.result$terms)) <- gsub("chr21", "chrY", names(colnames(tm.result$terms)))
+print(tail(colnames(tm.result$terms)))
 
 outmain <- "~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots"
 plotout <- file.path(outmain, paste0(jmark, "_LDA_bins_top_regions.pdf"))
@@ -137,7 +147,10 @@ cell.assign <- apply(topics.mat, 1, which.max)
 top.peaks <- tidytext::tidy(out.lda, matrix = "beta") %>% 
   group_by(topic) %>%
   arrange(desc(beta)) %>%
-  mutate(rnk = seq(length(beta)))
+  mutate(rnk = seq(length(beta)), 
+         term = gsub("chr20", "chrX", term),
+         term = gsub("chr21", "chrY", term))
+
 
 # annotate regions?
 regions <- data.frame(seqnames = sapply(colnames(tm.result$terms), GetChromo),
@@ -149,7 +162,9 @@ regions <- subset(regions, !seqnames %in% c("chr20", "chr21"))
 
 regions.range <- makeGRangesFromDataFrame(as.data.frame(regions))
 regions.annotated <- as.data.frame(annotatePeak(regions.range, 
-                                                TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, 
+                                                # TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene, 
+                                                TxDb=TxDb.Mmusculus.UCSC.mm10.ensGene, 
+                                                # TxDb=EnsDb.Mmusculus.v79, 
                                                 annoDb='org.Mm.eg.db'))
 regions.annotated$region_coord <- names(regions.range)
 

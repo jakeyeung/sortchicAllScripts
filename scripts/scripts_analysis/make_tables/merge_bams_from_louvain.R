@@ -11,6 +11,9 @@ library(ggrepel)
 library(dplyr)
 library(hash)
 
+library(umap)
+library(igraph)
+
 source("scripts/Rfunctions/MaraDownstream.R")
 source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/Aux.R")
@@ -71,11 +74,18 @@ jmark <- "H3K27me3"
 jmark <- "H3K9me3"
 
 print(head(dat.umap.long.lst[[jmark]]))
-m1 <- ggplot(dat.umap.long.lst[[jmark]], aes(x = umap1, y = umap2, color = louvain)) + geom_point() + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  ggtitle(jmark)
-print(m1)
 
+# print to file
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000")
+pdf("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/louvain_colors.pdf")
+for (jmark in jmarks.all){
+  m1 <- ggplot(dat.umap.long.lst[[jmark]], aes(x = umap1, y = umap2, color = louvain)) + geom_point(size=2.5) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    ggtitle(jmark) + scale_color_manual(values = cbPalette)
+  print(m1)
+}
+dev.off()
 
 # change name to cell name
 # write table summary for all 
@@ -83,6 +93,11 @@ dat.merge <- bind_rows(dat.umap.long.lst) %>% dplyr::select(cell, louvain, mark)
 dat.merge$cellnew <- sapply(dat.merge$cell, MakeNewCellName.rev, experihash, cellhash)
 dat.merge <- dat.merge %>% arrange(mark, louvain, cell)
 data.table::fwrite(dat.merge, file = file.path(outdir, paste0("cell_to_bam_summary.txt")), sep = "\t", col.names = FALSE)
+
+# write UMAP coordinates 
+data.table::fwrite(bind_rows(dat.umap.long.lst), file = file.path(outdir, paste0("cell_to_bam_summary_withUmapCoordinates.txt")), sep = "\t", col.names = TRUE)
+
+# write 
 
 
 # write to output
