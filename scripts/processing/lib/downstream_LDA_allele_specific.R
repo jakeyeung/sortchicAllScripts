@@ -17,6 +17,18 @@ inf <- args[[2]]
 assertthat::assert_that(file.exists(inf))
 plotout <- args[[3]]
 
+nn <- as.numeric(args[[4]])
+jmindist <- as.numeric(args[[5]])
+sweep.params <- as.logical(args[[6]])
+
+# sensible values
+# nn=40
+# jmindist=0.4
+assertthat::assert_that(!is.na(nn))
+assertthat::assert_that(!is.na(jmindist))
+assertthat::assert_that(!is.na(jmindist))
+
+
 # jmark <- "H3K4me1"
 # jbin <- "TRUE"
 # dirbase <- "/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_MetaCell"
@@ -29,6 +41,8 @@ plotout <- args[[3]]
 #   inf <- file.path(dirbase, jdir, fname)
 # }
 # 
+
+library(tidyr)  # gather
 
 library(topicmodels)
 library(dplyr)
@@ -92,9 +106,6 @@ GetChromoSplitAllele <- function(x){
 # settings for H3K4me1
 # the northern island with Sox6, Hbb, and Hba signal
 # nearest neighbors settings for UMAP
-nn=40
-jmindist=0.4
-
 nnvec <- seq(15, 51, 3)
 mindistvec <- c(0.1, 0.2)
 nnmindistvec <- apply(expand.grid(nnvec, mindistvec, stringsAsFactors=FALSE), 1, function(row) paste(row, collapse="_"))
@@ -135,7 +146,7 @@ if (length(out.lda) > 1){
 
 nchromos <- 20
 chrs.raw <- seq(2 * nchromos)
-chrs.new <- chrs %% nchromos  # chromosome 0 is X chromosome
+chrs.new <- chrs.raw %% nchromos  # chromosome 0 is X chromosome
 chrs.allele <- ceiling(chrs.raw / nchromos)
 chrs.allele.named <- sapply(chrs.allele, function(x) ifelse(x == 1, "b6", "cast"))
 
@@ -172,21 +183,29 @@ print(tail(colnames(tm.result$terms)))
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 
-custom.settings.lst <- lapply(nnmindistvec, function(nn_mindist){
-  nntmp <- as.numeric(strsplit(nn_mindist, "_")[[1]][[1]])
-  mindisttmp <- as.numeric(strsplit(nn_mindist, "_")[[1]][[2]])
-  settingstmp <- GetUmapSettings(nn=nntmp, jmetric=jmetric, jmindist=mindisttmp, seed = jseed)
-  return(settingstmp)
-})
+# for sweeping parameters
+if (sweep.params){
+    custom.settings.lst <- lapply(nnmindistvec, function(nn_mindist){
+      nntmp <- as.numeric(strsplit(nn_mindist, "_")[[1]][[1]])
+      mindisttmp <- as.numeric(strsplit(nn_mindist, "_")[[1]][[2]])
+      settingstmp <- GetUmapSettings(nn=nntmp, jmetric=jmetric, jmindist=mindisttmp, seed = jseed)
+      return(settingstmp)
+    })
+
+}
+# for custom settings for real plot 
 custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
 custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)
 
-dat.umap.lst <- lapply(custom.settings.lst, function(csettings){
-  dat.umap.tmp <- umap(topics.mat, config = csettings)
-  rownames(dat.umap.tmp$layout) <- rownames(topics.mat)
-  dat.umap.tmp <- data.frame(umap1 = dat.umap.tmp$layout[, 1], umap2 = dat.umap.tmp$layout[, 2])
-  return(dat.umap.tmp)
-})
+if (sweep.params){
+    dat.umap.lst <- lapply(custom.settings.lst, function(csettings){
+      dat.umap.tmp <- umap(topics.mat, config = csettings)
+      rownames(dat.umap.tmp$layout) <- rownames(topics.mat)
+      dat.umap.tmp <- data.frame(umap1 = dat.umap.tmp$layout[, 1], umap2 = dat.umap.tmp$layout[, 2])
+      return(dat.umap.tmp)
+    })
+    names(dat.umap.lst) <- nnmindistvec
+}
 
 dat.umap <- umap(topics.mat, config = custom.settings)
 rownames(dat.umap$layout) <- rownames(topics.mat)
@@ -225,12 +244,12 @@ topics.sum <- topics.long %>%
   arrange(entropy)
 print(topics.sum)
 
-m1.cellweights <- ggplot(topics.long, aes(x = topic, y = zscore, group = topic)) + geom_boxplot() + theme_bw() + scale_x_continuous(breaks = seq(out.lda@k)) + ylab("Zscore Cell Weights")
+m1.cellweights <- ggplot(topics.long, aes(x = topic, y = zscore, group = topic)) + geom_boxplot() + theme_bw() + scale_x_continuous(breaks = seq(out.lda@k)) + ylab("Zscore Cell Weights") + ggtitle("For each cell, a datapoint for a bin weight in zscore. Many outliers suggest a group of high weight cells")
 
 # plot distributions
-m1.cellweights.hist <- ggplot(topics.long, aes(x = zscore, group = topic)) + geom_histogram(bins = 50) + facet_wrap(~topic) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+m1.cellweights.hist <- ggplot(topics.long, aes(x = zscore, group = topic)) + geom_histogram(bins = 50) + facet_wrap(~topic) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + ggtitle("For each cell a dot for a bin weight (in zscore). Bimodal suggests a group of high weight cells")
 
-barplot(height = topics.sum$entropy, names.arg = topics.sum$topic, xlab = "Topic", ylab = "Entropy Measure H", main = "Low H suggests topic with islands of high cell weights. High H evenly distributed weights")
+barplot(height = topics.sum$entropy, names.arg = topics.sum$topic, xlab = "Topic", ylab = "Entropy Measure H", main = "Low H suggests topic with islands of high cell weights. High H evenly distributed weights", las = 2)
 
 topics.ranked <- topics.sum$topic  # rank the topics by increasing entropy 
 
@@ -345,41 +364,20 @@ chr <- "chr7"
 
 mart.obj <- useMart(biomart = 'ENSEMBL_MART_ENSEMBL', dataset = 'mmusculus_gene_ensembl', host="www.ensembl.org")
 
-# # get data for chromo 7
-# jpeaks <- grep("chr7", rownames(mat.norm), value = TRUE)
-# x <- as.data.frame(mat.norm[jpeaks, ])
-# x.long <- data.frame(exprs = unlist(x), cell = rep(colnames(x), each = nrow(x)), 
-#                      coord = rep(rownames(x), ncol(x)), stringsAsFactors = FALSE)
-# x.long$louvain.orig <- sapply(x.long$cell, function(x) clstr[[x]])
-# x.long$louvain <- sapply(as.character(x.long$louvain.orig), function(x) remap.clstr[[x]])
-# x.long$exprs <- x.long$exprs * 10^6
-# 
-# # get data for chromo 11
-# jpeaks11 <- grep("chr11", rownames(mat.norm), value = TRUE)
-# x11 <- as.data.frame(mat.norm[jpeaks11, ])
-# x.long11 <- data.frame(exprs = unlist(x11), cell = rep(colnames(x11), each = nrow(x11)), 
-#                        coord = rep(rownames(x11), ncol(x11)), stringsAsFactors = FALSE)
-# x.long11$louvain.orig <- sapply(x.long11$cell, function(x) clstr[[x]])
-# x.long11$louvain <- sapply(as.character(x.long11$louvain.orig), function(x) remap.clstr[[x]])
-# x.long11$exprs <- x.long11$exprs * 10^6
-
 pdf(plotout, useDingbats=FALSE)
 
-# plot many UMAPs
-names(dat.umap.lst) <- nnmindistvec
-jpeak <- "chr7:103800000-103900000"
-
-mlst <- lapply(nnmindistvec, function(x){
-  dat.umap.tmp <- dat.umap.lst[[x]]
-  jmain = x
-  m <- ggplot(dat.umap.tmp, aes(x = umap1, y = umap2)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + ggtitle(jmain)
-  return(m)
-  # print(m)
-})
-lapply(mlst, print)
+if (sweep.params){
+    # plot many UMAPs
+    mlst <- lapply(nnmindistvec, function(x){
+      dat.umap.tmp <- dat.umap.lst[[x]]
+      jmain = x
+      m <- ggplot(dat.umap.tmp, aes(x = umap1, y = umap2)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + ggtitle(jmain)
+      return(m)
+    })
+    lapply(mlst, print)
+}
 
 par(mfrow=c(nb.row, nb.col), mar=c(1,0.5,0.5,1))
-
 mapply(function(jcol.rgb, jtopic){
   plot(dat.umap$layout[, 1], dat.umap$layout[, 2], pch = 20, main = paste("Topic", jtopic), col = jcol.rgb, asp = 0.75)
 }, jcol.rgbs, seq(kchoose))
@@ -390,16 +388,20 @@ print(m1.cellweights)
 # plot distributions
 print(m1.cellweights.hist)
 
-barplot(height = topics.sum$entropy, names.arg = topics.sum$topic, xlab = "Topic", ylab = "Entropy Measure H", main = "Low H suggests topic with islands of high cell weights. High H evenly distributed weights")
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+barplot(height = topics.sum$entropy, names.arg = topics.sum$topic, xlab = "Topic", ylab = "Entropy Measure H", main = "Low H suggests topic with islands of high cell weights. High H evenly distributed weights", las = 2)
 
 
 # show interesting topics
 
 print(m.interesting)
 
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+barplot(height = topics.sum$entropy, names.arg = topics.sum$topic, xlab = "Topic", ylab = "Entropy Measure H", main = "Topics are now ordered by increasing entropy.", las = 2)
 
 # show top hits of betas
-for (i in seq(kchoose)){
+# for (i in seq(kchoose)){
+for (i in topics.ranked){
   m.top <- subset(top.peaks.annotated, topic == i) %>% top_n(n=25, wt = beta) %>% 
     mutate(term = forcats::fct_reorder(term, dplyr::desc(beta))) %>%
     ggplot(aes(x = term, y = log10(beta), label = SYMBOL)) + 
@@ -411,7 +413,7 @@ for (i in seq(kchoose)){
   print(m.top)
 }
 
-print(m)
+# print(m)
 
 # plot topic weight
 print(m.top)
