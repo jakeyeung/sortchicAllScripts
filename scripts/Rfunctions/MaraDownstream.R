@@ -3,7 +3,7 @@
 # File: ~/projects/scchic/scripts/Rfunctions/MaraDownstream.R
 # MARA downstream functions
 
-LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA.bc"){
+LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA.bc", fix.tech.rep = FALSE, rep.prefix = "rep", swap.tech.rep = NULL){
   act.mat <- fread(file.path(mdir, "Activities"), header = FALSE)
   se.mat <- fread(file.path(mdir, "StandardError"), header = FALSE)
   cnames <- unlist(fread(file.path(mdir, "Colnames"), header = FALSE), use.names = FALSE)
@@ -19,10 +19,37 @@ LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA
     jmark <- strsplit(x, "\\.")[[1]][[1]]
     jtiss <- strsplit(x, "\\.")[[1]][[2]]
     jmouse <- strsplit(x, "\\.")[[1]][[3]]
-    jrep <- paste0("rep", strsplit(x, "\\.")[[1]][[4]])
+    jrep <- paste0(rep.prefix, strsplit(x, "\\.")[[1]][[4]])
     jcell <- cellhash.bc[[strsplit(x, "\\.")[[1]][[6]]]]
     xnew <- paste(jtiss, jmark, jmouse, jrep, jcell, sep = "_")
   })
+  if (fix.tech.rep){
+    for (mouse in c("m1", "m2")){
+      # get tech reps for each mouse
+      cnames.i <- grep(mouse, cnames.new)
+      cnames.sub <- cnames.new[cnames.i]
+      techreps <- unique(sapply(cnames.sub, function(x) strsplit(x, "_")[[1]][[4]]))  # repS9 and repS11
+      techreps.number <- sapply(techreps, function(techrep) readr::parse_number(techrep))  # 9, 11
+      # convert number to rank
+      techreps.rank <- rank(techreps.number)
+      techreps.new <- paste("rep", techreps.rank, sep = "")
+      cnames.sub.new <- cnames.sub  # init
+      for (i in seq(length(techreps.new))){
+        techrep <- techreps[[i]]
+        techrep.new <- techreps.new[[i]]
+        cnames.sub.new <- gsub(paste0("_", techrep, "_"), paste0("_", techrep.new, "_"), cnames.sub.new)
+      }
+      # replace repS11 with rep1
+      # cnames.sub.new <- mapply(function(techrep, techrep.new, cname) return(gsub(techrep, techrep.new, cname)), techreps, techreps.new, cnames.sub)
+      cnames.new[cnames.i] <- cnames.sub.new
+    }
+  }
+  
+  if (!is.null(swap.tech.rep)){
+    # need to source
+    # source("scripts/Rfunctions/MatchCellNameToSample.R")
+    cnames.new <- sapply(cnames.new, function(x) SwapRepNameInCell(x, swap.tech.rep))
+  }
   
   colnames(act.mat) <- c("motif", cnames.new)
   colnames(se.mat) <- c("motif", cnames.new)
@@ -32,6 +59,9 @@ LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA
   return(list(act.mat = act.mat, se.mat = se.mat, zscores = zscores, act.long = act.long))
 }
 
+SwapTechRep <- function(x){
+  # swap tech rep 
+}
 
 LoadLDA <- function(inf){
   assertthat::assert_that(file.exists(inf))

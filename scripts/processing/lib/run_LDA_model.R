@@ -102,7 +102,7 @@ dev.off()
 bad.peaks <- dat.meanvar %>%
   filter(Mean > meanmax)
 print(head(bad.peaks$peak))
-print(paste("There are", nrow(bad.peaks), "peaks with more than", "counts. Removing them..."))
+print(paste("There are", nrow(bad.peaks), "peaks with more than", meanmax, "counts. Removing them..."))
 
 # filter them out before running count.mat
 print("Dimensions before filtering peaks...")
@@ -113,11 +113,11 @@ print("Dimensions after filtering peaks...")
 print(dim(count.mat))
 
 # remove peaks in chrM
-M.peaks <- grep("chrM|chrY|chrX", dat.meanvar$peak, value=TRUE)
-# M.peaks <- grep("chrM", dat.meanvar$peak, value=TRUE)
+# M.peaks <- grep("chrM|chrY|chrX", dat.meanvar$peak, value=TRUE)
+M.peaks <- grep("chrM", dat.meanvar$peak, value=TRUE)
 
 count.mat <- count.mat[which(!rownames(count.mat) %in% M.peaks), ]
-print("Dimensions after filtering peaks X, Y, M chromos")
+print("Dimensions after filtering peaks M chromos")
 print(dim(count.mat))
 
 

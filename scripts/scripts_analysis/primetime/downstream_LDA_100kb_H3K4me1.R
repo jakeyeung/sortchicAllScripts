@@ -75,6 +75,9 @@ out.lda <- ChooseBestLDA(out.lda)
 (kchoose <- out.lda@k)
 tm.result <- posterior(out.lda)
 
+
+
+
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 

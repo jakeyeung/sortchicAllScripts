@@ -213,7 +213,6 @@ count.imputed.lst <- lapply(tm.result.lst, function(tm.result) log10(t(tm.result
 
 annots.lst <- lapply(jmarks.all, function(jmark) out.objs[[jmark]]$regions.annot)
 
-
 # save data in best way 
 system.time(
   save(dat.merged.lst, mara.outs, custom.settings.lst, count.mat.lst, tm.result.lst, count.imputed.lst, annots.lst, file = "~/data/scchic/robjs/TFactivity_genelevels_objects.RData")

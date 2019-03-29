@@ -10,13 +10,11 @@
 jmarks="H3K27me3 H3K9me3"
 
 thres=0.99
-# jbin="TRUE"  # I used TRUE to make initial analysis looked good, should try on FALSE to see if it changes?
-jbin="FALSE"
+jbin="TRUE"  # I used TRUE to make initial analysis looked good, should try on FALSE to see if it changes?
+# jbin="FALSE"
 jcenter="TRUE"
 
 for jmark in $jmarks; do
-
-
     wd="/home/hub_oudenaarden/jyeung/projects/scChiC"
     rs="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/motevo/lib/lda_to_norm_mat.R"
     # inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_1.cellmin_100.cellmax_500000.binarize.FALSE/lda_out_meanfilt.BM-H3K4me1.CountThres0.K-5_15_25.Robj"

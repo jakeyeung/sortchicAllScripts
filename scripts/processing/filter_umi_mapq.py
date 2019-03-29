@@ -85,6 +85,12 @@ def main():
                         help='bc indx to get from header')
     parser.add_argument('--dumpfile', '-d', metavar='DUMPBAM', default = None,
                         help='bam output of UMI duplicates')
+    parser.add_argument('--no_prefix', '-p', action='store_true',
+                        help='If set, then remove chr from chromosome names')
+    parser.add_argument('--ignore_truncation', action='store_true',
+                        help='If set, then ignore truncation')
+    parser.add_argument('--add_prefix', action='store_true',
+                        help='Add chr to chromosome names')
     parser.add_argument('--genome', '-g', metavar='mm or hs', default = 'mm',
                         help='Genome is mm or hs to define chromosomes')
     args = parser.parse_args()
@@ -98,7 +104,11 @@ def main():
     ARG_INPUTS = ' '.join(ARG_INPUTS)
 
     # chromos = [''.join(['chr', str(i + 1)]) for i in range(20)] + ['chrX', 'chrY', 'chrM']
-    chromos = [''.join(['chr', str(i + 1)]) for i in range(22)] + ['chrX', 'chrY', 'chrM']
+    if not args.no_prefix:
+        chromos = [''.join(['chr', str(i + 1)]) for i in range(22)] + ['chrX', 'chrY', 'chrM']
+    else:
+        chromos = [''.join(['', str(i + 1)]) for i in range(22)] + ['X', 'Y', 'M']
+
     chromos_set = set(chromos)
     bad_chromos = set()
     print(chromos)
@@ -109,7 +119,9 @@ def main():
     badreadsumi = 0
     goodcounts = 0
     badchromo = 0
-    with pysam.AlignmentFile(args.infile, "rb") as bamf:
+    with pysam.AlignmentFile(args.infile, "rb", ignore_truncation=args.ignore_truncation) as bamf:
+        if args.add_prefix:
+            bamf.references = [''.join(['chr', x]) for x in bamf.references]
         with pysam.AlignmentFile(args.outfile, "wb", template=bamf) as outbam:
             if args.dumpfile is not None:
                 dumpbam = pysam.AlignmentFile(args.dumpfile, "wb", template=bamf)

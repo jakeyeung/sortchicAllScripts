@@ -31,7 +31,10 @@ source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/Aux.R")
 source("scripts/Rfunctions/GetMetaCellHash.R")
 
+
 source("scripts/Rfunctions/PlotFunctions.R")
+
+tm.resul
 
 # Constants you can tweak -------------------------------------------------
 
