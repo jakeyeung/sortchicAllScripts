@@ -28,6 +28,7 @@ assertthat::assert_that(!is.na(nn))
 assertthat::assert_that(!is.na(jmindist))
 assertthat::assert_that(!is.na(jmindist))
 
+pdf("/tmp/tmp_plots.pdf", useDingbats=FALSE)
 
 # jmark <- "H3K4me1"
 # jbin <- "TRUE"
@@ -363,6 +364,8 @@ gen <- "mm10"
 chr <- "chr7"
 
 mart.obj <- useMart(biomart = 'ENSEMBL_MART_ENSEMBL', dataset = 'mmusculus_gene_ensembl', host="www.ensembl.org")
+
+dev.off()
 
 pdf(plotout, useDingbats=FALSE)
 
