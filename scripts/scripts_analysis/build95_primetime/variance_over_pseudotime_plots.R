@@ -200,7 +200,7 @@ print(m.gw)
   
   # Plot the median log2 fold change relative to HSC cell: for one chromo
   
-  jsub.ref.merge <- lapply(grep.strs, function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+  jsub.ref.merge <- lapply(grep.strs, function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
     bind_rows() 
   m.mad <- ggplot(jsub.ref.merge, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = jsize.facet) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -208,7 +208,7 @@ print(m.gw)
   print(m.mad)
   
   # do genome-wide?
-  jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+  jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
     bind_rows() 
   m.mad.gw <- ggplot(jsub.ref.merge.gw, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = gw.jsize.facet) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -371,7 +371,7 @@ print(m.acf.myeloid.gw)
 
 # Plot the median log2 fold change relative to HSC cell: for one chromo
 
-jsub.ref.merge <- lapply(grep.strs, function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+jsub.ref.merge <- lapply(grep.strs, function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
   bind_rows() 
 m.mad <- ggplot(jsub.ref.merge, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = jsize.facet) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -379,7 +379,7 @@ m.mad <- ggplot(jsub.ref.merge, aes(x = umap1, y = umap2, color = exprs.diff.med
 print(m.mad)
 
 # do genome-wide?
-jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
   bind_rows() 
 m.mad.gw <- ggplot(jsub.ref.merge.gw, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = gw.jsize.facet) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -542,7 +542,7 @@ print(m.acf.myeloid.gw)
 
 # Plot the median log2 fold change relative to HSC cell: for one chromo
 
-jsub.ref.merge <- lapply(grep.strs, function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+jsub.ref.merge <- lapply(grep.strs, function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
   bind_rows() 
 m.mad <- ggplot(jsub.ref.merge, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = jsize.facet) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -551,7 +551,7 @@ print(m.mad)
 
 
 # do genome-wide?
-jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
   bind_rows() 
 m.mad.gw <- ggplot(jsub.ref.merge.gw, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = gw.jsize.facet) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -577,7 +577,7 @@ ggplot(traj.sub, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point
 
 
 # do genome-wide?
-jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
   bind_rows() 
 m.mad.gw <- ggplot(jsub.ref.merge.gw, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = gw.jsize.facet) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -743,7 +743,7 @@ print(m.acf.myeloid.gw)
 
 # Plot the median log2 fold change relative to HSC cell: for one chromo
 
-jsub.ref.merge <- lapply(grep.strs, function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+jsub.ref.merge <- lapply(grep.strs, function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
   bind_rows() 
 m.mad <- ggplot(jsub.ref.merge, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = jsize.facet) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -752,7 +752,7 @@ print(m.mad)
 
 
 # do genome-wide?
-jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
   bind_rows() 
 m.mad.gw <- ggplot(jsub.ref.merge.gw, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = gw.jsize.facet) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -773,7 +773,7 @@ print(m.mad.traj)
 
 
 # do genome-wide?
-jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long)) %>%
+jsub.ref.merge.gw <- lapply(c(""), function(gstr) GetDiffRelToCell(imputed.dat, gstr = gstr, trajs, trajname = trajname, dat.umap.long = dat.umap.long, jmark = jmark)) %>%
   bind_rows() 
 m.mad.gw <- ggplot(jsub.ref.merge.gw, aes(x = umap1, y = umap2, color = exprs.diff.med)) + geom_point(size = gw.jsize.facet) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 

@@ -1,5 +1,5 @@
 
-GetDiffRelToCell <- function(imputed.dat, gstr, trajs, trajname, dat.umap.long){
+GetDiffRelToCell <- function(imputed.dat, gstr, trajs, trajname, dat.umap.long, jmark){
   hsc.cell <- (trajs[[jmark]][[trajname]] %>% arrange(lambda) %>% dplyr::top_n(-1))$cell[[1]]
   jsub.all <- MatToLong(imputed.dat, gstr = gstr, cells.vec=NULL)
   jsub.hsc <- jsub.all %>% filter(cell == hsc.cell)
@@ -92,6 +92,7 @@ CalculateACF <- function(jsub.hsc, jstep = 20000, jtype = "correlation", jmain =
 
 
 SummarizeACF <- function(acf.out.hsc.lst){
+  assertthat::assert_that(!is.null(names(acf.out.hsc.lst)))
   acf.out.hsc.long <- lapply(names(acf.out.hsc.lst), function(g){
     lst <- acf.out.hsc.lst[[g]]
     dat.tmp <- data.frame(acfval = lst$acf, 
