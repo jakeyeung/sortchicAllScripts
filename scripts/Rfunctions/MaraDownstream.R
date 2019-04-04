@@ -51,12 +51,14 @@ LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA
     cnames.new <- sapply(cnames.new, function(x) SwapRepNameInCell(x, swap.tech.rep))
   }
   
+  colnames.lst <- data.frame(old.colnames = cnames, new.colnames = cnames.new)
+  
   colnames(act.mat) <- c("motif", cnames.new)
   colnames(se.mat) <- c("motif", cnames.new)
   
   act.long <- tidyr::gather(act.mat, -motif, key = "cell", value = "activity")
   
-  return(list(act.mat = act.mat, se.mat = se.mat, zscores = zscores, act.long = act.long))
+  return(list(act.mat = act.mat, se.mat = se.mat, zscores = zscores, act.long = act.long, colnames.lst = colnames.lst))
 }
 
 SwapTechRep <- function(x){

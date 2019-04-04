@@ -391,8 +391,13 @@ print(m1.cellweights)
 # plot distributions
 print(m1.cellweights.hist)
 
+<<<<<<< HEAD
+barplot(height = topics.sum$entropy, names.arg = topics.sum$topic, cex.names=1, las = 2, 
+        xlab = "Topic", ylab = "Entropy Measure H", main = "Low H suggests topic with islands of high cell weights. High H evenly distributed weights")
+=======
 par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
 barplot(height = topics.sum$entropy, names.arg = topics.sum$topic, xlab = "Topic", ylab = "Entropy Measure H", main = "Low H suggests topic with islands of high cell weights. High H evenly distributed weights", las = 2)
+>>>>>>> 8e3a0df9be8013b661d821a078241953332bb775
 
 
 # show interesting topics
