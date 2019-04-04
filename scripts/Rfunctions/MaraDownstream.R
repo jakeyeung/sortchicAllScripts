@@ -4,9 +4,10 @@
 # MARA downstream functions
 
 LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA.bc", fix.tech.rep = FALSE, rep.prefix = "rep", swap.tech.rep = NULL, filesuffix = ""){
-  act.mat <- fread(file.path(mdir, paste("Activities", filesuffix)), header = FALSE)
-  se.mat <- fread(file.path(mdir, paste("StandardError", filesuffix)), header = FALSE)
-  cnames <- unlist(fread(file.path(mdir, paste("Colnames", filesuffix)), header = FALSE), use.names = FALSE)
+  act.mat <- fread(file.path(mdir, paste0("Activities", filesuffix)), header = FALSE)
+  se.mat <- fread(file.path(mdir, paste0("StandardError", filesuffix)), header = FALSE)
+  cnames <- unlist(fread(file.path(mdir, paste0("Colnames", filesuffix)), header = FALSE), use.names = FALSE)
+  
   zscores <- fread(file.path(mdir, "Zscores"), header = FALSE)
   colnames(zscores) <- c("motif", "zscore")
   zscores <- zscores %>% arrange(desc(zscore))
