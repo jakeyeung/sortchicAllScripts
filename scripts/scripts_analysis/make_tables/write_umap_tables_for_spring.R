@@ -18,33 +18,29 @@ load(inf, v=T)
 # Write topic models list  ------------------------------------------------
 
 # do only one mark
-jmark <- "H3K4me1"
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
+# jmark <- "H3K4me1"
 
-cell.topic.mat <- tm.result.lst[[jmark]]$topics
-
-imputed.mat <- as.data.frame(tm.result.lst[[jmark]]$topics %*% tm.result.lst[[jmark]]$terms)
-
-cell.bcs <- rownames(imputed.mat)
-
-imputed.mat.df <- data.frame(barcodes = cell.bcs, imputed.mat)
-
-print(dim(imputed.mat.df))
-
-# write imputed.mat to output 
-outf <- paste0("/Users/yeung/data/scchic/tables/imputed_matrix/", jmark, "_imputed_matrix_transpose.txt")
-outf.genelst <- paste0("/Users/yeung/data/scchic/tables/imputed_matrix/", jmark, "_genelist.txt")
-
-data.table::fwrite(imputed.mat.df, file = outf)
-system(paste0("gzip ", outf))
-
-# create gene list
-gene.lst <- colnames(imputed.mat)
-write(gene.lst, file = outf.genelst)
-
-
-# write.table(imputed.mat, 
-#           file = outf, 
-#           sep = "\t",
-#           quote = FALSE)
-# system(paste0("gzip ", outf))
+for (jmark in jmarks){
+  cell.topic.mat <- tm.result.lst[[jmark]]$topics
+  
+  imputed.mat <- as.data.frame(tm.result.lst[[jmark]]$topics %*% tm.result.lst[[jmark]]$terms)
+  
+  cell.bcs <- rownames(imputed.mat)
+  
+  imputed.mat.df <- data.frame(barcodes = cell.bcs, imputed.mat)
+  
+  print(dim(imputed.mat.df))
+  
+  # write imputed.mat to output 
+  outf <- paste0("/Users/yeung/data/scchic/tables/imputed_matrix/", jmark, "_imputed_matrix_transpose.txt")
+  outf.genelst <- paste0("/Users/yeung/data/scchic/tables/imputed_matrix/", jmark, "_genelist.txt")
+  
+  data.table::fwrite(imputed.mat.df, file = outf)
+  system(paste0("gzip ", outf))
+  
+  # create gene list
+  gene.lst <- colnames(imputed.mat)
+  write(gene.lst, file = outf.genelst)
+}
 

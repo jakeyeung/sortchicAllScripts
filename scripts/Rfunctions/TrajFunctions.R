@@ -22,7 +22,7 @@ GetTopGenes <- function(dat.long, jcelltype, jtopic, topn = 20){
 }
 
 # do Principal Curves on filtered genes
-InferTrajOnUmap <- function(dat, cname = "granu", init.on = "umap1", flip.lambda = FALSE){
+InferTrajOnUmap <- function(dat, cname = "granu", init.on = "umap2", flip.lambda = FALSE, return.obj = FALSE){
   inmat <- subset(dat[which(dat[[cname]] == TRUE), ], select = c(umap1, umap2, cell))
   rownames(inmat) <- inmat$cell
   inmat$cell <- NULL
@@ -50,7 +50,11 @@ InferTrajOnUmap <- function(dat, cname = "granu", init.on = "umap1", flip.lambda
   }
   # if end of lambda is near origin, then switch
   # endpoint <- dat.pca.proj[, 1]$umap1 *
-  return(dat.pca.proj)
+  if (!return.obj){
+    return(dat.pca.proj)
+  } else {
+    return(list(dat.pca.proj = dat.pca.proj, pc.obj = proj))
+  }
 }
 
 
