@@ -4,8 +4,10 @@
 # Log1p transform
 # 2019-03-21
 
-inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/bedgraphs_2019-03-21"
-outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/bedgraphs_2019-03-21/log1p"
+inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/bedgraphs_build95_2019-03-28/"
+outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/bedgraphs_build95_2019-03-28/log1p"
+
+[[ ! -d $outmain ]] && mkdir $outmain
 
 n=0
 maxjobs=8

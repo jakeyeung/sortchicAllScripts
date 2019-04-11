@@ -5,7 +5,7 @@
 # 2019-02-04
 
 suffix="build95"
-jdate="2019-03-26"
+jdate="2019-03-28"
 indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/sorted_bams_${suffix}_${jdate}"
 
 n=0
