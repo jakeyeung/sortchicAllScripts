@@ -38,10 +38,15 @@ source("scripts/Rfunctions/PlotFunctions.R")
 # settings for H3K4me1
 jmark <- "H3K4me1"
 # the northern island with Sox6, Hbb, and Hba signal
-jtopic <- 12
+jtopic <- 1
 # nearest neighbors settings for UMAP
 nn=40
 jmindist=0.4
+
+nnvec <- seq(15, 51, 3)
+mindistvec <- c(0,1, 0.2, 0.4)
+nnmindistvec <- as.character(interaction(nnvec, mindistvec, sep = "_"))
+names(nnmindistvec) <- as.character(interaction(nnvec, mindistvec, sep = "_"))
 
 # # settings for H3K4me3
 # jmark <- "H3K4me3"
@@ -92,9 +97,21 @@ tm.result <- posterior(out.lda)
 topics.mat <- tm.result$topics
 terms.mat <- tm.result$terms
 
-
+custom.settings.lst <- lapply(nnmindistvec, function(nn_mindist){
+  nntmp <- strsplit(nn_mindist, "_")[[1]][[1]]
+  mindisttmp <- strsplit(nn_mindist, "_")[[1]][[2]]
+  settingstmp <- GetUmapSettings(nn=nntmp, jmetric=jmetric, jmindist=mindisttmp, seed = jseed)
+  return(settingstmp)
+})
 custom.settings <- GetUmapSettings(nn=nn, jmetric=jmetric, jmindist=jmindist, seed = jseed)
 custom.settings.terms <- GetUmapSettings(nn=nnterms, jmetric=jmetric, jmindist=jmindist)
+
+dat.umap.lst <- lapply(custom.settings.lst, function(csettings){
+  dat.umap.tmp <- umap(topics.mat, config = csettings)
+  rownames(dat.umap.tmp$layout) <- rownames(topics.mat)
+  dat.umap.tmp <- data.frame(umap1 = dat.umap.tmp$layout[, 1], umap2 = dat.umap.tmp$layout[, 2])
+  return(dat.umap.tmp)
+})
 
 dat.umap <- umap(topics.mat, config = custom.settings)
 rownames(dat.umap$layout) <- rownames(topics.mat)
@@ -274,6 +291,17 @@ x.long11$louvain <- sapply(as.character(x.long11$louvain.orig), function(x) rema
 x.long11$exprs <- x.long11$exprs * 10^6
 
 pdf(plotout, useDingbats=FALSE)
+
+# plot many UMAPs
+names(dat.umap.lst) <- nnmindistvec
+jpeak <- "chr7:103800000-103900000"
+lapply(nnmindistvec, function(x){
+  dat.umap.tmp <- dat.umap.lst[[x]]
+  jmain = x
+  m <- ggplot(dat.umap.tmp, aes(x = umap1, y = umap2)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + ggtitle(jmain)
+  print(m)
+}
+
 
 # pdf(paste0("~/Dropbox/scCHiC_figs/FIG4_BM/primetime_plots/", jmark, "_LDA_bins_top_regions.pdf"),
 #     useDingbats = FALSE)

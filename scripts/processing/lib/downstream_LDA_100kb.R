@@ -103,8 +103,14 @@ print(paste("Loading LDA output", inf))
 
 load(inf, v=T)
 
-out.lda <- ChooseBestLDA(out.lda)
-(kchoose <- out.lda@k)
+if (length(out.lda) > 1){
+    out.lda <- ChooseBestLDA(out.lda)
+    (kchoose <- out.lda@k)
+} else {
+    # choose first
+    out.lda <- out.lda[[1]]
+    kchoose <- out.lda@k
+}
 tm.result <- posterior(out.lda)
 # convert chr20 to chrX, chr21 to chrY
 print(tail(colnames(tm.result$terms)))
