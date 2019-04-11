@@ -91,6 +91,8 @@ def main():
                         help='If set, then ignore truncation')
     parser.add_argument('--add_prefix', action='store_true',
                         help='Add chr to chromosome names')
+    parser.add_argument('--debug', action='store_true',
+                        help='Debug')
     parser.add_argument('--genome', '-g', metavar='mm or hs', default = 'mm',
                         help='Genome is mm or hs to define chromosomes')
     args = parser.parse_args()
@@ -133,6 +135,9 @@ def main():
                 # get UMI-Barcode
                 # umibc = get_umibc(read)
                 umibc = get_umibc_longheader(read)
+                if (args.debug):
+                    print(umibc)
+                    input("press any key")
                 chromo = read.reference_name
                 if chromo not in chromos_set:
                     # throw out bad chromo
@@ -165,6 +170,8 @@ def main():
                 # reads here are unique (within a window) and high quality, write them to outbam and move on
                 # umi_dic_pos[umibc][get_end(read)].append(coord)  # only append if it's a bad read 
                 umi_dic_bin[umibc][get_end(read)][chromo].add(bin)
+                if (args.debug):
+                    print("Good read, adding to dictionary")
                 goodcounts += 1
                 outbam.write(read)
             if args.dumpfile is not None:
