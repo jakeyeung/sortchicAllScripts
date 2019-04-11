@@ -102,7 +102,7 @@ PlotMotifInUmap <- function(jmotif, dat.merged, zscores, jmark, jsize = 1, colve
   # m <- ggplot(dat.sub, aes(x = umap1, y = umap2, color = activity)) + geom_point(size = jsize) + 
     ggtitle(jtitle) + 
     theme_bw() + 
-    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   if (length(colvec) == 3){
     midpt <- min(dat.sub$activity) + (max(dat.sub$activity) - min(dat.sub$activity)) / 2
     m <- m + 

@@ -7,8 +7,21 @@
 library(data.table)
 library(dplyr)
 library(ggplot2)
+library(scales)
+library(JFuncs)
+library(umap)
+
+source("scripts/Rfunctions/MaraDownstream.R")
+
+
+source("scripts/Rfunctions/AuxLDA.R")
+source("scripts/Rfunctions/Aux.R")
+source("scripts/Rfunctions/PlotFunctions.R")
+
+
 
 inf <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient.withColnameList.2019-04-04.RData"
+
 
 
 # Load data  --------------------------------------------------------------
@@ -113,9 +126,79 @@ print(dim(pvals.top))
 print(split(pvals.top, f = pvals.top$mark))
 
 
+# Plot top hits  ----------------------------------------------------------
+
+jmark <- "H3K4me1"
+top.motifs <- subset(pvals.top, mark == jmark)$motif[1:10]
+jcolvec <- c("gray85", "gray50", "darkblue")
+
+for (jmotif in top.motifs){
+  m1 <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark]] %>% mutate(umap2 = -1 * umap2), mara.outs[[jmark]]$zscores, jmark, jsize = 0.75, colvec = jcolvec)
+  print(m1)
+}
+
+print(head(annots.lst[[jmark]]))
+
+dsub <- dat.umap.long.new.lst[[1]]
+# add activities here 
+dsub <- left_join(dsub, mara.outs$H3K4me1$act.long)
+# ggplot(, aes(x = umap1, y = -1 * umap2)) + geom_point()  + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+PlotImputedPeaks(tm.result, jpeak, jchip, show.plot = TRUE, return.plot.only = TRUE, usettings=custom.settings)
+
+# plot a gene
+
+print(head(data.frame(subset(pvals.long, mark == ref.mark) %>% arrange(log10pval)), n = 30))
+
+ref.mark <- "H3K4me1"
+
+jgene <- "Pou2f2"
+jmotif <- "Pou2f2"
+
+jgene <- "Gfi1"
+jmotif <- "Gfi1"
+
+jgene <- "Mdb2"
+jmotif <- "Mdb2"
+
+jgene <- "Hmbox1"
+jmotif <- "Hmbox1"
+
+jgene <- "Nkx2.9"
+jmotif <- "Nkx2.9"
+
+jgene <- "Pax6"
+jmotif <- "Pax6"
+
+jgene <- "Bcl3"
+jmotif <- "Bcl3"
+
+jgene <- "Ebf1"
+jmotif <- "Ebf1"
+
+jgene <- "Cebpb"
+jmotif <- "Cebpb"
+
+out.sub <- GetPeaksFromGene(jgene, annots.lst[[ref.mark]])
+(jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]]))
+jscale.fac <- 1
+jpseudo <- 10^-6
+jsize <- 1
+
+m.peak <- PlotImputedPeaks2(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]],  
+                  # use.count.mat = count.mat.lst[[jmark]],
+                  use.count.mat = NULL,
+                  usettings=custom.settings.new.lst[[jmark]], 
+                  gname = jgene,
+                  jsize = jsize, jcolvec = jcolvec, .log = TRUE, scale.fac = jscale.fac, pseudocount = jpseudo, y.axis.factor = -1)
+m.motif <- PlotMotifInUmap(jmotif, dat.merged.lst[[jmark]] %>% mutate(umap2 = -1 * umap2), mara.outs[[jmark]]$zscores, jmark, jsize = 0.75, colvec = jcolvec)
+multiplot(m.peak, m.motif, cols = 2)
+
+
 # Save objects ------------------------------------------------------------
 
 save(pvals.long, zscore.long, file = "~/data/scchic/robjs/TFactivity_zscore_analysis.RData")
+
 
 
 # 

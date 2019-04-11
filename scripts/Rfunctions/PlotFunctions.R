@@ -221,7 +221,7 @@ PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, retur
 PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL, 
                               usettings=NULL, gname = "", 
                               jsize = 3, jcolvec = c("blue", "white", "red"),
-                              .log = TRUE, scale.fac = 1, pseudocount = 10^-6, cap.quantile= NA, midpoint = "auto", debug.plot=FALSE){
+                              .log = TRUE, scale.fac = 1, pseudocount = 10^-6, cap.quantile= NA, midpoint = "auto", debug.plot=FALSE, y.axis.factor = 1){
   if (.log){
     jlegend <- "Log10 counts"
   } else {
@@ -279,7 +279,7 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
   jmain <- paste0(jchip, " ", jlab, "\n", gname)
   # prepare plot object
   dat <- data.frame(umap1 = dat.umap$layout[, 1], 
-                    umap2 = dat.umap$layout[, 2], 
+                    umap2 = y.axis.factor * dat.umap$layout[, 2], 
                     counts.norm = jcounts.norm)
   dat <- RankOrder(dat, cname = "counts.norm", out.cname = "orderrank")
   if (is.numeric(cap.quantile)){
