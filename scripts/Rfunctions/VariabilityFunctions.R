@@ -189,6 +189,28 @@ MakeVariabilityPlots <- function(jmark, trajname, tm.result.lst, dat.umap.long.t
   return(jsub.ref.merge.gw)
 }
 
+GetDiffRelToCell2 <- function(jmerge.long, cell.ref){
+  # add reference cell expression as exprs.ref column, then calculate median log2 fold change
+  lambda.dat <- jmerge.long %>%
+    group_by(cell) %>%
+    filter(row_number()==1) %>%
+    ungroup() %>%
+    dplyr::select(cell, lambda)
+  
+  jsub <- jmerge.long %>% filter(cell == cell.ref) %>%
+    dplyr::select(coord, mark, ctype, exprs) %>%
+    dplyr::rename(exprs.ref = exprs)
+  
+  jmerge.med.diff <- left_join(jmerge.long, jsub) %>%
+    group_by(mark, ctype, cell) %>%
+    mutate(exprs.diff = exprs - exprs.ref) %>% 
+    summarise(exprs.diff.med = median(abs(exprs.diff))) %>%
+    left_join(., lambda.dat)  # add back lambda info, which is lost
+  return(jmerge.med.diff)
+}
+
+
+
 GetDiffRelToCell <- function(imputed.dat, gstr, trajs, trajname, dat.umap.long, jmark){
   hsc.cell <- (trajs[[jmark]][[trajname]] %>% arrange(lambda) %>% dplyr::top_n(-1))$cell[[1]]
   jsub.all <- MatToLong(imputed.dat, gstr = gstr, cells.vec=NULL)
@@ -206,6 +228,9 @@ GetDiffRelToCell <- function(imputed.dat, gstr, trajs, trajname, dat.umap.long, 
     mutate(label = gstr)
   return(jsub.ref.merge)
 }
+
+
+
 
 GetCellSd <- function(dat.mat, grep.str, log2.scale = TRUE, fn = sd){
   # calculate standard deviation from matrix

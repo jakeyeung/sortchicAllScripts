@@ -220,7 +220,7 @@ lims.fc <- c(0, 3)
 jsize.facet <- 0.2
 gw.jsize.facet <- 2
 
-do.plots <- TRUE
+do.plots <- FALSE
 
 jstep <- 20000
 # jtype <- "correlation"

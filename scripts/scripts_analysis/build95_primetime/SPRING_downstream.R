@@ -24,6 +24,8 @@ ReadCoords <- function(inf, jmark, scalefac.X1=1, scalefac.X2=1){
 source("scripts/Rfunctions/PlotFunctions.R")
 source("scripts/Rfunctions/TrajFunctions.R")
 
+make.plots <- TRUE
+
 
 # Inits -------------------------------------------------------------------
 
@@ -35,8 +37,9 @@ trajs.spring <- list()
 inf.objs <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.WithColnamesLst.2019-04-04.RData"
 load(inf.objs, v=T)
 
-
-pdf("~/data/scchic/pdfs/build95_trajectories_spring_2019-04-09.pdf")
+if (make.plots){
+  pdf(paste0("~/data/scchic/pdfs/build95_trajectories_spring_", Sys.Date(), ".pdf"))
+}
 
 # Load coordinates and plot  ----------------------------------------------
 
@@ -593,7 +596,7 @@ print(m.traj)
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 3) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   geom_path(data = trajs.H3K27me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2), size = jsize) + ggtitle(paste(jmark, ctype)) + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   scale_color_manual(values = cbPalette)
 print(m.traj)
 
@@ -608,7 +611,7 @@ m <- ggplot(dat.trajs, aes_string(x = "umap1", y = "umap2", color = ctype, order
   geom_point(size = 3, alpha = 0.9) + 
   scale_color_manual(values = cbPalette) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   ggtitle(jmark)
 print(m)
 # fit trajectory 
@@ -616,14 +619,14 @@ print(m)
 trajs.H3K27me3[[ctype]] <- InferTrajOnUmap(dat.trajs, cname = ctype, init.on = "umap1")
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2)) + geom_point(size = 3, color = "gray50", alpha = 0.5) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   geom_path(data = trajs.H3K27me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + ggtitle(paste(jmark, ctype))
 print(m.traj)
 
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 3) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   geom_path(data = trajs.H3K27me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2), size = jsize) + ggtitle(paste(jmark, ctype)) + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   scale_color_manual(values = cbPalette)
 print(m.traj)
 
@@ -640,7 +643,7 @@ m <- ggplot(dat.trajs, aes_string(x = "umap1", y = "umap2", color = ctype, order
   geom_point(size = 3, alpha = 0.9) + 
   scale_color_manual(values = cbPalette) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   ggtitle(jmark)
 print(m)
 # fit trajectory 
@@ -648,14 +651,14 @@ print(m)
 trajs.H3K27me3[[ctype]] <- InferTrajOnUmap(dat.trajs, cname = ctype, init.on = "umap1")
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2)) + geom_point(size = 3, color = "gray50", alpha = 0.5) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   geom_path(data = trajs.H3K27me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + ggtitle(paste(jmark, ctype))
 print(m.traj)
 
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 3) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   geom_path(data = trajs.H3K27me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2), size = jsize) + ggtitle(paste(jmark, ctype)) + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   scale_color_manual(values = cbPalette)
 print(m.traj)
 
@@ -666,7 +669,7 @@ m.all <- ggplot(dat.trajs, aes(x = umap1, y = umap2)) + geom_point(size = 3, col
   geom_path(data = trajs.H3K27me3[["lymphoid"]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + 
   geom_path(data = trajs.H3K27me3[["granu"]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + 
   geom_path(data = trajs.H3K27me3[["eryth"]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   ggtitle(paste(jmark, ctype))
 print(m.all)
 
@@ -688,40 +691,54 @@ m.louvain <- ggplot(dat.trajs, aes(x = umap1, y = umap2, color = louvain, shape 
   geom_point(size = 3, alpha = 0.9) + 
   scale_color_manual(values = cbPalette) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   ggtitle(jmark)
 print(m.louvain)
 
 
 # H3K9me3 eryth --------------------------------------------------------
 
-lambda.filt <- 0.65
+# lambda.filt <- 0.65
+jthres <- 0.5
 
 ctype <- "eryth"
 jlouv <- c(4, 6)
 
-dat.trajs[[ctype]] <- dat.trajs$louvain %in% jlouv
+hcutoff <- 1.35
+
+dat.trajs[[ctype]] <- dat.trajs$louvain %in% jlouv & dat.trajs$umap2 > hcutoff
 # dat.trajs[[ctype]] <- dat.trajs$umap2 > 1
 m <- ggplot(dat.trajs, aes_string(x = "umap1", y = "umap2", color = ctype, order = "orderrank")) + 
   geom_point(size = 3, alpha = 0.9) + 
   scale_color_manual(values = cbPalette) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   ggtitle(jmark)
 print(m)
+
 # fit trajectory 
 
-trajs.H3K9me3[[ctype]] <- InferTrajOnUmap(dat.trajs, cname = ctype, init.on = "umap1")
+jtraj <- InferTrajOnUmap(dat.trajs, cname = ctype, init.on = "umap1")
+# compress all trajectories > threshold to be threshold, then renormlize
+jtraj$lambda.tmp <- sapply(jtraj$lambda, function(l) ifelse(l > jthres, jthres, l))
+# renormalize
+jtraj$lambda.tmp <- jtraj$lambda.tmp / max(jtraj$lambda.tmp)
+jtraj$lambda <- jtraj$lambda.tmp
+jtraj$lambda.tmp <- NULL
+
+trajs.H3K9me3[[ctype]] <- jtraj
+
+
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2)) + geom_point(size = 3, color = "gray50", alpha = 0.5) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  geom_path(data = trajs.H3K9me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + ggtitle(paste(jmark, ctype))
+  geom_path(data = trajs.H3K9me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + ggtitle(paste(jmark, ctype)) + 
   xlab("X1") + ylab("X2")
 print(m.traj)
 
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 3) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  geom_path(data = trajs.H3K9me3[[ctype]] %>% filter(lambda > lambda.filt), inherit.aes = FALSE, aes(x = umap1, y = umap2), size = jsize) + ggtitle(paste(jmark, ctype)) + 
-  xlab("X1") + ylab("X2")
+  geom_path(data = trajs.H3K9me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2), size = jsize) + ggtitle(paste(jmark, ctype)) + 
+  xlab("X1") + ylab("X2") + 
   scale_color_manual(values = cbPalette)
 print(m.traj)
 
@@ -731,44 +748,47 @@ print(m.traj)
 
 ctype <- "lymphoid"
 jlouv <- c(2, 1, 6)
-jint <- -2.5
-jslope <- -5
+# jint <- -2.5
+# jslope <- -5
 
-dat.trajs[[ctype]] <- dat.trajs$louvain %in% jlouv
+vcutoff <- -0.25
+
+dat.trajs[[ctype]] <- dat.trajs$louvain %in% jlouv & (dat.trajs$umap1 < vcutoff)
 # dat.trajs[[ctype]] <- dat.trajs$louvain %in% jlouv & (dat.trajs$umap2 < jslope * dat.trajs$umap1 + jint)
 m <- ggplot(dat.trajs, aes_string(x = "umap1", y = "umap2", color = ctype, order = "orderrank")) + 
   geom_point(size = 3, alpha = 0.9) + 
   scale_color_manual(values = cbPalette) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
   ggtitle(jmark) + 
-  xlab("X1") + ylab("X2")
-  geom_abline(slope = jslope, intercept = jint)
+  xlab("X1") + ylab("X2") + 
+  geom_vline(xintercept = vcutoff)
+  # geom_abline(slope = jslope, intercept = jint)
 print(m)
 
 # fit trajectory 
 trajs.H3K9me3[[ctype]] <- InferTrajOnUmap(dat.trajs, cname = ctype, init.on = "umap2", flip.lambda = TRUE)
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2)) + geom_point(size = 3, color = "gray50", alpha = 0.5) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlab("X1") + ylab("X2")
-  geom_path(data = trajs.H3K9me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + ggtitle(paste(jmark, ctype))
+  xlab("X1") + ylab("X2") + 
+  geom_path(data = trajs.H3K9me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + ggtitle(paste(jmark, ctype)) 
 print(m.traj)
 
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 3) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   geom_path(data = trajs.H3K9me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2), size = jsize) + ggtitle(paste(jmark, ctype)) + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   scale_color_manual(values = cbPalette)
 print(m.traj)
 
 
 ctype <- "granu"
 jlouv <- c(6, 5, 3)
-dat.trajs[[ctype]] <- dat.trajs$louvain %in% jlouv
+dat.trajs[[ctype]] <- dat.trajs$louvain %in% jlouv & dat.trajs$umap1 > vcutoff
 m <- ggplot(dat.trajs, aes_string(x = "umap1", y = "umap2", color = ctype, order = "orderrank")) + 
   geom_point(size = 3, alpha = 0.9) + 
   scale_color_manual(values = cbPalette) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   ggtitle(jmark)
 print(m)
 
@@ -776,14 +796,14 @@ print(m)
 trajs.H3K9me3[[ctype]] <- InferTrajOnUmap(dat.trajs, cname = ctype, init.on = "umap2", flip.lambda = FALSE)
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2)) + geom_point(size = 3, color = "gray50", alpha = 0.5) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   geom_path(data = trajs.H3K9me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + ggtitle(paste(jmark, ctype))
 print(m.traj)
 
 m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 3) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   geom_path(data = trajs.H3K9me3[[ctype]], inherit.aes = FALSE, aes(x = umap1, y = umap2), size = jsize) + ggtitle(paste(jmark, ctype)) + 
-  xlab("X1") + ylab("X2")
+  xlab("X1") + ylab("X2") + 
   scale_color_manual(values = cbPalette)
 print(m.traj)
 
@@ -791,9 +811,9 @@ print(m.traj)
 
 m.all <- ggplot(dat.trajs, aes(x = umap1, y = umap2)) + geom_point(size = 3, color = "gray50", alpha = 0.5) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  geom_path(data = trajs.H3K9me3[["lymphoid"]] %>% filter(lambda > 0.2), inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + 
-  geom_path(data = trajs.H3K9me3[["granu"]] %>% filter(lambda > 0.2), inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + 
-  geom_path(data = trajs.H3K9me3[["eryth"]] %>% filter(lambda > lambda.filt), inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + 
+  geom_path(data = trajs.H3K9me3[["lymphoid"]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + 
+  geom_path(data = trajs.H3K9me3[["granu"]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + 
+  geom_path(data = trajs.H3K9me3[["eryth"]], inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = jsize) + 
   xlab("X1") + ylab("X2") + 
   ggtitle(paste(jmark, ctype))
 print(m.all)
@@ -801,12 +821,14 @@ print(m.all)
 # save trajectory
 trajs.spring[[jmark]] <- trajs.H3K9me3
 
-dev.off()
+if (make.plots){
+  dev.off()
+}
 
 # Save objects  -----------------------------------------------------------
 
 dat.trajs.long <- neutros.dat.join
 
-save(trajs.spring, dat.trajs.long, file = "~/data/scchic/robjs/trajectory_from_spring_2019-04-09.RData")
+save(trajs.spring, dat.trajs.long, file = paste0("~/data/scchic/robjs/trajectory_from_spring_", Sys.Date(), ".RData"))
 
 

@@ -49,8 +49,7 @@ lagmax <- pos.max / bsize
 ci.interval <- 1.96  # corresponds to zscore 1.96 = alpha = 0.05 = 95% confidence interval
 # Load data ---------------------------------------------------------------
 
-inf <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.RData"
-
+inf <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.WithColnamesLst.2019-04-04.RData"
 load(inf, v=T)
 
 
@@ -102,7 +101,7 @@ print(m.gw)
   
   gstr <- paste0("chr15:")
   jsub <- MatToLong(imputed.dat, gstr, cells.vec = c(hsc.cell, diff.cell))
-  m.spatial <- ggplot(jsub, aes(x = pos / 10^6, y = log2(exprs))) + 
+  m.spatial <- ggplot(jsub, aes(x = pos / 10^6, y = log10(( (exprs * 10^6) + 1)))) + 
     geom_line(alpha = jalpha) + 
     facet_wrap(~cell) + 
     ggtitle(paste(jmark, gstr)) + 
