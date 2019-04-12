@@ -53,7 +53,7 @@ GetCellsAlongTraj <- function(trajs.spring, jmark, ctype, n.sections = 3, thres 
 
 
 GetMatSub <- function(tm.result.lst, jmark, gstr, jpseudo, jfac, cells.vec = NULL){
-  imputed.dat <- log10((t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics) + jpseudo) * jfac)
+  imputed.dat <- log2((t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics) + jpseudo) * jfac)
   mat.sub <- MatToLong(imputed.dat, gstr = gstr, cells.vec = cells.vec) %>% dplyr::select(-start, -end)
   # mat.sub <- MatToLong(imputed.dat, gstr = gstr, cells.vec = NULL)
   return(mat.sub)
@@ -133,7 +133,7 @@ jpseudo <- 0
 jfac <- 10^7
 
 
-# imputed.dat <- log10(t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics) + jpseudo) * jfac
+# imputed.dat <- log2(t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics) + jpseudo) * jfac
 # mat.sub <- MatToLong(imputed.dat, gstr = "chr15:", cells.vec = NULL) %>% dplyr::select(-start, -end)
 
 mat.sub.merge <- lapply(jmarks, function(jmark) GetMatSub(tm.result.lst, jmark, jstr, jpseudo, jfac) %>% mutate(mark = jmark)) %>% 
@@ -212,7 +212,7 @@ for (jmark in jmarks){
     theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")  + 
     ggtitle(jmark)  +  
     xlab("MB") + 
-    ylab("log10(Counts Per Million)") + 
+    ylab("log2(Counts Per Million)") + 
     scale_color_gradient2(low = colvec[[1]], mid = colvec[[2]], high = scales::muted(colvec[[3]]), lim = c(0, 1), midpoint = 0.5)
   print(m)
   
@@ -291,7 +291,7 @@ for (ctype in ctypes){
     theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")  + 
     ggtitle(ctype)  +  
     xlab("MB") + 
-    ylab("log10(Counts Per Million)") + 
+    ylab("log2(Counts Per Million)") + 
     scale_color_gradient2(low = colvec[[1]], mid = colvec[[2]], high = scales::muted(colvec[[3]]), lim = c(0, 1), midpoint = 0.5)
   print(m)
   
