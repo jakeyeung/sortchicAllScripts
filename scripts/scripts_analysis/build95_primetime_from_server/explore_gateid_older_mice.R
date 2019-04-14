@@ -25,6 +25,7 @@ library(biomaRt)
 
 source("scripts/Rfunctions/Aux.R")
 
+jmark <- "H3K4me1"
 
 # Init paths and check ----------------------------------------------------
 
@@ -33,13 +34,12 @@ inf <- paste0("/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_out
 assertthat::assert_that(file.exists(inf))
 # inf.bulkdat <- "/Users/yeung/data/scchic/public_data/E-MTAB-3079-query-results.fpkms.tsv"
 inf.bulkdat <- "/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/E-MTAB-3079-query-results.fpkms.tsv"
-assertthat::aserth_that(file.exists(inf.bulkdat))
+assertthat::assert_that(file.exists(inf.bulkdat))
 
 # Load data ---------------------------------------------------------------
 
 # inf <- "/Users/yeung/data/scchic/from_cluster/lda_outputs_GateID/lda_out_meanfilt.H3K4me1_GateID_LDA45.Robj"
 
-jmark <- "H3K4me1"
 
 pdfname <- paste0(basename(dirname(inf)), ".pdf")
 # pdfdir <- "/Users/yeung/data/scchic/pdfs"
