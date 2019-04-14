@@ -10,7 +10,7 @@
 # if binarize
 
 jmem='64G'
-jtime='48:00:00'
+jtime='24:00:00'
 
 workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 
@@ -29,8 +29,9 @@ ncores=4
 topics="15,20,25,30"
 topicsName=`echo $topics | sed 's/,/_/g'`
 tunemodels="TRUE"
-binarize="FALSE"
-cellmin="100"
+binarize="TRUE"
+# cellmin="100"
+cellmin="550"
 cellmax="500000"
 # relax assumptions to capture more H3K4me3 and H3K9me3 cells?
 meanmax="10"  # meanmax = 1 keeps the Erdr1 and Mid1 genes, which are probably real? But there may be some weird peaks as well that are skewing results.
