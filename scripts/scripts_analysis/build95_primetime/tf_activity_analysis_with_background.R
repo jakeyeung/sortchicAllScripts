@@ -179,6 +179,9 @@ jmotif <- "Ebf1"
 jgene <- "Cebpb"
 jmotif <- "Cebpb"
 
+m.peak <- PlotImputedPeaks3(counts.mat.sub.long, jpeak, jmark, gname = jgene, jcolvec = jcolvec, .log = TRUE, jpseudo = 0, jscale = 10^7)
+print(m.peak)
+
 out.sub <- GetPeaksFromGene(jgene, annots.lst[[ref.mark]])
 (jpeak <- SelectBestPeak(out.sub$peaks, regions.annot, tm.result.lst[[ref.mark]]))
 jscale.fac <- 1

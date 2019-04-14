@@ -4,6 +4,7 @@
 # Finalize variance analysis with pretty figures
 
 rm(list=ls())
+
 library(data.table)
 library(dplyr)
 library(ggplot2)
@@ -307,7 +308,7 @@ for (ctype in ctypes){
     mutate(lambda.rank = rank(lambda))
   
   # correlation across the marks ? 
-  jmerge.wide <- spread(jmerge.gw.long %>% 
+  jmerge.wide <- tidyr::spread(jmerge.gw.long %>% 
                           ungroup() %>%
                           mutate(markrank = paste(mark, lambda.rank, sep = "_")) %>%
                           dplyr::select(-lambda, -lambda.rank, -cell, -mark),
