@@ -221,7 +221,7 @@ PlotImputedPeaks <- function(tm.result, peaks.keep, jchip, show.plot=TRUE, retur
 PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL, 
                               usettings=NULL, gname = "", 
                               jsize = 3, jcolvec = c("blue", "white", "red"),
-                              .log = TRUE, scale.fac = 1, pseudocount = 10^-6, cap.quantile= NA, midpoint = "auto", debug.plot=FALSE){
+                              .log = TRUE, scale.fac = 1, pseudocount = 10^-6, cap.quantile= NA, midpoint = "auto", debug.plot=FALSE, y.axis.factor = 1){
   if (.log){
     jlegend <- "Log10 counts"
   } else {
@@ -279,7 +279,7 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
   jmain <- paste0(jchip, " ", jlab, "\n", gname)
   # prepare plot object
   dat <- data.frame(umap1 = dat.umap$layout[, 1], 
-                    umap2 = dat.umap$layout[, 2], 
+                    umap2 = y.axis.factor * dat.umap$layout[, 2], 
                     counts.norm = jcounts.norm)
   dat <- RankOrder(dat, cname = "counts.norm", out.cname = "orderrank")
   if (is.numeric(cap.quantile)){
@@ -332,6 +332,76 @@ PlotImputedPeaks2 <- function(tm.result, peaks.keep, jchip, use.count.mat=NULL,
 
   return(m)
 }
+
+PlotImputedPeaks3 <- function(counts.mat.sub.long, 
+                              peaks.keep,
+                              jchip,
+                              gname = "", 
+                              jsize = 3, jcolvec = c("blue", "white", "red"),
+                              .log = TRUE, jpseudo = 0, jscale = 10^7, cap.quantile= NA, midpoint = "auto", debug.plot=FALSE, y.axis.factor = 1){
+  if (.log){
+    jlegend <- "Log10 counts"
+  } else {
+    jlegend <- "Counts"
+  } 
+  peaks.keep.kb <- peaks.keep
+  jlab <- peaks.keep
+  
+  jpeaks.str <- paste(peaks.keep.kb, collapse = ",")
+  jmain <- paste0(jchip, " ", jlab, "\n", gname)
+  # prepare plot object
+  dat <- subset(counts.mat.sub.long, bin == jpeak)
+  dat <- RankOrder(dat, cname = "exprs", out.cname = "orderrank")
+  if (is.numeric(cap.quantile)){
+    if (length(cap.quantile) == 1){
+      # cap.quantile should be between 0 and 1
+      print(range(dat$exprs))
+      assertthat::assert_that(cap.quantile >= 0 & cap.quantile <= 1)
+      quant.min <- quantile(counts.mat.sub.long$exprs, 1 - cap.quantile)
+      quant.max <- quantile(counts.mat.sub.long$exprs, cap.quantile)
+    } else if (length(cap.quantile) == 2){
+      quant.min <- quantile(counts.mat.sub.long$exprs, cap.quantile[[1]])
+      quant.max <- quantile(counts.mat.sub.long$exprs, cap.quantile[[2]])
+    } else {
+      warning(paste(cap.quantile, "must be length 1 or 2"))
+    }
+    dat$exprs <- sapply(dat$exprs, function(x){
+      if (x > quant.max){
+        xnew <- quant.max
+      } else if (x < quant.min){
+        xnew <- quant.min
+      } else {
+        xnew <- x
+      }
+      return(xnew)
+    })
+    if (debug.plot){
+      print(range(dat$exprs))
+      plot(density(jexprs))
+      abline(v = c(quant.min, quant.max))
+    }
+  }
+  m <- ggplot(dat, aes(x = umap1, y = umap2, col = exprs, order = orderrank)) + 
+    geom_point(size = jsize) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          plot.title = element_text(size=7), legend.position = "bottom",
+          legend.title=element_text(size=8),
+          legend.text = element_text(size=5)) +
+    guides(colour = guide_colourbar(title.position="top", title.hjust = 0.5)) + 
+    ggtitle(jmain)
+  if (midpoint == "auto"){
+    jmid <- min(dat$exprs) + (max(dat$exprs) - min(dat$exprs)) / 2
+    print(paste("Midpiont:", jmid))
+    m <- m + scale_color_gradient2(low = jcolvec[[1]], mid = jcolvec[[2]], high = scales::muted(jcolvec[[3]]), name = jlegend, 
+                                   midpoint = jmid, limits = c(NA, NA), na.value = "orange")
+  } else {
+    m <- m + scale_color_gradient2(low = jcolvec[[1]], mid = jcolvec[[2]], high = scales::muted(jcolvec[[3]]), name = jlegend, 
+                                   midpoint = midpoint, limits = c(NA, NA), na.value = "orange")
+  }
+  return(m)
+}
+
 
 CapQuantile <- function(xvec, cap.quantile){
   # cap.quantile should be between 0 and 1

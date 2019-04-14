@@ -5,14 +5,16 @@
 # 2019-03-21
 
 chromsizes="/hpc/hub_oudenaarden/jyeung/data/databases/chromsizes/chromsizes.mm10.txt"
-inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/bedgraphs_2019-03-21/log1p"
-outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/bigwigs_2019-03-20/log1p_bigwigs"
+inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/bedgraphs_build95_2019-03-28/log1p/chr_filt"
+outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/bigwigs_build95_2019-03-28//log1p_bigwigs"
+
+[[ ! -d $outmain ]] && mkdir $outmain
 
 [[ ! -e $chromsizes ]] && echo "$chromsizes not found, exiting" && exit 1
 [[ ! -d $inmain ]] && echo "$inmain not found, exiting" && exit 1
 
 n=0
-maxjobs=15
+maxjobs=16
 for inbed in `ls -d $inmain/*.bedgraph`; do
     # echo $inbed
     bbase=$(basename $inbed)

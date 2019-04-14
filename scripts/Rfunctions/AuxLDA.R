@@ -35,7 +35,7 @@ GetPeaksFromGene <- function(jgene, regions.annot, dist = 50000){
   return(list(regions.sub = jsub, peaks = jpeaks))
 }
 
-SelectBestPeak <- function(jpeaks, regions.annot, tm.result){
+SelectBestPeak <- function(jpeaks, regions.annot = NULL, tm.result){
   if (length(jpeaks) == 1){
     warning("Only one peak entered, returning only option")
     # no need to select

@@ -35,8 +35,12 @@ source("scripts/Rfunctions/PlotFunctions.R")
 # jmark <- "H3K27me3"
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
+colsvec <- list(H3K4me1 = "cyan1", H3K4me3 = "darkblue", H3K9me3 = "red1", H3K27me3 = "darkorange1")
 
 for (jmark in jmarks){
+  
+  jcol <- colsvec[[jmark]]
+  print(jcol)
   
   # jmark <- "H3K9me3"
   # jmark <- "H3K4me1"
@@ -60,7 +64,6 @@ for (jmark in jmarks){
     return(SelectTopRegions(tm.result$terms[clst, ], colnames(tm.result$terms), method = "thres", method.val = top.thres))
   })
   top.regions <- unique(unlist(topic.regions))
-  
   
   # Process regions ---------------------------------------------------------
   
@@ -276,8 +279,13 @@ for (jmark in jmarks){
   print(m.louvain)
   
   # plot without color
-  m.nocolor <- ggplot(dat.umap.long, aes(x = umap1, y = umap2)) + geom_point(alpha = 0.5, size = 3) +
-    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  m.nocolor <- ggplot(dat.umap.long, aes(x = umap1, y = umap2)) + geom_point(alpha = 0.5, size = 3, color = jcol) +
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+          axis.ticks=element_blank(), 
+          axis.text.x=element_blank(),
+          axis.text.y=element_blank(),
+          panel.border=element_blank()) +
   print(m.nocolor)
   
   PlotGTrack(x.long, jstart, jend, mart.obj, gen = "hg38", chr = jchromo, jheight = "auto")

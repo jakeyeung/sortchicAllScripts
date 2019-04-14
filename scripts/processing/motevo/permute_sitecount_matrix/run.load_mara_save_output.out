@@ -1,0 +1,344 @@
+/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1
+/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_10
+/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_100
+/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1000
+/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1001
+/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1002
+/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1003
+/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1004
+hash-2.2.6 provided by Decision Patterns
+
+hash-2.2.6 provided by Decision Patterns
+
+hash-2.2.6 provided by Decision Patterns
+
+hash-2.2.6 provided by Decision Patterns
+
+hash-2.2.6 provided by Decision Patterns
+
+hash-2.2.6 provided by Decision Patterns
+
+hash-2.2.6 provided by Decision Patterns
+
+hash-2.2.6 provided by Decision Patterns
+
+
+Attaching package: ‘data.table’
+
+
+Attaching package: ‘data.table’
+
+The following object is masked from ‘package:hash’:
+
+    copy
+
+The following object is masked from ‘package:hash’:
+
+    copy
+
+
+Attaching package: ‘data.table’
+
+
+Attaching package: ‘data.table’
+
+
+Attaching package: ‘data.table’
+
+The following object is masked from ‘package:hash’:
+
+    copy
+
+The following object is masked from ‘package:hash’:
+
+    copy
+
+The following object is masked from ‘package:hash’:
+
+    copy
+
+
+Attaching package: ‘data.table’
+
+The following object is masked from ‘package:hash’:
+
+    copy
+
+
+Attaching package: ‘data.table’
+
+The following object is masked from ‘package:hash’:
+
+    copy
+
+
+Attaching package: ‘data.table’
+
+The following object is masked from ‘package:hash’:
+
+    copy
+
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+[1] TRUE
+[1][1] "Arguments:"[1]
+ TRUE
+ TRUE
+[1][1] TRUE$indir
+
+ TRUE[1]
+[1][1] TRUE
+[1] TRUE
+ TRUE
+ "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1002"
+
+$mark
+[1] "H3K4me1"
+
+$outfile
+[1] "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1002.txt"
+
+$seed
+[1] "1002"
+
+$verbose
+[1] TRUE
+
+[1][1] "Arguments:"
+ "Arguments:"
+$indir
+[1][1]$indir
+[1] "Arguments:"[1]
+[1] "Arguments:"
+ "Arguments:"
+ "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_10"$indir
+
+ "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_100"[1]
+
+
+$mark
+$indir
+$indir
+[1]$mark
+[1][1] "H3K4me1"[1]
+
+ "H3K4me1"
+
+$outfile
+[1]$outfile
+ "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1"[1]
+
+$mark
+[1] "H3K4me1"
+[1]
+ "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1000" "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1001"
+$outfile
+
+
+ "Arguments:"[1] "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_10.txt"
+$mark
+
+ "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_100.txt"
+[1]$mark
+
+
+[1] "H3K4me1"
+$seed
+
+ "H3K4me1"$seed
+[1]
+
+[1] "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1.txt"$indir
+ "10"
+$outfile
+ "100"
+
+[1][1]$outfile
+
+
+
+[1]
+$seed
+$verbose
+[1]$verbose
+[1] "1"[1] TRUE
+ TRUE
+
+
+
+
+$verbose
+[1] TRUE "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1000.txt"
+
+
+
+ "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1001.txt"
+$seed
+
+[1] "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1004"$seed
+ "1000"
+[1]
+
+
+ "1001"
+$mark
+
+$verbose
+[1][1]$verbose
+ TRUE[1] "H3K4me1"
+ TRUE
+
+
+
+
+$outfile
+[1][1] "Arguments:"
+ "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1004.txt"
+
+$seed
+[1] "1004"$indir
+
+
+[1]$verbose
+[1] TRUE
+
+ "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permutation_analysis_H3K4me1/mara_output/seed_row_1003"
+
+$mark
+[1] "H3K4me1"
+
+$outfile
+[1] "/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1003.txt"
+
+$seed
+[1] "1003"
+
+$verbose
+[1] TRUE
+
+gzip: /hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1002.txt.gz already exists;	not overwritten
+gzip: /hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_100.txt.gz already exists;	not overwritten
+gzip: /hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_10.txt.gz already exists;	not overwritten
+gzip: /hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1004.txt.gz already exists;	not overwritten
+gzip: /hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1000.txt.gz already exists;	not overwritten
+gzip: /hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1.txt.gz already exists;	not overwritten
+gzip: /hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1001.txt.gz already exists;	not overwritten
+gzip: /hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_build95.cells_from_bin_analysis/permute_summary_activities/activities_long_H3K4me1_1003.txt.gz already exists;	not overwritten

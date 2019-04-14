@@ -14,7 +14,8 @@ source("scripts/Rfunctions/TrajFunctions.R")
 # Load file  --------------------------------------------------------------
 
 
-inf <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient.RData"
+# inf <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient.RData"
+inf <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient.withColnameList.2019-04-04.RData"
 
 load(inf, v=T)
 
@@ -592,4 +593,4 @@ trajs[[jmark]] <- trajs.mark
 
 dev.off()
 
-save(dat.umap.long.trajs, trajs, mara.outs, tm.result.lst, count.mat.lst, annots.lst, custom.settings.new.lst, file = "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.RData")
+save(dat.umap.long.trajs, trajs, mara.outs, tm.result.lst, count.mat.lst, annots.lst, custom.settings.new.lst, file = paste0("/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.WithColnamesLst.", Sys.Date(), ".RData"))

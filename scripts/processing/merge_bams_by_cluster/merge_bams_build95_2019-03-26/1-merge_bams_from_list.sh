@@ -5,11 +5,11 @@
 # 2019-03-26
 
 suffix="build95"
-jdate="2019-03-26"
+jdate="2019-03-28"
 
 outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_cluster_merged/sorted_bams_${suffix}_${jdate}"
 [[ ! -d $outdir ]] && mkdir $outdir
-wd="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc/count_thres-0_${suffix}"
+wd="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/bam_split_by_bc/count_thres-0_${suffix}.withchr"
 
 [[ ! -d $wd ]] && echo "$wd not found, exiting" && exit 1
 cd $wd

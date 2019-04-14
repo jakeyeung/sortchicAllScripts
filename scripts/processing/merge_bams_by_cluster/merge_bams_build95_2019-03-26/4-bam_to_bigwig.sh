@@ -4,7 +4,7 @@
 #  
 # 2019-02-04
 
-jdate="2019-03-26"
+jdate="2019-03-28"
 suffix="build95"
 
 bs="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/lib/bam_to_bigwig_mm10.sh"

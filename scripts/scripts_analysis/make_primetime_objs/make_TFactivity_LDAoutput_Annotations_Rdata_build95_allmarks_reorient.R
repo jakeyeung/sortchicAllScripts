@@ -133,8 +133,8 @@ mdirs.repress <- lapply(jmarks.repress, function(jmark){
 mdirs <- c(mdirs, mdirs.repress)
 # mdirs <- c(mdirs)
 
-switch.rep.hash <- GetRepSwitchHash(experihash)
 
+switch.rep.hash <- GetRepSwitchHash(experihash)
 mara.outs <- lapply(mdirs, LoadMARA, fix.tech.rep = FALSE, rep.prefix = "", swap.tech.rep = switch.rep.hash)
 names(mara.outs) <- jmarks.all
 
