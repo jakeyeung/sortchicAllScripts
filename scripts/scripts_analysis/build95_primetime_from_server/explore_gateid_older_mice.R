@@ -28,7 +28,7 @@ source("scripts/Rfunctions/Aux.R")
 
 # Init paths and check ----------------------------------------------------
 
-inf <- paste0("/Users/yeung/data/scchic/from_cluster/lda_outputs_GateID/LDA_outputs_all_GateID/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_10.cellmin_550.cellmax_500000.binarize.TRUE.no_filt/lda_out_meanfilt.", jmark, "_GateID.CountThres0.K-15_20_25_30_35.Robj")
+# inf <- paste0("/Users/yeung/data/scchic/from_cluster/lda_outputs_GateID/LDA_outputs_all_GateID/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_10.cellmin_550.cellmax_500000.binarize.TRUE.no_filt/lda_out_meanfilt.", jmark, "_GateID.CountThres0.K-15_20_25_30_35.Robj")
 inf <- paste0("/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_GateID/ldaAnalysisBins_MetaCell/lda_outputs.meanfilt_10.cellmin_550.cellmax_500000.binarize.TRUE.no_filt/lda_out_meanfilt.", jmark, "_GateID.CountThres0.K-15_20_25_30_35.Robj")
 assertthat::assert_that(file.exists(inf))
 # inf.bulkdat <- "/Users/yeung/data/scchic/public_data/E-MTAB-3079-query-results.fpkms.tsv"
