@@ -3,6 +3,37 @@
 #  
 # 2018-12-19
 
+
+GetTissue <- function(inf, type="BM"){
+  # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> BM
+  # PZ-K562-H3K27me3-G1_AH2VV5BGX9_S11.bc_counts.txt
+  # PZ-K562-G1-M-H3K4me1-plate1_AHHCCGBGX9_S2 -> K562 ok
+  if (type == "BM"){
+    x <- strsplit(inf, split = "-")[[1]][[2]]
+  } else if (type == "K562" | type == "K562_round2"){
+    x <- strsplit(inf, split = "-")[[1]][[2]]
+  } else {
+    print("Must be BM or K562")
+  return(x)
+  }
+}
+
+GetChip <- function(inf, type="BM"){
+  # "PZ-BM-m1-H3K27me3-1_H2GV2BGX9_S14.bc_counts.txt" -> H3K7me3
+  # PZ-K562-H3K27me3-G1_AH2VV5BGX9_S11.bc_counts.txt -> H3K27me3
+  # PZ-K562-G1-M-H3K4me1-plate1_AHHCCGBGX9_S2 -> H3K4me1
+  if (type == "BM"){
+    x <- strsplit(inf, split = "-")[[1]][[4]]
+  } else if (type == "K562"){
+    x <- strsplit(inf, split = "-")[[1]][[3]]
+  } else if (type == "K562_round2"){
+    x <- strsplit(inf, split = "-")[[1]][[5]]
+  } else {
+    print("Must be BM or K562")
+  }
+  return(x)
+}
+
 TechRepToRank <- function(cnames.new, mouse.reps = c("m1", "m2"), jsep = "-"){
   # expects m1 and m2 mouse replicates
   # sampname: PZ-BM-m1-H3K4me1-1_AH3VGVBGX9_S9
