@@ -1,6 +1,7 @@
 #!/bin/sh
 # Jake Yeung
-# 6-run.make_count_matrix_from_bams_hiddenDomains.sh
+# 6a-run.take_bin_cells_make_count_matrix_hiddenDomains.sh
+# You want to take bin cells because then you have same cells in both activity and bin analysis
 # Make count matrix from bams using R 
 # 2019-01-08
 

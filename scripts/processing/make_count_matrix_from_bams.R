@@ -30,6 +30,9 @@ bampaths <- args[[1]]  # file list of bam paths
 regions <- args[[2]]  # file of regions to count reads
 outpath <- args[[3]]  # sparse count matrix. R object?
 
+assertthat::assert_that(file.exists(bampaths))
+assertthat::assert_that(file.exists(regions))
+
 outdir <- dirname(outpath)
 
 jpaired <- TRUE  # probably always paired End
