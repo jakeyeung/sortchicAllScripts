@@ -30,6 +30,12 @@ bampaths <- args[[1]]  # file list of bam paths
 regions <- args[[2]]  # file of regions to count reads
 outpath <- args[[3]]  # sparse count matrix. R object?
 
+if (length(args) == 4){
+  use.pname = TRUE
+} else {
+  use.pname = FALSE
+}
+
 assertthat::assert_that(file.exists(bampaths))
 assertthat::assert_that(file.exists(regions))
 
@@ -60,14 +66,18 @@ if (ncol(regions.dat) == 9){
   stop(paste("Number of columns must be 9 or 15, found", ncol(regions.dat)))
 }
 # GeneID as chromo:start-end
-GeneID <- paste(regions.dat$Chr, ":", regions.dat$Start, "-", regions.dat$End, sep='')
+if (!use.pname){
+  GeneID <- paste(regions.dat$Chr, ":", regions.dat$Start, "-", regions.dat$End, sep='')
+} else {
+  GeneID <- regions.dat$pname
+}
 regions.dat$GeneID <- GeneID
 
 print("Regions file looks like this...")
 print(head(regions.dat))
 
 # other interesting features: countMultiMappingReads
-count.dat <- Rsubread::featureCounts(bamfiles, annot.ext=regions.dat, read2pos=5, isPairedEnd=jpaired, reportReadsPath=outdir)
+count.dat <- Rsubread::featureCounts(bamfiles, annot.ext=regions.dat, read2pos=5, isPairedEnd=jpaired, reportReadsPath=outdir, allowMultiOverlap=TRUE)  # allowMultiOverlap otherwise you get zero reads sometimes if you convert TSS to counts
 
 # make sparse
 count.dat$counts <- Matrix(count.dat$counts, sparse=TRUE)  # save some space?
