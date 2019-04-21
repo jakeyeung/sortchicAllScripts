@@ -350,7 +350,7 @@ PlotImputedPeaks3 <- function(counts.mat.sub.long,
                               jchip,
                               gname = "", 
                               jsize = 3, jcolvec = c("blue", "white", "red"),
-                              .log = TRUE, jpseudo = 0, jscale = 10^7, cap.quantile= NA, midpoint = "auto", debug.plot=FALSE, y.axis.factor = 1){
+                              .log = FALSE, jpseudo = 0, jscale = 10^7, cap.quantile= NA, midpoint = "auto", debug.plot=FALSE, y.axis.factor = 1){
   if (.log){
     jlegend <- "Log10 counts"
   } else {
@@ -363,6 +363,9 @@ PlotImputedPeaks3 <- function(counts.mat.sub.long,
   jmain <- paste0(jchip, " ", jlab, "\n", gname)
   # prepare plot object
   dat <- subset(counts.mat.sub.long, bin == peaks.keep)
+  if (.log){
+    dat$exprs <- log10(dat$exprs * jscale + jpseudo)
+  }
   dat <- RankOrder(dat, cname = "exprs", out.cname = "orderrank")
   if (is.numeric(cap.quantile)){
     if (length(cap.quantile) == 1){
