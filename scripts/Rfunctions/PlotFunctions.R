@@ -1,3 +1,15 @@
+PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", jcol = scales::muted("darkblue"), jtitle = "", jcol.low = "gray85", jcol.mid = "gray50"){
+  jsub <- RankOrder(jsub, cname = cname, out.cname = "orderrank")
+  jrange <- range(jsub[[cname]])
+  jmid <- min(jsub[[cname]]) + diff(range(jsub[[cname]])) / 2
+  m1 <- ggplot(jsub, aes_string(x = xvar, y = yvar, col = cname, order = "orderrank")) + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+    scale_color_gradient2(low = "gray85", mid = "gray50", high = jcol, midpoint = jmid, limit = jrange) + 
+    ggtitle(jtitle)
+  return(m1)
+}
+
+
 PlotUmapAllMarks <- function(jmarks, tm.result.lst, jpeak, juse.count.mat, dat.umap.lst, jgene, jsize, jcolvec, .log=TRUE, scale.fac = 1, pseudocount = 10^-6){
   m.lst <- lapply(jmarks, function(jmark) PlotImputedPeaks2(tm.result.lst[[jmark]], jpeak, jmarks[[jmark]],
                                                             use.count.mat = NULL,
@@ -350,7 +362,7 @@ PlotImputedPeaks3 <- function(counts.mat.sub.long,
   jpeaks.str <- paste(peaks.keep.kb, collapse = ",")
   jmain <- paste0(jchip, " ", jlab, "\n", gname)
   # prepare plot object
-  dat <- subset(counts.mat.sub.long, bin == jpeak)
+  dat <- subset(counts.mat.sub.long, bin == peaks.keep)
   dat <- RankOrder(dat, cname = "exprs", out.cname = "orderrank")
   if (is.numeric(cap.quantile)){
     if (length(cap.quantile) == 1){
