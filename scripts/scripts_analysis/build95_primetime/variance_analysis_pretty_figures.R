@@ -80,6 +80,7 @@ load(inf.dat, v=T)
 
 
 make.plots <- TRUE
+make.plots <- FALSE
 
 colvec <- c("gray85", "gray50", "blue")  
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")

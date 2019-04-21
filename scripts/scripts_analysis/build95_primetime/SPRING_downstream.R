@@ -38,7 +38,7 @@ inf.objs <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build9
 load(inf.objs, v=T)
 
 if (make.plots){
-  pdf(paste0("~/data/scchic/pdfs/build95_trajectories_spring_", Sys.Date(), ".pdf"))
+  pdf(paste0("~/data/scchic/pdfs/build95_trajectories_spring_", Sys.Date(), ".pdf"), useDingbats = FALSE)
 }
 
 # Load coordinates and plot  ----------------------------------------------
@@ -140,7 +140,7 @@ neutros.dat <- samps.long %>%
   arrange(desc(abs(PC1))) %>%
   mutate(indx = seq(length(PC1)),
          is.neutro = ifelse(indx <= jtopn, "zNeutro", "aNotNeutro")) %>%
-  rename(cell = samp) %>%
+  dplyr::rename(cell = samp) %>%
   dplyr::select(cell, mark, PC1, is.neutro)
 
 neutros.dat.join <- left_join(coords.dat.join, neutros.dat)
@@ -361,9 +361,20 @@ m.traj <- ggplot(dat.trajs, aes(x = umap1, y = umap2)) +
   geom_path(data = lymphoid.avg, inherit.aes = FALSE, aes(x = umap1, y = umap2, color = lambda), size = 2) +
   # geom_path(data = lymphoid.avg %>% filter(celltype == "tcell"), inherit.aes = FALSE, aes(x = umap1, y = umap2), size = 2, color = "darkblue") +
   # geom_path(data = lymphoid.avg %>% filter(celltype == "bcell"), inherit.aes = FALSE, aes(x = umap1, y = umap2), size = 2, color = "darkred") + 
-  ggtitle("Test") + 
+  ggtitle(paste(jmark, ctype)) + 
   xlab("X1") + ylab("X2")
 print(m.traj)
+
+#  plot avg on the umap
+m.traj2 <- ggplot(dat.trajs, aes(x = umap1, y = umap2)) + 
+  geom_point(size = 3, color = "gray50", alpha = 0.5) +
+  theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_path(data = lymphoid.avg, inherit.aes = FALSE, aes(x = umap1, y = umap2), size = 2, color = "black") +
+  ggtitle(paste(jmark, ctype)) + 
+  xlab("X1") + ylab("X2")
+print(m.traj2)
+
 
 # add to list
 trajs.mark[[ctype]] <- lymphoid.avg

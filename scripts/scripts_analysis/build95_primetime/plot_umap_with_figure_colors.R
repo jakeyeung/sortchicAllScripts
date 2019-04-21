@@ -48,11 +48,12 @@ colsvec <- list(H3K4me1 = "cyan1", H3K4me3 = "darkblue", H3K9me3 = "red1", H3K27
 
 jtops <- c(26, 13, 30, 23, 17, 24, 5, 7, 8, 12, 15, 18, 29, 28, 27)
 
-jhits <- c("Sox6", "Hbb-b2", "Irf8", "Irf4", "Foxo1", "S100a8", "Inpp4b", "Inhba", "Mef2c", "Car10", "Hs3st5")
+jhits <- c("Sox6", "Hbb-b2", "Irf8", "Irf4", "Foxo1", "S100a8", "Inpp4b", "Inhba", "Mef2c", "Car10", "Hs3st5", "Cd19", "Kit1", "Hoxa1", "Meis1", "Cd11b", "Cd3e")
 
 jcols <- c("gray85", "gray50", "darkred")
 jcols.gene <- jcols
 jcols.gene[[3]] <- "darkblue"
+
 
 
 

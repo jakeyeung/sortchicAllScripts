@@ -26,18 +26,18 @@ source("scripts/Rfunctions/Aux.R")
 
 # Functions ---------------------------------------------------------------
 
-PlotUmapWithCellSums <- function(jmark, dat.umap.long.new.lst, count.mat.lst, jscale = 1){
+PlotUmapWithCellSums <- function(jmark, dat.umap.long.new.lst, count.mat.lst){
   cell.sums <- data.frame(cell = colnames(count.mat.lst[[jmark]]), cellsum = Matrix::colSums(count.mat.lst[[jmark]]))
   # add it to umap and plot
   dat.umap <- left_join(dat.umap.long.new.lst[[jmark]], cell.sums)
   head(dat.umap.long.new.lst[[jmark]])
-  cell.sums <- data.frame(cell = colnames(count.mat.lst[[jmark]]), cellsum = Matrix::colSums(count.mat.lst[[jmark]]))
+  # cell.sums <- data.frame(cell = colnames(count.mat.lst[[jmark]]), cellsum = Matrix::colSums(count.mat.lst[[jmark]]))
   # add it to umap and plot
   dat.umap <- left_join(dat.umap.long.new.lst[[jmark]], cell.sums) 
-  m1 <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = cellsum)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-  m2 <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = log10(cellsum))) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-  print(m1)
-  print(m2)
+  # m1 <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = cellsum)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  # m2 <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = log10(cellsum))) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  # print(m1)
+  # print(m2)
   return(dat.umap)
 }
 
@@ -76,7 +76,20 @@ cell.sums <- data.frame(cell = colnames(count.mat.lst[[jmark]]), cellsum = Matri
 # add it to umap and plot
 dat.umap <- left_join(dat.umap.long.new.lst[[jmark]], cell.sums)
 
+colvec <- c("gray85", "gray50", scales::muted("darkblue"))
+
 pdf(paste0("~/data/scchic/pdfs/umap_with_counts.", Sys.Date(), ".pdf"), useDingbats = FALSE)
-outs <- mapply(function(jmark, jscale) PlotUmapWithCellSums(jmark, dat.umap.long.new.lst, count.mat.lst, jscale), jmarks, jscales, 
-               MoreArgs = list(dat.umap.long.new.lst = dat.umap.long.new.lst, count.mat.lst = count.mat.lst))
+for (i in seq(length(jmarks))){
+  jmark <- jmarks[[i]]
+  jscale <- jscales[[i]]
+  print(jmark)
+  out <- PlotUmapWithCellSums(jmark, dat.umap.long.new.lst, count.mat.lst)
+  mdpt <- min(log10(out$cellsum)) + (max(log10(out$cellsum)) - min(log10(out$cellsum))) / 2
+  out$umap2 <- jscale * out$umap2
+  m2 <- ggplot(out, aes(x = umap1, y = umap2, color = log10(cellsum))) + geom_point() + theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_gradient2(low = colvec[[1]], mid = colvec[[2]], high = colvec[[3]], midpoint = mdpt) + 
+    ggtitle(jmark)
+  print(m2)
+}
 dev.off()

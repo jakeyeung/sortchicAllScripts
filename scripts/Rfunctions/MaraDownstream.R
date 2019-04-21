@@ -3,6 +3,45 @@
 # File: ~/projects/scchic/scripts/Rfunctions/MaraDownstream.R
 # MARA downstream functions
 
+GetCellHashBC <- function(inf.experinames = "data/outputs/experinames.txt", bc.inf = "data/barcode_summaries/barcodes/maya_384NLA.bc"){
+  experis <- read.table(inf.experinames, stringsAsFactors = FALSE)
+  experihash <- hash::hash(sapply(experis$V1, function(x) strsplit(x, "_")[[1]][[1]]), sapply(experis$V1, function(x) paste(strsplit(x, "_")[[1]][2:3], collapse="_")))
+  switch.rep.hash <- GetRepSwitchHash(experihash)
+  
+  barcodes <- read.table(bc.inf, col.names = "Barcodes", stringsAsFactors = FALSE)
+  cellhash <- hash::hash(rownames(barcodes), unlist(barcodes))
+  cellhash.bc <- hash::hash(unlist(barcodes), paste("cell", rownames(barcodes), sep = "")) 
+}
+
+SwitchColnames <- function(cnames, inf.experinames = "data/outputs/experinames.txt", bc.inf = "data/barcode_summaries/barcodes/maya_384NLA.bc", rep.prefix = "", jsplit = "\\."){
+  source("scripts/Rfunctions/MatchCellNameToSample.R")
+  experis <- read.table(inf.experinames, stringsAsFactors = FALSE)
+  experihash <- hash::hash(sapply(experis$V1, function(x) strsplit(x, "_")[[1]][[1]]), sapply(experis$V1, function(x) paste(strsplit(x, "_")[[1]][2:3], collapse="_")))
+  switch.rep.hash <- GetRepSwitchHash(experihash)
+  
+  barcodes <- read.table(bc.inf, col.names = "Barcodes", stringsAsFactors = FALSE)
+  cellhash <- hash::hash(rownames(barcodes), unlist(barcodes))
+  cellhash.bc <- hash::hash(unlist(barcodes), paste("cell", rownames(barcodes), sep = ""))
+  
+  cnames.new <- sapply(cnames, function(x){
+    jmark <- strsplit(x, jsplit)[[1]][[1]]
+    jtiss <- strsplit(x, jsplit)[[1]][[2]]
+    jmouse <- strsplit(x, jsplit)[[1]][[3]]
+    jrep <- paste0(rep.prefix, strsplit(x, jsplit)[[1]][[4]])
+    jcell <- cellhash.bc[[strsplit(x, jsplit)[[1]][[6]]]]
+    if (is.null(jcell)){
+      warning(paste(strsplit(x, jsplit)[[1]][[6]], "not in hash, returning NA"))
+      xnew <- NA
+    } else {
+      xnew <- paste(jtiss, jmark, jmouse, jrep, jcell, sep = "_")
+    }
+  })
+  # need to source
+  # source("scripts/Rfunctions/MatchCellNameToSample.R")
+  cnames.new <- sapply(cnames.new, function(x) SwapRepNameInCell(x, switch.rep.hash))
+  return(cnames.new)
+}
+
 LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA.bc", fix.tech.rep = FALSE, rep.prefix = "rep", swap.tech.rep = NULL, filesuffix = ""){
   act.mat <- fread(file.path(mdir, paste0("Activities", filesuffix)), header = FALSE)
   se.mat <- fread(file.path(mdir, paste0("StandardError", filesuffix)), header = FALSE)
