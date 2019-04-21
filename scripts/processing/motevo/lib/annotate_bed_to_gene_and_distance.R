@@ -50,7 +50,12 @@ if ( args$verbose ) {
 }
 
 # load bed file 
-bed <- data.table::fread(args$infile, col.names = c("chromo", "start", "end", "peakname"))
+bed <- data.table::fread(args$infile)
+if (ncol(bed) == 4){
+  colnames(bed) = c("chromo", "start", "end", "peakname")
+} else {
+  colnames(bed) = c("chromo", "start", "end")
+}
 print(head(bed))
 # regions <- data.frame(seqnames = sapply(colnames(bed), GetChromo),
 #                       start = sapply(colnames(bed), GetStart),
