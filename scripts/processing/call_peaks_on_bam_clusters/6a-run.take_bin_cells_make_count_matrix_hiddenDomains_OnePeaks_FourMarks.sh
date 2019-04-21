@@ -11,6 +11,8 @@ jtime='1:00:00'
 n=0
 maxjobs=4
 
+markref="H3K4me1"  # take peak file from one mark, but create count matrix for 4 marks so we can remove bad peaks
+
 marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
 # marks="H3K27me3"
 mindist="1000"
@@ -42,14 +44,14 @@ echo $jprefix
 
 for jchip in $marks; do
     # peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_bam_hiddenDomains_output_${suffix}/${cell}_${jchip}_merged.${mindist}.cutoff/${cell}_${jchip}_merged.${mindist}.cutoff_analysis.blacklistfilt.bed"
-    peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_cluster_bam_hiddenDomains_output_build95/merged_across_clusters_${jchip}/merged_${jchip}.1000.cutoff_analysis.blacklistfilt.bed"
+    peakf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_cluster_bam_hiddenDomains_output_build95/merged_across_clusters_${markref}/merged_${markref}.1000.cutoff_analysis.blacklistfilt.bed"
     [[ ! -e $peakf ]] && echo "$peakf not found, exiting" && exit 1
 
     bamnamesfile=$bamnamesdir/"JY_${jchip}_bamnames.out"
     [[ ! -e $bamnamesfile ]] && echo "$bamnamesfile not found, exiting" && exit 1
 
     # now run Rscript
-    outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}_${suffix}.cells_from_bin_analysis"
+    outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}_${suffix}.cells_from_bin_analysis/peak_from_${markref}"
     [[ ! -d $outmain ]] && mkdir $outmain
     outf="$outmain/PZ-BM-${jchip}.merged.NoCountThres.hiddenDomains.Robj"
     [[ -e $outf ]] && echo "$outf already found, continuing" && continue
