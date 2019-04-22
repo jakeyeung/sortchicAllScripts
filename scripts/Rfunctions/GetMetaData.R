@@ -87,7 +87,7 @@ GetTechRep <- function(inf, type="BM"){
   # x <- stringr::str_match(inf, "_S[1-9]*.")[1, 1]
   # "PZ-BM-m2-H3K9me3-1_H2GV2BGX9_S17" -> 1
   # if (type == "BM" | type == "K562" | type == "K562_round2"){
-    x <- stringr::str_match(inf, "_S[1-9]*.")[1, 1]
+    x <- stringr::str_match(inf, "_S[0-9]*.")[1, 1]
     x <- substr(x, start = 2, stop = nchar(x) - 1)
   # }
   # if (type == "BM"){
