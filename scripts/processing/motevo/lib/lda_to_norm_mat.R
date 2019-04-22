@@ -63,6 +63,8 @@ if (length(out.lda) > 1){
   } else {
     out.lda <- ChooseBestLDA(out.lda)
   }
+} else {
+  out.lda <- out.lda[[1]]
 }
 kchoose <- out.lda@k
 

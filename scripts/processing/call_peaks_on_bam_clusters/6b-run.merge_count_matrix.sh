@@ -5,7 +5,7 @@
 # 2019-04-19
 
 mark="H3K4me1"
-tssdist="20000"
+tssdist="50000"
 
 rs="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/call_peaks_on_bam_clusters/merge_count_matrix.R"
 

@@ -38,21 +38,22 @@ cellmax="9999999"
 meanmax="10"  # meanmax = 1 keeps the Erdr1 and Mid1 genes, which are probably real? But there may be some weird peaks as well that are skewing results.
 
 suffix="build95.withchr.cells_from_bin_analysis"
-# suffix2="GeneTSS.Dedup"
+suffix2="GeneTSS.Dedup"
 # suffix2="GeneTSS.Dedup.RbindHiddenDomains"
-suffix2="CorrPeakFilt"
-# tssdist=20000
+# suffix2="CorrPeakFilt"
+tssdist=60000
+jdate="2019-04-22"
 
 # marks="H3K27me3"
 for mark in $marks; do
     # inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}_${suffix}/PZ-${cell}-${mark}.merged.NoCountThres.hiddenDomains.Robj"
     # inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromGeneTSS.1000_build95.withchr.cells_from_bin_analysis/PZ-BM-${mark}.merged.NoCountThres.GeneTSS.Dedup.RbindHiddenDomains.Robj"
-    # inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromGeneTSS.1000_build95.withchr_${tssdist}.cells_from_bin_analysis/PZ-BM-${mark}.merged.NoCountThres.${suffix2}.Robj"
-    inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}_${suffix}/CorrPeakFilt/PZ-BM-${mark}.merged.NoCountThres.hiddenDomains.${suffix2}.Robj"
+    inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromGeneTSS.1000_build95.withchr_${tssdist}.cells_from_bin_analysis/PZ-BM-${mark}.merged.NoCountThres.${suffix2}.Robj"
+    # inf="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/count_mats_all/count_mats.fromHiddenDomains.${mindist}_${suffix}/CorrPeakFilt/PZ-BM-${mark}.merged.NoCountThres.hiddenDomains.${suffix2}.Robj"
 
     # relax assumptions to capture more H3K4me3 and H3K9me3 cells?
     # outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysis_${suffix2}_${mindist}_${suffix}_${tssdist}_2019-04-20/lda_outputs.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}"
-    outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysis_${suffix2}_${mindist}_${suffix}_2019-04-21/lda_outputs.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}"
+    outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysis_${suffix2}_${mindist}_${suffix}_${tssdist}_${jdate}/lda_outputs.meanfilt_${meanmax}.cellmin_${cellmin}.cellmax_${cellmax}.binarize.${binarize}"
     [[ ! -d $outdir ]] && mkdir -p $outdir
 
     [[ ! -e $inf ]] && echo "$inf not found, exiting" && exit 1

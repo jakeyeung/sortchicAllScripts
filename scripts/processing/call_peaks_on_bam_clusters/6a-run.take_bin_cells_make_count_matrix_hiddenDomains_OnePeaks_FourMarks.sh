@@ -11,13 +11,17 @@ jtime='1:00:00'
 n=0
 maxjobs=4
 
-markref="H3K4me1"  # take peak file from one mark, but create count matrix for 4 marks so we can remove bad peaks
+# markref="H3K4me1"  # take peak file from one mark, but create count matrix for 4 marks so we can remove bad peaks
+# markref="H3K4me3"  # take peak file from one mark, but create count matrix for 4 marks so we can remove bad peaks
+# markref="H3K27me3"  # take peak file from one mark, but create count matrix for 4 marks so we can remove bad peaks
+markref="H3K9me3"  # take peak file from one mark, but create count matrix for 4 marks so we can remove bad peaks
 
 marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
 # marks="H3K27me3"
 mindist="1000"
 
-workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
+# workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"  #  more than 7 gb in tmp files so move to data
+workdir="/hpc/hub_oudenaarden/jyeung/code_for_analysis/scchic"  # more room for Rsubread tmp files
 cd $workdir
 rs="scripts/processing/make_count_matrix_from_bams.R"
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1

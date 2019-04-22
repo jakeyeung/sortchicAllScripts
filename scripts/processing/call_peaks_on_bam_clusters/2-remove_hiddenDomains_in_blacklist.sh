@@ -4,7 +4,6 @@
 # Remove peaks from blacklist region 
 # 2019-04-15
 
-
 marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
 mindist="1000"
 cell="BM"

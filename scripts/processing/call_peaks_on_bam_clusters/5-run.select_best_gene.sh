@@ -5,7 +5,7 @@
 # 2019-04-19
 
 mark="H3K4me1"
-tssdist=20000
+tssdist=60000
 rs="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/call_peaks_on_bam_clusters/select_best_gene.R"
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 
