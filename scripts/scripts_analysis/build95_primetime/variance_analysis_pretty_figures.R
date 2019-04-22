@@ -18,48 +18,6 @@ source("scripts/Rfunctions/VariabilityFunctions.R")
 source("scripts/Rfunctions/Aux.R")
 
 
-# Function ----------------------------------------------------------------
-
-MakeLowerPlot <- function(data, mapping, ..., jbins = 150){
-  m <- ggplot(data = data, mapping = mapping) + 
-    geom_point_rast(data = data %>% sample_frac(size = 0.1), alpha = 0.3) + 
-    geom_density_2d() 
-    # geom_point(data = data %>% sample_frac(size = 0.1), alpha = 0.1) + 
-  return(m)
-}
-
-
-
-
-# Functions ---------------------------------------------------------------
-
-GetCellsAlongTraj <- function(trajs.spring, jmark, ctype, n.sections = 3, thres = 0.05, jfrom = 0, jto = 1, show.plots = TRUE){
-  lambda.cutoffs <- seq(from = jfrom, to = jto, length.out = n.sections)
-  cells.vec <- lapply(lambda.cutoffs, function(jlambda) (trajs.spring[[jmark]][[ctype]] %>% arrange(abs(lambda - jlambda)))$cell[[1]])
-  if (show.plots){
-    m <- ggplot(dat.trajs.long %>% filter(mark == jmark) %>% mutate(highlighted = cell %in% c(cell0, cell1, cell2)), aes(x = X1, y = X2, color = highlighted)) +
-      geom_point() +
-      theme_bw() +
-      theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-    print(m)
-    # plot chromosome 15 over time
-    m <- ggplot(jmerge %>% filter(cell %in% c(cell0, cell1, cell2)), aes(x = pos, y = exprs, group = lambda, color = lambda)) + 
-      geom_line() + theme_bw() + facet_wrap(~lambda, ncol = 1) + 
-      theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
-      ggtitle(jmark, ctype) 
-    print(m)
-  }
-  return(unlist(cells.vec))
-}
-
-
-GetMatSub <- function(tm.result.lst, jmark, gstr, jpseudo, jfac, cells.vec = NULL){
-  imputed.dat <- log2((t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics) + jpseudo) * jfac)
-  mat.sub <- MatToLong(imputed.dat, gstr = gstr, cells.vec = cells.vec) %>% dplyr::select(-start, -end)
-  # mat.sub <- MatToLong(imputed.dat, gstr = gstr, cells.vec = NULL)
-  return(mat.sub)
-}
-
 
 # Load data  --------------------------------------------------------------
 
