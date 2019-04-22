@@ -39,7 +39,7 @@ GetMatSub <- function(tm.result.lst, jmark, gstr, jpseudo, jfac, cells.vec = NUL
 
 
 MakeVariabilityPlots <- function(jmark, trajname, tm.result.lst, dat.umap.long.trajs, 
-                                 jcol = c("gray80", "gray50", "darkblue"), grep.strs = paste("chr", c(seq(21)), ":", sep = ""), jalpha = 0.5, pseudo = 0, jscale = 1, 
+                                 jcol = c("gray85", "gray50", "darkblue"), grep.strs = paste("chr", c(seq(21)), ":", sep = ""), jalpha = 0.5, pseudo = 0, jscale = 1, 
                                  mdpt.sd = 1, ms.sd = c(0, 3), mdpt.fc = 0.75, lims.fc = c(0, 3), 
                                  jsize.facet = 0.2, gw.size.facet = 2, lagmax = 2500, ci.interval = 1.96,
                                  chromogstr="chr15:",

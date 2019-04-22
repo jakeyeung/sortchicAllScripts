@@ -9,7 +9,7 @@ library(topicmodels)
 library(dplyr)
 library(ggplot2)
 library(ldatuning)
-
+library(Matrix)
 
 print(paste("Work directory: ", getwd()))
 
