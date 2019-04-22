@@ -22,6 +22,7 @@ source("scripts/Rfunctions/MatchCellNameToSample.R")
 source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/Aux.R")
 source("scripts/Rfunctions/PlotFunctions.R")
+source("scripts/Rfunctions/TrajFunctions.R")
 source("scripts/Rfunctions/AnnotationFunctions.R")
 
 inf <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient.withColnameList.2019-04-04.RData"
@@ -35,25 +36,6 @@ inf.exprs <- "/Users/yeung/data/scchic/from_cluster/mara_input/exprs_mat.rds"
 
 # Functions ---------------------------------------------------------------
 
-RenameTraj <- function(x){
-  if (x == "eryth"){
-    return("Erythryoid")
-  } else if (x == "granu") {
-    return("Myeloid")
-  } else if (x == "lymphoid"){
-    return("Lymphoid") 
-  }
-}
-
-RenameTraj.rev <- function(x){
-  if (x == "Erythryoid"){
-    return("eryth")
-  } else if (x == "Myeloid") {
-    return("granu")
-  } else if (x == "Lymphoid"){
-    return("lymphoid") 
-  }
-}
 
 
 # Constants ---------------------------------------------------------------
@@ -145,8 +127,6 @@ ref.mark <- "H3K4me1"
   
   jcolvec <- c("gray85", "gray50", "darkblue")
   jcolvec.motif <- c("gray85", "gray50", "red")
-  
-  
   
   if (!use.peaks.mat){
     rows.i <- rownames(count.imputed.lst[[jmark]]) %in% peaks.filt

@@ -13,15 +13,21 @@ library(tidyr)
 
 source("scripts/Rfunctions/Aux.R")
 
+
+# Constnats ---------------------------------------------------------------
+
+jcutoff <- 0.99
+
 # Load data ---------------------------------------------------------------
 
-mark <- "H3K4me1"
+# refmark <- "H3K4me1"
+refmark <- "H3K4me3"
 marks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
 names(marks) <- marks
 
 peak.mean.dat <- lapply(marks, function(mark){
   print(mark)
-  inf <- paste0("/Users/yeung/data/scchic/from_cluster/count_mat_explore/PZ-BM-", mark, ".merged.NoCountThres.hiddenDomains.Robj")
+  inf <- paste0("/Users/yeung/data/scchic/from_cluster/count_mat_explore.peak_ref_", refmark, "/PZ-BM-", mark, ".merged.NoCountThres.hiddenDomains.Robj")
   load(inf, v=T)
   count.filt <- count.dat$counts
   # count.filt[!is.na(rownames(count.filt))] <- count.filt
@@ -46,7 +52,6 @@ peak.mean.sum <- peak.mean.dat %>%
   arrange(desc(pmean))
 
 # check cutoffs
-jcutoff <- 0.99
 subset(peak.mean.sum, pmean < jcutoff)
 
 # keep 
@@ -66,7 +71,7 @@ bl.dat <- data.frame(chromo = sapply(peaks.high, GetChromo),
                      stringsAsFactors = FALSE) %>%
   arrange(chromo, start, end)
 
-data.table::fwrite(bl.dat, file = paste0("/Users/yeung/data/databases/blacklist_regions/mm10_BM_blacklist_QuantileCutoff-", 
+data.table::fwrite(bl.dat, file = paste0("/Users/yeung/data/databases/blacklist_regions/mm10_BM_", refmark, "_blacklist_QuantileCutoff-", 
                                          jcutoff, ".bed"), sep = "\t", col.names = FALSE)
 
 # ggpairs(peak.mat %>% filter(peak %in% peaks.plot) %>% dplyr::select(-peak))

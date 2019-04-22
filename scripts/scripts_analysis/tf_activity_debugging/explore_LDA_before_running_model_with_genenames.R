@@ -8,9 +8,13 @@ library(topicmodels)
 library(dplyr)
 library(ggplot2)
 library(tidytext)
+library(umap)
+library(data.table)
+library(tidyr)
 
 jscale <- 10^7
 jpseudo <- 0
+.log <- FALSE
 
 source("scripts/Rfunctions/MaraDownstream.R")
 source("scripts/Rfunctions/PlotFunctions.R")
@@ -64,7 +68,7 @@ top.peaks <- tidytext::tidy(out.lda, matrix = "beta", log = FALSE) %>%
   mutate(beta.zscore = scale(beta, center = TRUE, scale = TRUE)) %>%
   rowwise() %>%
   mutate(gene = strsplit(term, ";")[[1]][[2]])
-         
+
 
 # top.peaks.sum <- top.peaks %>%
 #   group_by(term) %>%
@@ -123,14 +127,16 @@ exprs.long <- left_join(exprs.long, dat.trajs.long)
 
 # 
 jgenes <- c("Hbb-bs", "Gata1", "Foxo1", "Inpp4b", "S100a8", "Hs3st5", "Il2ra", "Prf1", "Klf", "Sox6", "Gata2", "Pax5", "Ly6c2", "Gypa")
-jgenes <- c(jgenes, "Tal1", "Mbd2", "Bcl3", "Foxc1", "Nrf1", "Hmbox1", "Spi1", "Gfi1", "Ebf3", "Cebpd", "Cebpb", "Pax6", "Pou2f2", "Ebf1")
+jgenes <- c(jgenes, "Tal1", "Mbd2", "Bcl3", "Foxc1", "Nrf1", "Hmbox1", "Spi1", "Gfi1", "Ebf3", "Cebpd", "Cebpb", "Cebpg", "Cebpa", "Pax6", "Pou2f2", "Ebf1")
 
-
-
-pdf(paste0("/tmp/lda_check.", jsuffix, ".", tssdist,  ".", jdate, ".pdf"), useDingbats = FALSE)
+pdf(paste0("/tmp/lda_check.log.", .log, ".", jsuffix, ".", tssdist,  ".", jdate, ".pdf"), useDingbats = FALSE)
 for (jgene in jgenes){
-  jsub <- subset(exprs.long, gene == jgene) %>%
-    mutate(exprs = log2(exprs * jscale + jpseudo))
+  if (.log){
+    jsub <- subset(exprs.long, gene == jgene) %>%
+      mutate(exprs = log2(exprs * jscale + jpseudo))
+  } else {
+    jsub <- subset(exprs.long, gene  == jgene)
+  }
   if (nrow(jsub) == 0){
     print(paste("Skipping", jgene))
     next
@@ -194,9 +200,9 @@ jtopic <- 46
 
 jtopic <- 39
 jtopic <- 48
-jtopic <- 50
 jtopic <- 15
 
+jtopic <- 50
 print(data.frame(head(subset(top.peaks, topic == jtopic), n = 20)))
 
 topn <- 100
@@ -234,4 +240,3 @@ jgene <- "Tal1"
 jgene <- "Cebpb"
 ggplot(dat.long %>% filter(Gene_Name == jgene), aes(x = CellType, y = zscore)) + geom_point()  + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle(jgene)
-  

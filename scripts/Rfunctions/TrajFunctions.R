@@ -1,4 +1,25 @@
 
+RenameTraj <- function(x){
+  if (x == "eryth"){
+    return("Erythryoid")
+  } else if (x == "granu") {
+    return("Myeloid")
+  } else if (x == "lymphoid"){
+    return("Lymphoid") 
+  }
+}
+
+RenameTraj.rev <- function(x){
+  if (x == "Erythryoid"){
+    return("eryth")
+  } else if (x == "Myeloid") {
+    return("granu")
+  } else if (x == "Lymphoid"){
+    return("lymphoid") 
+  }
+}
+
+
 GetTopGenes <- function(dat.long, jcelltype, jtopic, topn = 20){
   jsub <- dat.long %>% 
     rowwise() %>%
