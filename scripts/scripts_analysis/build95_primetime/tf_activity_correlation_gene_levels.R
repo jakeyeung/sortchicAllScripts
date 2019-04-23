@@ -36,6 +36,7 @@ inf <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.all
 
 # Constants ---------------------------------------------------------------
 
+vcutoff <- 2
 use.peaks.mat <- TRUE
 
 pcutoff <- -7.5
@@ -117,6 +118,7 @@ load(inf.trajs, v=T)
 experis <- read.table("data/outputs/experinames.txt", stringsAsFactors = FALSE)
 experihash <- hash(sapply(experis$V1, function(x) strsplit(x, "_")[[1]][[1]]), sapply(experis$V1, function(x) paste(strsplit(x, "_")[[1]][2:3], collapse="_")))
 switch.rep.hash <- GetRepSwitchHash(experihash)
+
 
 indir.mara <- "/Users/yeung/data/scchic/from_cluster/mara_analysis_cluster_build95_CorrPeakFilt.withchr.cells_from_bin_analysis/H3K4me1/mara_output/hiddenDomains_cellmin_0-cellmax_9999999-binarize_TRUE-BM_H3K4me1.filt_0.99.center_TRUE_K50-hiddenDomains_motevo_merged.closest.long.scale_0.center_0.byrow_0.bugfix.filt.0--K50/hiddenDomains_cellmin_0-cellmax_9999999-binarize_TRUE-BM_H3K4me1.filt_0.99.center_TRUE_K50"
 
@@ -206,8 +208,6 @@ jmotif <- "Foxc1"
 
 jmotifs <- mara.out$zscores$motif[1:25]
 # .log <- TRUE
-vcutoff <- 2
-
 
 pdf(paste0("/tmp/mara_output.", tssdist, ".pdf"), useDingbats = FALSE)
 for (jmotif in jmotifs){
@@ -232,6 +232,47 @@ for (jmotif in jmotifs){
   print(m3.col.merge)
 }
 dev.off()
+
+# Genome wide correlations ------------------------------------------------
+
+act.sum <- act.exprs.umap %>%
+  group_by(motif) %>%
+  summarise(cor.out = cor(x = exprs.log, y = activity)) %>%
+  arrange(desc(abs(cor.out))) %>%
+  left_join(mara.out$zscores) %>%
+  mutate(motif.lab = ifelse(zscore > 2, motif, NA))
+
+ggplot(act.sum, aes(x = cor.out, y = zscore, label = motif.lab)) + geom_point() + geom_text_repel() +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  ggtitle(paste("Global analysis of TF and gene correlation:", tssdist, "TSS window"))
+
+
+# Do analysis by trajectory -----------------------------------------------
+
+# y axis: mean exprs, x axis: correlation
+act.exprs.umap <- left_join(act.exprs.umap, traj.annot)
+
+act.sum.bytraj <- act.exprs.umap %>%
+  group_by(motif, traj) %>%
+  filter(!is.na(exprs.log)) %>%
+  summarise(exprs.upper = quantile(exprs.log, 0.95),
+            exprs.mean = mean(exprs.log),
+            act.mean = mean(activity),
+            cor.out = cor(x = exprs.log, y = activity)) %>%
+  filter(!is.na(traj)) %>% 
+  filter(exprs.upper > vcutoff) %>%
+  left_join(., mara.out$zscores) %>% 
+  mutate(motif.lab = ifelse(zscore > 2, motif, NA))
+
+ggplot(act.sum.bytraj, aes(x = cor.out, y = exprs.mean, label = motif.lab)) + geom_point(alpha=0.2) +  facet_wrap(~traj)  + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + geom_text_repel() + ggtitle("TSS dist:", tssdist)
+
+ggplot(act.sum.bytraj, aes(x = cor.out, y = act.mean, label = motif.lab)) + geom_point(alpha=0.2) +  facet_wrap(~traj)  + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + geom_text_repel() + ggtitle("TSS dist:", tssdist)
+
+
+# Some kind of global analysis of z-scores  -------------------------------
+
 
 
 

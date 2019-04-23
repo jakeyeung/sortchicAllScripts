@@ -3,7 +3,12 @@ PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", 
   jrange <- range(jsub[[cname]])
   jmid <- min(jsub[[cname]]) + diff(range(jsub[[cname]])) / 2
   m1 <- ggplot(jsub, aes_string(x = xvar, y = yvar, col = cname, order = "orderrank")) + geom_point() + 
-    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom",
+                       axis.ticks=element_blank(),
+                       axis.text.x=element_blank(),
+                       axis.text.y=element_blank(),
+                       panel.border=element_blank())  + 
+    xlab("") + ylab("") + 
     scale_color_gradient2(low = "gray85", mid = "gray50", high = jcol, midpoint = jmid, limit = jrange) + 
     ggtitle(jtitle)
   return(m1)

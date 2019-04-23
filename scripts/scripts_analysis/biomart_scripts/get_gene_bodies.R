@@ -13,7 +13,7 @@ library(GenomicRanges)
 # Constants ---------------------------------------------------------------
 
 
-winsize <- 60000
+winsize <- 100000L
 
 
 
