@@ -21,12 +21,9 @@ source("scripts/Rfunctions/VariabilityFunctions.R")
 source("scripts/Rfunctions/Aux.R")
 
 
-
 # Load data  --------------------------------------------------------------
 
-# inf.trajs <- "/Users/yeung/data/scchic/robjs/trajectory_from_spring_2019-04-09.RData"
 inf.trajs <- "/Users/yeung/data/scchic/robjs/trajectory_from_spring_2019-04-11.RData"
-inf.trajs <- "/Users/yeung/data/scchic/robjs/trajectory_from_spring_2019-04-15.RData"
 assertthat::assert_that(file.exists(inf.trajs))
 load(inf.trajs, v=T)
 
@@ -121,15 +118,18 @@ trajs.sum <- trajs.long %>%
 # Do heatmap of granulocytes for the 4 marks ------------------------------
 
 
+
 jsub <- trajs.sum %>% filter(pos > 0e7 & pos < 999e7)
 jsub$mark <- factor(jsub$mark, levels = c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"))
 jlims <- range(jsub$exprs)
 jmid <- min(jlims) + (max(jlims) - min(jlims)) / 2
 
-pdf(file = paste0("~/data/scchic/pdfs/variance_over_pseudotime_heatmaps.", Sys.Date(), ".pdf"), useDingbats = FALSE)
-m.lines <- ggplot(trajs.sum, aes(x = pos, y = exprs)) + geom_line() + facet_grid(lambda.bin ~ mark) + 
-  theme_bw() + 
+pdf(file = paste0("~/data/scchic/pdfs/variance_over_pseudotime_heatmaps.", jtraj, ".", Sys.Date(), ".pdf"), useDingbats = FALSE)
+
+m.lines <- ggplot(trajs.sum, aes(x = pos, y = exprs)) + geom_line() + facet_grid(lambda.bin ~ mark) +
+  theme_bw() +
   theme(aspect.ratio=0.25, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
 m1 <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, desc(lambda.bin)), fill = exprs)) + 
   # geom_tile(width = 0.1, height = 1) + 
   geom_tile() + 
@@ -139,33 +139,6 @@ m1 <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, desc(lambda.bin)),
   ggtitle(paste(jtraj, jstr)) + 
   ylab("Trajectory") + 
   xlab("Position (MB)")
+print(m.lines)
 print(m1)
 dev.off()
-
-
-# Do SD over time ---------------------------------------------------------
-# 
-# # all trajs
-# 
-# # get genome wide bins: by marks 
-# jmark <- "H3K4me1"
-# mat.sub.gw <- GetMatSub(tm.result.lst, jmark, "", jpseudo, jfac) %>% mutate(mark = jmark)
-# 
-
-# Make as function --------------------------------------------------------
-
-
-jtraj <- "granu"
-BinTrajectory <- function(trajs.spring.lst, jtraj, nearest = 0.1){
-  round.int <- 1 / nearest
-  trajs.sum <- lapply(trajs.spring, function(x) x[[jtraj]] %>% mutate(traj = jtraj)) %>%
-    bind_rows() %>%
-    rowwise() %>%
-    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
-    left_join(., mat.sub.merge) %>%
-    rowwise() %>%
-    mutate(lambda.bin = floor(lambda * round.int) / round.int) %>%
-    group_by(traj, lambda.bin, mark, coord, pos) %>%
-    summarise(exprs = mean(exprs)) %>%
-  return(trajs.sum)
-}
