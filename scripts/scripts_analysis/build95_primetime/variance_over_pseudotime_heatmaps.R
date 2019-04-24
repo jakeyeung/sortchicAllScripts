@@ -113,7 +113,6 @@ trajs.long <- lapply(trajs.spring, function(x) x[[jtraj]]) %>%
   left_join(., mat.sub.merge) %>%
   rowwise() %>%
   mutate(lambda.bin = floor(lambda * 10) / 10)
-
 trajs.sum <- trajs.long %>%
   group_by(lambda.bin, mark, coord, pos) %>%
   summarise(exprs = mean(exprs))
@@ -139,6 +138,7 @@ m1 <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, desc(lambda.bin)),
   ggtitle(paste(jtraj, jstr)) + 
   ylab("Trajectory") + 
   xlab("Position (MB)")
+print(m.lines)
 print(m1)
 dev.off()
 
