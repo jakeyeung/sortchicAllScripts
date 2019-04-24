@@ -28,7 +28,7 @@ library(biomaRt)
 source("scripts/Rfunctions/Aux.R")
 source("scripts/Rfunctions/AuxLDA.R")
 
-jmark <- "H3K4me1"
+jmark <- "H3K4me9"
 
 # Init paths and check ----------------------------------------------------
 
