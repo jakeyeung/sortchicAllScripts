@@ -3,7 +3,6 @@
 # File: ~/projects/scchic/scripts/scripts_analysis/pseudobulk_analysis/plot_correlations_summarize_everything_build95.R
 # Plot everything again 
 
-
 rm(list=ls())
 
 tstart <- Sys.time() 

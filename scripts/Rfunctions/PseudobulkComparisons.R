@@ -1,5 +1,5 @@
 
-ComparePublicLog <- function(inf, thres = 0.995, lab = "MyLabel"){
+ComparePublicLog <- function(inf, thres = 0.995, lab = "MyLabel", clip.chic.only = FALSE){
   dat <- data.table::fread(inf, sep = "\t")
   
   datref <- dat[, 1]
@@ -17,11 +17,18 @@ ComparePublicLog <- function(inf, thres = 0.995, lab = "MyLabel"){
   dat.long.filt <- dat.long %>%
     filter(!is.nan(chip)) %>%
     group_by(Sample) %>%
-    filter(chic <= quantile(chic, probs = jthres) & chip <= quantile(chip, probs = jthres) & chic >= quantile(chic, probs = 1 - jthres) & chip >= quantile(chip, probs = 1-jthres)) %>%
-    # filter(chic <= quantile(chic, probs = thres)) %>%
     mutate(compare = lab)
   
   
+  if (!clip.chic.only){
+    dat.long.filt <- dat.long.filt %>%
+      group_by(Sample) %>%
+      filter(chic <= quantile(chic, probs = jthres) & chip <= quantile(chip, probs = jthres) & chic >= quantile(chic, probs = 1 - jthres) & chip >= quantile(chip, probs = 1-jthres))
+  } else {
+    dat.long.filt <- dat.long.filt %>%
+      group_by(Sample) %>%
+      filter(chic <= quantile(chic, probs = jthres) & chic >= quantile(chic, probs = 1-0.9*jthres))
+  }
   dat.cors <- dat.long.filt %>%
     group_by(Sample) %>%
     summarise(corr.pears = cor(chip, chic, method = "pearson"),
@@ -88,10 +95,13 @@ ComparePublicLinear <- function(inf, thres = 0.995, lab = "MyLabel", pseudocount
   return(list(dat.long.filt = dat.long.filt, dat.cors = dat.cors, m = m))
 }
 
-CompareAcrossMarks <- function(inf2, jmark, clstr, thres = 0.995, lab = "MyLabel"){
+CompareAcrossMarks <- function(inf2, jmark, refmark, clstr, thres = 0.995, lab = "MyLabel", clip.top.only = FALSE){
   dat.multi <- data.table::fread(inf2, sep = "\t")
   # compare erythryroblasts
-  datref.multi <- dat.multi[, ..clstr]
+  refname <- paste0(refmark, "_cluster_", clstr, ".bw")
+  datref.multi <- dat.multi[, ..refname]
+  # check we got the right cluster??
+  print(head(datref.multi))
   colnames(datref.multi) <- c("chic_ref")
   cols.compare <- grepl(jmark, colnames(dat.multi))
   datcompare.multi <- dat.multi[, ..cols.compare]
@@ -104,15 +114,23 @@ CompareAcrossMarks <- function(inf2, jmark, clstr, thres = 0.995, lab = "MyLabel
   dat.multi.long <- dplyr::left_join(datcompare.multi.long, datref.multi)
   
   # remove outliers
-  dat.multi.long.filt <- dat.multi.long %>%
-    group_by(Sample) %>%
-    filter(!is.nan(chic) & !is.nan(chic_ref)) %>%  # otherwise fails 
-    filter(chic <= quantile(chic, probs = thres) & chic >= quantile(chic, probs = 1 - thres)) %>%
-    filter(chic_ref <= quantile(chic_ref, probs = thres) & chic_ref >= quantile(chic_ref, probs = 1 - thres)) %>%
-    mutate(compare = lab)
+  if (!clip.top.only){
+    dat.multi.long.filt <- dat.multi.long %>%
+      group_by(Sample) %>%
+      filter(!is.nan(chic) & !is.nan(chic_ref)) %>%  # otherwise fails 
+      filter(chic <= quantile(chic, probs = thres) & chic >= quantile(chic, probs = 1 - thres)) %>%
+      filter(chic_ref <= quantile(chic_ref, probs = thres) & chic_ref >= quantile(chic_ref, probs = 1 - thres)) %>%
+      mutate(compare = lab)
+  } else {
+    dat.multi.long.filt <- dat.multi.long %>%
+      group_by(Sample) %>%
+      filter(!is.nan(chic) & !is.nan(chic_ref)) %>%  # otherwise fails 
+      filter(chic <= quantile(chic, probs = thres) & chic_ref <= quantile(chic_ref, probs = thres)) %>%
+      mutate(compare = lab)
+  }
   
-  m <- ggplot(dat.multi.long.filt, aes(x = chic_ref, y = chic)) + geom_point(alpha = 0.25) + 
-    scale_x_log10() + scale_y_log10() + facet_wrap(~Sample) + theme_bw() + 
+  m <- ggplot(dat.multi.long.filt, aes(x = chic_ref, y = chic)) + geom_point(alpha = 0.25) +
+    scale_x_log10() + scale_y_log10() + facet_wrap(~Sample) + theme_bw() +
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   
   dat.cors <- dat.multi.long.filt %>%
@@ -125,4 +143,52 @@ CompareAcrossMarks <- function(inf2, jmark, clstr, thres = 0.995, lab = "MyLabel
     mutate(compare = lab)
   # print(dat.cors)
   return(list(dat.multi.long.filt = dat.multi.long.filt, dat.cors = dat.cors, m = m))
+}
+
+CompareAcrossMarks2 <- function(inf2, jmark, clstr, thres = 0.995, lab = "MyLabel", clip.top.only = FALSE, jmark.ref){
+  dat.multi <- data.table::fread(inf2, sep = "\t")
+  # compare erythryroblasts
+  clstr.name <- paste0(jmark.ref, "_cluster_", clstr, ".bw")
+  datref.multi <- dat.multi[, ..clstr.name]
+  colnames(datref.multi) <- c("chic_ref")
+  cols.compare <- grepl(jmark, colnames(dat.multi))
+  datcompare.multi <- dat.multi[, ..cols.compare]
+  
+  datref.multi$peakid <- seq(nrow(datref.multi))
+  datcompare.multi$peakid <- seq(nrow(datcompare.multi))
+  
+  datcompare.multi.long <- melt(datcompare.multi, id.vars = "peakid", variable.name = "Sample", value.name = "chic")
+  
+  dat.multi.long <- dplyr::left_join(datcompare.multi.long, datref.multi)
+  
+  # remove outliers
+  if (!clip.top.only){
+    dat.multi.long.filt <- dat.multi.long %>%
+      group_by(Sample) %>%
+      filter(!is.nan(chic) & !is.nan(chic_ref)) %>%  # otherwise fails 
+      filter(chic <= quantile(chic, probs = thres) & chic >= quantile(chic, probs = 1 - thres)) %>%
+      filter(chic_ref <= quantile(chic_ref, probs = thres) & chic_ref >= quantile(chic_ref, probs = 1 - thres)) %>%
+      mutate(compare = lab)
+  } else {
+    dat.multi.long.filt <- dat.multi.long %>%
+      group_by(Sample) %>%
+      filter(!is.nan(chic) & !is.nan(chic_ref)) %>%  # otherwise fails 
+      filter(chic <= quantile(chic, probs = thres) & chic_ref <= quantile(chic_ref, probs = thres)) %>%
+      mutate(compare = lab)
+  }
+  
+  m <- ggplot(dat.multi.long.filt, aes(x = chic_ref, y = chic)) + geom_point(alpha = 0.25) + 
+    # scale_x_log10() + scale_y_log10() + facet_wrap(~Sample) + theme_bw() + 
+    facet_wrap(~Sample) + theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
+  dat.cors <- dat.multi.long.filt %>%
+    group_by(Sample) %>%
+    summarise(corr.pears = cor(chic, chic_ref, method = "pearson"),
+              corr.spear = cor(chic, chic_ref, method = "spearman"),
+              corr.pears.log2 = cor(log2(chic), log2(chic_ref), method = "pearson"),
+              corr.spear.log2 = cor(log2(chic), log2(chic_ref), method = "spearman")) %>%
+    mutate(compare = lab)
+  # print(dat.cors)
+  return(list(dat.multi.long.filt = dat.multi.long.filt, dat.cors = dat.cors, m = m, dat.multi.long = dat.multi.long, datref.multi = datref.multi, datcompare.multi = datcompare.multi))
 }
