@@ -21,6 +21,7 @@ library(org.Mm.eg.db)
 
 source("scripts/Rfunctions/MaraDownstream.R")
 
+source("scripts/Rfunctions/BackgroundPermutationScripts.R")
 
 source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/Aux.R")
@@ -73,46 +74,6 @@ zscore.long <- left_join(zscore.long, zscore.long.real)
 
 
 # Plot CEBPB zscore versus background model  ------------------------------
-
-GetPvalZscore <- function(jsub, zscore.real, jprob = 0.9, show.plot = TRUE, return.pval.only = FALSE, jtitle = ""){
-  # zscore.real <- subset(zscore.real.dat, motif == jmotif)$zscore
-  if (is.null(zscore.real)){
-    # assume it's inside the jsub
-    assertthat::assert_that(length(unique(jsub$zscore.real)) == 1)
-    zscore.real <- jsub$zscore.real[[1]]
-  }
-  jsub <- jsub %>%
-    arrange(zscore)
-  # jsub$zscore <- as.numeric(jsub$zscore)
-  jsub$zscore.cumsum <- cumsum(jsub$zscore)
-  jsub$indx <- seq(nrow(jsub))
-  jsub$frac.less.than <- jsub$indx / nrow(jsub)
-  jsub$frac.more.than <- 1 - jsub$frac.less.than
-  jsub$log10.frac.more.than <- log10(jsub$frac.more.than)
-  
-  jsubsub <- jsub %>% filter(zscore > quantile(zscore, probs = jprob) & frac.more.than > 0)
-  jfit <- lm(formula = log10.frac.more.than ~ zscore, data = jsubsub)
-  
-  log10pval <- predict(jfit, newdata = data.frame(zscore = zscore.real))
-  
-  xpred <- seq(min(jsubsub$zscore), max(zscore.real, jsubsub$zscore), length.out = 100)
-  ypred <- predict(jfit, newdata = data.frame(zscore = xpred))
-  pred.dat <- data.frame(log10.frac.more.than = ypred, zscore = xpred)
-  
-  if (show.plot){
-    m <- ggplot(jsubsub, aes(x = zscore, y = log10.frac.more.than)) + 
-      geom_point() + theme_bw() +
-      geom_vline(xintercept = zscore.real, linetype = "dashed") + 
-      expand_limits(y = ceiling(log10pval)) + 
-      geom_line(mapping = aes(x = zscore, y = log10.frac.more.than), data = pred.dat) + ggtitle(jtitle)
-    print(m)
-  }
-  if (!return.pval.only){
-    return(list(real.dat = jsubsub, pred.dat = pred.dat, fit = jfit, log10pval = log10pval))
-  } else {
-    return(data.frame(log10pval = log10pval))
-  }
-}
 
 # out <- GetPvalZscore(zscore.long %>% filter(mark == jmark & motif == jmotif), subset(mara.outs$H3K4me1$zscore, motif == jmotif)$zscore)
 
