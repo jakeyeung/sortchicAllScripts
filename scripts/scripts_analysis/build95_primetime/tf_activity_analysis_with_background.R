@@ -11,12 +11,10 @@ library(scales)
 library(JFuncs)
 library(umap)
 
-
 library(ChIPseeker)
 library(GenomicRanges)
 library(TxDb.Mmusculus.UCSC.mm10.knownGene)
 library(org.Mm.eg.db)
-
 
 
 source("scripts/Rfunctions/MaraDownstream.R")
@@ -26,7 +24,6 @@ source("scripts/Rfunctions/BackgroundPermutationScripts.R")
 source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/Aux.R")
 source("scripts/Rfunctions/PlotFunctions.R")
-
 
 
 inf <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient.withColnameList.2019-04-04.RData"

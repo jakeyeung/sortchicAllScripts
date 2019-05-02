@@ -38,7 +38,7 @@ GetPvalFOV <- function(fovs.permute, fovs.real = NULL, jprob = 0.9, show.plot = 
     print(m)
   }
   if (!return.pval.only){
-    return(list(real.dat = fovs.subsub, pred.dat = pred.dat, fit = jfit, log10pval = log10pval))
+    return(list(real.dat = fovs.subsub, pred.dat = pred.dat, fit = jfit, log10pval = log10pval, fov.real = fov.real))
   } else {
     return(data.frame(log10pval = log10pval))
   }
@@ -80,7 +80,7 @@ GetPvalZscore <- function(jsub, zscore.real, jprob = 0.9, show.plot = TRUE, retu
     print(m)
   }
   if (!return.pval.only){
-    return(list(real.dat = jsubsub, pred.dat = pred.dat, fit = jfit, log10pval = log10pval))
+    return(list(real.dat = jsubsub, pred.dat = pred.dat, fit = jfit, log10pval = log10pval, zscore.real = zscore.real))
   } else {
     return(data.frame(log10pval = log10pval))
   }
