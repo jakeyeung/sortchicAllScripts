@@ -73,6 +73,7 @@ jpseudo <- 0
 jfac <- 10^6
 
 
+
 # Load data  --------------------------------------------------------------
 
 # trajectories from 
@@ -133,7 +134,7 @@ if (make.plots){
   pdf(paste0("~/data/scchic/pdfs/variance_over_pseudotime_plots_primetime.Figure4.umaps.", Sys.Date(), ".pdf"), useDingbats = FALSE)
 }
 
-
+jsize <- 6.5
 jleg.name <- "log10(# Cuts)"
 m.h3k4me1 <- PlotXYWithColor(dat.umap.mixed[["H3K4me1"]], xvar = "umap1", yvar = "umap2", cname = "countslog", jsize = jsize, leg.name = jleg.name, jjrange = jrange)
 m.h3k4me3 <- PlotXYWithColor(dat.umap.mixed[["H3K4me3"]], xvar = "X1", yvar = "X2", cname = "countslog", jsize = jsize, leg.name = jleg.name, jjrange = jrange)
@@ -211,77 +212,129 @@ if (make.plots){
 if (make.plots){
   pdf(paste0("~/data/scchic/pdfs/variance_over_pseudotime_plots_primetime.Figure4.TrajsSD.", Sys.Date(), ".pdf"), useDingbats = FALSE)
 }
-  # Prepare dat -------------------------------------------------------------
 
-  # get groupings by trajecotry
-  
-  cells.sd <- lapply(jmarks, function(jmark){
-    dat.mat <-  t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics)
-    # log2 transform
-    dat.mat <- log2(dat.mat * jfac + jpseudo)
-    cells.sd <- GetCellSd(dat.mat, "", log2.scale = FALSE) %>%
-      mutate(mark = jmark)
-    return(cells.sd)
-  })
-  
-  cells.sd <- cells.sd %>%
-    bind_rows()
-  
-  # label trajectory and lambda
-  
-  # add lambda
-  trajs.long <- lapply(jtrajs, function(jtraj){
-    trajs.tmp <- lapply(trajs.mixed, function(x) x[[jtraj]]) %>%
-      bind_rows() %>%
-      rowwise() %>%
-      mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
-      rowwise() %>%
-      mutate(lambda.bin = floor(lambda * 10) / 10) %>%
-      mutate(traj = jtraj)
-  }) %>%
-    bind_rows()
-  
-  # add info
-  cells.sd.merge <- left_join(cells.sd, trajs.long %>% dplyr::select(mark, cell, lambda, lambda.bin, traj))
-  cells.sd.merge$mark <- factor(cells.sd.merge$mark, levels = c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"))
-  
-  jsub <- cells.sd.merge %>% filter(!is.na(traj)) %>% rowwise() %>% mutate(jcol = colhash[[traj]])
-  jsub.trajfilt <- cells.sd.merge %>% filter(traj == jtraj) %>% rowwise() %>% mutate(jcol = colhash[[jtraj]])
-  m.facet <- ggplot(jsub, aes(x = lambda, y = cell.sd, color = jcol, group = traj)) + 
-    # facet_wrap(~mark, nrow = 1) + 
-    facet_grid(traj~mark) + 
-    geom_point(alpha = 0.3) + 
-    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-                       axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "bottom") +  
-    scale_color_identity() + 
-    xlab("Pseudotime") + ylab("Genome-wide SD") 
-  
-  m.nofacet <- ggplot(jsub, aes(x = lambda, y = cell.sd, color = jcol, group = traj)) + 
+# Prepare dat -------------------------------------------------------------
+
+# get groupings by trajecotry
+
+cells.sd <- lapply(jmarks, function(jmark){
+  dat.mat <-  t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics)
+  # log2 transform
+  dat.mat <- log2(dat.mat * jfac + jpseudo)
+  cells.sd <- GetCellSd(dat.mat, "", log2.scale = FALSE) %>%
+    mutate(mark = jmark)
+  return(cells.sd)
+})
+
+cells.sd <- cells.sd %>%
+  bind_rows()
+
+# label trajectory and lambda
+
+# add lambda
+trajs.long <- lapply(jtrajs, function(jtraj){
+  trajs.tmp <- lapply(trajs.mixed, function(x) x[[jtraj]]) %>%
+    bind_rows() %>%
+    rowwise() %>%
+    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
+    rowwise() %>%
+    mutate(lambda.bin = floor(lambda * 10) / 10) %>%
+    mutate(traj = jtraj)
+}) %>%
+  bind_rows()
+
+# add info
+cells.sd.merge <- left_join(cells.sd, trajs.long %>% dplyr::select(mark, cell, lambda, lambda.bin, traj))
+cells.sd.merge$mark <- factor(cells.sd.merge$mark, levels = c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"))
+
+jsub <- cells.sd.merge %>% filter(!is.na(traj)) %>% rowwise() %>% mutate(jcol = colhash[[traj]])
+jsub.trajfilt <- cells.sd.merge %>% filter(traj == jtraj) %>% rowwise() %>% mutate(jcol = colhash[[jtraj]])
+m.facet <- ggplot(jsub, aes(x = lambda, y = cell.sd, color = jcol, group = traj)) + 
+  # facet_wrap(~mark, nrow = 1) + 
+  facet_grid(traj~mark) + 
+  geom_point(alpha = 0.3) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                     axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "bottom") +  
+  scale_color_identity() + 
+  xlab("Pseudotime") + ylab("Genome-wide SD") 
+
+m.nofacet <- ggplot(jsub, aes(x = lambda, y = cell.sd, color = jcol, group = traj)) + 
+  facet_wrap(~mark, nrow = 1) + 
+  geom_point(alpha = 0.3) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                     axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "bottom") +  
+  scale_color_identity() + 
+  xlab("Pseudotime") + ylab("Genome-wide SD") 
+
+m.lst <- lapply(jtrajs, function(jtraj){
+  m <- ggplot(jsub.trajfilt, aes(x = lambda, y = cell.sd, color = jcol, group = traj)) + 
     facet_wrap(~mark, nrow = 1) + 
     geom_point(alpha = 0.3) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-                       axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "bottom") +  
+                       axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "bottom") + 
+    ggtitle(jtraj) + 
     scale_color_identity() + 
     xlab("Pseudotime") + ylab("Genome-wide SD") 
+  return(m)
+})
+
+print(m.facet)
+print(m.nofacet)
+print(m.lst)
+
+if (make.plots){
+  dev.off()
+}
+
+
+
+# Do SD chromosome by chromosome ------------------------------------------
+
+cell.sd.df.long <- lapply(jmarks, function(jmark){
+  dat.mat <-  t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics)
+  # log2 transform
+  dat.mat <- log2(dat.mat * jfac + jpseudo)
+  jtmp <- lapply(grep.strs, function(grep.str){
+    return(GetCellSd(dat.mat, grep.str, log2.scale = FALSE))
+  }) %>%
+    bind_rows()
+  jtmp$mark <- jmark
+  return(jtmp)
+}) %>%
+    bind_rows()
   
-  m.lst <- lapply(jtrajs, function(jtraj){
-    m <- ggplot(jsub.trajfilt, aes(x = lambda, y = cell.sd, color = jcol, group = traj)) + 
-      facet_wrap(~mark, nrow = 1) + 
-      geom_point(alpha = 0.3) + 
-      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-                         axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "bottom") + 
-      ggtitle(jtraj) + 
-      scale_color_identity() + 
-      xlab("Pseudotime") + ylab("Genome-wide SD") 
-    return(m)
-  })
-  
-  print(m.facet)
-  print(m.nofacet)
-  print(m.lst)
+ 
+# add to umap?
+head(dat.umap.mixed$H3K4me1)
 
-  if (make.plots){
-    dev.off()
-  }
+dat.umap.mixed.long <- dat.umap.mixed %>% bind_rows() %>%
+  rowwise() %>%
+  mutate(umap1 = ifelse(is.na(umap1), X1, umap1), 
+         umap2 = ifelse(is.na(umap2), X2, umap2))
+
+dat.sd.umap <- left_join(cell.sd.df.long, dat.umap.mixed.long %>% dplyr::select(umap1, umap2, cell))
 
 
+tstart <- Sys.time()
+jmark <- "H3K4me1"
+jcol = c("gray80", "gray50", "darkblue")
+if (make.plots){
+  pdf(paste0("~/data/scchic/pdfs/variance_over_pseudotime_plots_primetime.Figure4.TrajsSD_by_chromo.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+}
+for (jmark in jmarks){
+  jsub <- dat.sd.umap %>% filter(mark == jmark)
+  jsub <- RankOrder(jsub, cname = "cell.sd", out.cname = "orderrank")
+  m.chr <- ggplot(jsub, aes(x = umap1, y = umap2, color = cell.sd, order = orderrank)) +
+    # geom_point_rast(size = 9)  +
+    geom_point(size = 0.8)  + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    facet_wrap(~label) + scale_color_gradient2(low = jcol[[1]], mid = jcol[[2]], high = jcol[[3]], midpoint = mdpt.sd, limits = lims.sd) +
+    ggtitle(jmark, paste0(deparse(substitute(sd)), " across chromosome"))
+  print(m.chr)
+}
+if (make.plots){
+  dev.off()
+}
+print(Sys.time() - tstart)
+
+# ggplot(dat.sd.umap %>% filter(mark == jmark), aes(x = umap1, y = umap2, color = cell.sd)) + geom_point() + facet_wrap(~label)

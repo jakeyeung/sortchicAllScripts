@@ -21,6 +21,25 @@ source("scripts/Rfunctions/VariabilityFunctions.R")
 source("scripts/Rfunctions/Aux.R")
 
 
+# Make as function --------------------------------------------------------
+
+
+jtraj <- "granu"
+BinTrajectory <- function(trajs.spring.lst, jtraj, nearest = 0.1){
+  round.int <- 1 / nearest
+  trajs.sum <- lapply(trajs.spring, function(x) x[[jtraj]] %>% mutate(traj = jtraj)) %>%
+    bind_rows() %>%
+    rowwise() %>%
+    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
+    left_join(., mat.sub.merge) %>%
+    rowwise() %>%
+    mutate(lambda.bin = floor(lambda * round.int) / round.int) %>%
+    group_by(traj, lambda.bin, mark, coord, pos) %>%
+    summarise(exprs = mean(exprs)) %>%
+    return(trajs.sum)
+}
+
+
 
 # Load data  --------------------------------------------------------------
 
@@ -142,6 +161,11 @@ print(m.lines)
 print(m1)
 dev.off()
 
+jstrs <- paste("chr", seq(21), ":", sep = "")
+
+for (jstr in jstrs){
+  print(jstr)
+}
 
 # Do SD over time ---------------------------------------------------------
 # 
@@ -151,21 +175,3 @@ dev.off()
 # jmark <- "H3K4me1"
 # mat.sub.gw <- GetMatSub(tm.result.lst, jmark, "", jpseudo, jfac) %>% mutate(mark = jmark)
 # 
-
-# Make as function --------------------------------------------------------
-
-
-jtraj <- "granu"
-BinTrajectory <- function(trajs.spring.lst, jtraj, nearest = 0.1){
-  round.int <- 1 / nearest
-  trajs.sum <- lapply(trajs.spring, function(x) x[[jtraj]] %>% mutate(traj = jtraj)) %>%
-    bind_rows() %>%
-    rowwise() %>%
-    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
-    left_join(., mat.sub.merge) %>%
-    rowwise() %>%
-    mutate(lambda.bin = floor(lambda * round.int) / round.int) %>%
-    group_by(traj, lambda.bin, mark, coord, pos) %>%
-    summarise(exprs = mean(exprs)) %>%
-  return(trajs.sum)
-}
