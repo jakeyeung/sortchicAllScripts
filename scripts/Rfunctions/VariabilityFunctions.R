@@ -1,4 +1,50 @@
 
+BinTrajectory <- function(trajs.spring.lst, jtraj, nearest = 0.1){
+  round.int <- 1 / nearest
+  trajs.sum <- lapply(trajs.spring, function(x) x[[jtraj]] %>% mutate(traj = jtraj)) %>%
+    bind_rows() %>%
+    rowwise() %>%
+    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
+    left_join(., mat.sub.merge) %>%
+    rowwise() %>%
+    mutate(lambda.bin = floor(lambda * round.int) / round.int) %>%
+    group_by(traj, lambda.bin, mark, coord, pos) %>%
+    summarise(exprs = mean(exprs)) %>%
+    return(trajs.sum)
+}
+
+
+GetTrajSum <- function(tm.result.lst, trajs.mixed, jmarks, jstr, jpseudo, jfac, jtraj){
+  mat.sub.merge <- lapply(jmarks, function(jmark) GetMatSub(tm.result.lst, jmark, jstr, jpseudo, jfac) %>% mutate(mark = jmark)) %>% 
+    bind_rows()
+  trajs.long <- lapply(trajs.mixed, function(x) x[[jtraj]]) %>%
+    bind_rows() %>%
+    rowwise() %>%
+    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
+    left_join(., mat.sub.merge) %>%
+    rowwise() %>%
+    mutate(lambda.bin = floor(lambda * 10) / 10)
+  trajs.sum <- trajs.long %>%
+    group_by(lambda.bin, mark, coord, pos) %>%
+    summarise(exprs = mean(exprs)) %>%
+    mutate(chromo = jstr)
+  return(trajs.sum)
+}
+
+FitSlope <- function(dat.sub){
+  # fit exprs to trajectory to find slope
+  fit <- lm(formula = exprs ~ lambda.bin, data = dat.sub)
+  slope <- fit$coefficients[['lambda.bin']]
+  int <- fit$coefficients[['(Intercept)']]
+  pval <- summary(fit)$coefficients["lambda.bin", "Pr(>|t|)"]
+  return(data.frame(slope = slope, int = int, pval = pval))
+}
+
+HexPlot <- function(data, mapping, ...){
+  p <- ggplot(data, mapping) + geom_hex() + geom_density2d() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  return(p)
+}
+
 MakeLowerPlot <- function(data, mapping, ..., jbins = 150){
   m <- ggplot(data = data, mapping = mapping) + 
     geom_point_rast(data = data %>% sample_frac(size = 0.1), alpha = 0.3) + 

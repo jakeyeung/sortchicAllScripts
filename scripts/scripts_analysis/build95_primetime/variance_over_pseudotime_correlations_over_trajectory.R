@@ -31,46 +31,7 @@ source("scripts/Rfunctions/TrajFunctions.R")
 
 
 jtraj <- "granu"
-BinTrajectory <- function(trajs.spring.lst, jtraj, nearest = 0.1){
-  round.int <- 1 / nearest
-  trajs.sum <- lapply(trajs.spring, function(x) x[[jtraj]] %>% mutate(traj = jtraj)) %>%
-    bind_rows() %>%
-    rowwise() %>%
-    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
-    left_join(., mat.sub.merge) %>%
-    rowwise() %>%
-    mutate(lambda.bin = floor(lambda * round.int) / round.int) %>%
-    group_by(traj, lambda.bin, mark, coord, pos) %>%
-    summarise(exprs = mean(exprs)) %>%
-    return(trajs.sum)
-}
 
-
-GetTrajSum <- function(tm.result.lst, trajs.mixed, jmarks, jstr, jpseudo, jfac, jtraj){
-  mat.sub.merge <- lapply(jmarks, function(jmark) GetMatSub(tm.result.lst, jmark, jstr, jpseudo, jfac) %>% mutate(mark = jmark)) %>% 
-    bind_rows()
-  trajs.long <- lapply(trajs.mixed, function(x) x[[jtraj]]) %>%
-    bind_rows() %>%
-    rowwise() %>%
-    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
-    left_join(., mat.sub.merge) %>%
-    rowwise() %>%
-    mutate(lambda.bin = floor(lambda * 10) / 10)
-  trajs.sum <- trajs.long %>%
-    group_by(lambda.bin, mark, coord, pos) %>%
-    summarise(exprs = mean(exprs)) %>%
-    mutate(chromo = jstr)
-  return(trajs.sum)
-}
-
-FitSlope <- function(dat.sub){
-  # fit exprs to trajectory to find slope
-  fit <- lm(formula = exprs ~ lambda.bin, data = dat.sub)
-  slope <- fit$coefficients[['lambda.bin']]
-  int <- fit$coefficients[['(Intercept)']]
-  pval <- summary(fit)$coefficients["lambda.bin", "Pr(>|t|)"]
-  return(data.frame(slope = slope, int = int, pval = pval))
-}
 
 # Load data  --------------------------------------------------------------
 
@@ -166,6 +127,7 @@ jsub.fits <- trajs.sum %>%
   group_by(pos, mark, chromo) %>%
   do(FitSlope(.))
 
+jsub.fits$mark <- factor(jsub.fits$mark, levels = jmarks)
 
 jsub.wide <- subset(jsub.fits, select = c(pos, mark, slope, chromo)) %>% spread(key = mark, value = slope) %>% ungroup()
 
@@ -177,10 +139,15 @@ jsub <- trajs.sum %>% filter(pos > 0e7 & pos < 999e7)
 jlims <- range(jsub$exprs)
 jmid <- min(jlims) + (max(jlims) - min(jlims)) / 2
 
+outf <- "~/data/scchic/robjs/trajs_sum_variance.rds"
+if (!file.exists(outf)){
+  saveRDS(trajs.sum, file = outf)
+}
+
 pdf(file = paste0("~/data/scchic/pdfs/variance_over_pseudotime_slopes_and_correlations_genomewide.", Sys.Date(), ".pdf"), useDingbats = FALSE)
   # show mutual exclusiivity between the two repressive marks 
   for (jchromo in jstrs){
-    m.slopes <- ggplot(jsub.fits %>% filter(jchromo), aes(x = pos / 10^6, y = reorder(mark, desc(mark)), fill = slope)) + geom_tile() + 
+    m.slopes <- ggplot(jsub.fits %>% filter(chromo == jchromo), aes(x = pos / 10^6, y = reorder(mark, desc(mark)), fill = slope)) + geom_tile() + 
       theme_bw() + theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
       scale_fill_gradient2(low = "darkred", mid = "gray85", high = "darkblue", midpoint = 0, name = "Slope [A.U.]") + 
       ylab("") + 
@@ -190,7 +157,8 @@ pdf(file = paste0("~/data/scchic/pdfs/variance_over_pseudotime_slopes_and_correl
   }
   # plot mutual exclusivity
   m.cor <- ggpairs(jsub.wide %>% select(-pos, -chromo),
-                   lower = list(continuous = wrap("points", alpha = 0.2, size = 0.5))) + theme_classic() + ggtitle(jstr)
+                   lower = list(continuous = HexPlot)) + theme_classic() + ggtitle(jstr)
   print(m.cor)
 dev.off()
+
 
