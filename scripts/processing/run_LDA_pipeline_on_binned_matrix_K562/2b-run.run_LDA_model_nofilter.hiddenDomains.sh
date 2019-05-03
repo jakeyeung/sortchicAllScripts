@@ -51,5 +51,4 @@ for mark in $marks; do
     [[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
     # echo $bname
     echo "cd $workdir; Rscript $rs $inf $outdir $K $topics $tunemodels $meanmax $cellmin $cellmax $binarize $bname" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -pe threaded $ncores -m beas -M j.yeung@hubrecht.eu
-
 done
