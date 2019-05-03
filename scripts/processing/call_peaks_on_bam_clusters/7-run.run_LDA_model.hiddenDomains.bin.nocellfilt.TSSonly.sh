@@ -22,7 +22,8 @@ rs="scripts/processing/lib/run_LDA_model.R"
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 
 # marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
-marks="H3K4me1"
+# marks="H3K4me1"
+marks="H3K4me3 H3K27me3 H3K9me3"
 # marks="H3K27me3"
 mindist="1000"
 cell="BM"
@@ -41,7 +42,7 @@ suffix="build95.withchr.cells_from_bin_analysis"
 suffix2="GeneTSS.Dedup"
 # suffix2="GeneTSS.Dedup.RbindHiddenDomains"
 # suffix2="CorrPeakFilt"
-tssdist=60000
+tssdist=50000
 jdate="2019-04-22"
 
 # marks="H3K27me3"

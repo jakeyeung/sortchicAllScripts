@@ -12,11 +12,13 @@ n=0
 maxjobs=4
 
 # marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
-marks="H3K4me1"
+# marks="H3K4me1"
 # marks="H3K4me3"
+# marks="H3K27me3"
+marks="H3K9me3"
 mindist="1000"
-# tssdist="20000"
-tssdist="60000"
+# tssdist="100000"
+tssdist="50000"
 
 workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"
 cd $workdir

@@ -15,8 +15,9 @@ maxjobs=4
 
 # marks="H3K4me1 H3K27me3 H3K9me3 H3K4me3"
 # marks="H3K4me1"
-marks="H3K4me3"
+# marks="H3K4me3"
 # marks="H3K27me3"
+ marks="H3K9me3"
 mindist="1000"
 
 # workdir="/home/hub_oudenaarden/jyeung/projects/scChiC"  #  more than 7 gb in tmp files so move to data

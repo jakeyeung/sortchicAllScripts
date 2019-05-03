@@ -15,6 +15,7 @@ for inf in `ls -d $inmain/*.npz`; do
     inbase=$(basename $inf)
     inbase=${inbase%%.*}
     outf=$outmain/$inbase.txt
+    [[ -e $outf ]] && echo "$outf found, continuing" && continue
     python $ps $inf $outf&
     if (( $(($((++n)) % $maxjobs)) == 0 )) ; then
         # define maxjobs and n using maxjobsn skeleton

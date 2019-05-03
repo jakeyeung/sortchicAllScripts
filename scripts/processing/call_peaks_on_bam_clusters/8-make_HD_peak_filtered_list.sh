@@ -4,7 +4,9 @@
 # Take input from LDA to get fasta later 
 # 2019-04-19
 
-mark="H3K4me3"
+# mark="H3K4me3"
+# mark="H3K27me3"
+mark="H3K9me3"
 wd="/home/hub_oudenaarden/jyeung/projects/scChiC"
 rs="$wd/scripts/processing/call_peaks_on_bam_clusters/make_bed_from_count_mat.R"
 suffix="CorrPeakFilt"
