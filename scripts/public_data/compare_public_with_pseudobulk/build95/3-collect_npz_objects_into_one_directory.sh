@@ -6,7 +6,8 @@
 
 # do public comparisons Neu and MatB
 dmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/comparisons_with_pseudobulk"
-outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/comparisons_with_pseudobulk/merged_softlinks"
+outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/comparisons_with_pseudobulk/merged_softlinks2"
+[[ ! -d $outdir ]] && mkdir $outdir
 # ps="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/public_data/lib/npz_to_textfile.py"
 # [[ ! -e $ps ]] && echo "$ps not found, exiting" && exit 1
 

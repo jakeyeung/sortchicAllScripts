@@ -16,8 +16,10 @@ marks="H3K4me1 H3K4me3 H3K27me3 H3K9me3"
 ctypes="Multimark"
 
 # H3K4me1 vs H3K4me3, H3K27me3, and H3K9me3
-markref="H3K4me1"
-marks="H3K4me3 H3K27me3 H3K9me3"
+# markref="H3K4me1"
+# markref="H3K4me3"
+markref="H3K4me3"
+marks="H3K4me1 H3K27me3 H3K9me3"
 
 infblist=$(ls -d $chicbwdir/${markref}_cluster_*.bw)
 infblist=$(echo $infblist | tr '\n' ' ')

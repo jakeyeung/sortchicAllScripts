@@ -6,10 +6,9 @@
 
 ps="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/public_data/lib/npz_to_textfile.py"
 [[ ! -e $ps ]] && echo "$ps not found, exiting" && exit 1
-indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/comparisons_with_pseudobulk/merged_softlinks"
+indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/comparisons_with_pseudobulk/merged_softlinks2"
 [[ ! -d $indir ]] && echo "$indir not found, exiting" && exit 1
-outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/comparisons_with_pseudobulk/merged_softlinks_textfile"
-
+outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/comparisons_with_pseudobulk/merged_softlinks_textfile2"
 [[ ! -d $outdir ]] && mkdir $outdir
 
 n=0
