@@ -6,13 +6,15 @@
 
 rm(list=ls())
 
+tstart <- Sys.time()
+
 library(data.table)
 library(dplyr)
 library(ggplot2)
 library(JFuncs)
 library(tidyr)
 library(GGally)
-library(ggrastr)
+# library(ggrastr)
 library(gridExtra)
 
 library(grDevices)
@@ -23,13 +25,12 @@ source("scripts/Rfunctions/Aux.R")
 
 # Load data  --------------------------------------------------------------
 
-inf.trajs <- "/Users/yeung/data/scchic/robjs/trajectory_from_spring_2019-04-11.RData"
+inf.trajs <- "/hpc/hub_oudenaarden/jyeung/data/scChiC/from_macbook/primeitme_objects/trajectory_from_spring_2019-04-15.RData"
 assertthat::assert_that(file.exists(inf.trajs))
 load(inf.trajs, v=T)
 
-head(trajs.spring[[4]][[1]])
 
-inf.dat <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.WithColnamesLst.2019-04-04.RData"
+inf.dat <- "/hpc/hub_oudenaarden/jyeung/data/scChiC/from_macbook/primeitme_objects/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.WithColnamesLst.2019-04-04.RData"
 assertthat::assert_that(file.exists(inf.dat))
 load(inf.dat, v=T)
 
@@ -76,69 +77,77 @@ ci.interval <- 1.96  # corresponds to zscore 1.96 = alpha = 0.05 = 95% confidenc
 jsize <- 2
 
 
-jstr <- "chr15:"
+# jstr <- "chr15:"
 
 jthres <- 0.05
 
-# Explore the data  -------------------------------------------------------
-
-jmark <- "H3K4me1"
-jmark <- "H3K27me3"
-jmark <- "H3K9me3"
-
 jtraj <- "granu"
-
-# Prepare dat -------------------------------------------------------------
 
 jpseudo <- 0
 jfac <- 10^6
 
+jtrajs <- c("eryth", "granu", "lymphoid")
 
-# imputed.dat <- log2(t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics) + jpseudo) * jfac
-# mat.sub <- MatToLong(imputed.dat, gstr = "chr15:", cells.vec = NULL) %>% dplyr::select(-start, -end)
+# jchromos.auto <- paste(paste("chr", seq(19), sep = ""), collapse = "|")
+# jchromos.sex <- paste(paste("chr", c("20", "21"), sep = ""), collapse = "|")
+# 
+# jstrs <- c(jchromos.auto, jchromos.sex)
+jstrs <- paste("chr", seq(21), ":", sep = "")
 
-mat.sub.merge <- lapply(jmarks, function(jmark) GetMatSub(tm.result.lst, jmark, jstr, jpseudo, jfac) %>% mutate(mark = jmark)) %>% 
-  bind_rows()
+# out <- parallel::mclapply(jtrajs, function(jtraj){
+for (jtraj in jtrajs){
 
-head(trajs.spring[[1]][[1]])
+    outpdf <- paste0("/hpc/hub_oudenaarden/jyeung/data/scChiC/pdfs/variance_over_pseudotime_heatmaps.", jtraj, ".", Sys.Date(), ".pdf")
+    pdf(file = outpdf, useDingbats=FALSE)
+    for (jstr in jstrs){
+        mat.sub.merge <- lapply(jmarks, function(jmark) GetMatSub(tm.result.lst, jmark, jstr, jpseudo, jfac) %>% mutate(mark = jmark)) %>% 
+          bind_rows()
 
-jtraj <- "granu"
-trajs.long <- lapply(trajs.spring, function(x) x[[jtraj]]) %>%
-  bind_rows() %>%
-  rowwise() %>%
-  mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
-  left_join(., mat.sub.merge) %>%
-  rowwise() %>%
-  mutate(lambda.bin = floor(lambda * 10) / 10)
+        trajs.long <- lapply(trajs.spring, function(x) x[[jtraj]]) %>%
+          bind_rows() %>%
+          rowwise() %>%
+          mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
+          left_join(., mat.sub.merge) %>%
+          rowwise() %>%
+          mutate(lambda.bin = floor(lambda * 10) / 10)
 
-trajs.sum <- trajs.long %>%
-  group_by(lambda.bin, mark, coord, pos) %>%
-  summarise(exprs = mean(exprs))
+        trajs.sum <- trajs.long %>%
+          group_by(lambda.bin, mark, coord, pos) %>%
+          summarise(exprs = mean(exprs))
 
-# Do heatmap of granulocytes for the 4 marks ------------------------------
+        # Do heatmap of granulocytes for the 4 marks ------------------------------
+        jsub <- trajs.sum %>% filter(pos > 0e7 & pos < 999e7)
+        jsub$mark <- factor(jsub$mark, levels = c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"))
+        jlims <- range(jsub$exprs)
+        jmid <- min(jlims) + (max(jlims) - min(jlims)) / 2
 
+          m.lines <- ggplot(trajs.sum, aes(x = pos, y = exprs)) + geom_line() + facet_grid(lambda.bin ~ mark) +
+            theme_bw() +
+            theme(aspect.ratio=0.25, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+            ggtitle(paste(jtraj, jstr))
+          m1 <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, desc(lambda.bin)), fill = exprs)) + 
+            geom_tile() + 
+            theme_bw() + theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+            scale_fill_gradient(high = "darkblue", low = "gray85") + 
+            facet_wrap(~mark, ncol = 1) + 
+            ggtitle(paste(jtraj, jstr)) + 
+            ylab("Trajectory") + 
+            xlab("Position (MB)")
+          m1.rev <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, lambda.bin), fill = exprs)) + 
+            geom_tile() + 
+            theme_bw() + theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+            scale_fill_gradient(high = "darkblue", low = "gray85") + 
+            facet_wrap(~mark, ncol = 1) + 
+            ggtitle(paste(jtraj, jstr)) + 
+            ylab("Trajectory") + 
+            xlab("Position (MB)")
+          print(m.lines)
+          print(m1)
+          print(m1.rev)
+    }
+    dev.off()
 
-
-jsub <- trajs.sum %>% filter(pos > 0e7 & pos < 999e7)
-jsub$mark <- factor(jsub$mark, levels = c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"))
-jlims <- range(jsub$exprs)
-jmid <- min(jlims) + (max(jlims) - min(jlims)) / 2
-
-pdf(file = paste0("~/data/scchic/pdfs/variance_over_pseudotime_heatmaps.", jtraj, ".", Sys.Date(), ".pdf"), useDingbats = FALSE)
-
-m.lines <- ggplot(trajs.sum, aes(x = pos, y = exprs)) + geom_line() + facet_grid(lambda.bin ~ mark) +
-  theme_bw() +
-  theme(aspect.ratio=0.25, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
-m1 <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, desc(lambda.bin)), fill = exprs)) + 
-  # geom_tile(width = 0.1, height = 1) + 
-  geom_tile() + 
-  theme_bw() + theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  scale_fill_gradient(high = "darkblue", low = "gray85") + 
-  facet_wrap(~mark, ncol = 1) + 
-  ggtitle(paste(jtraj, jstr)) + 
-  ylab("Trajectory") + 
-  xlab("Position (MB)")
-print(m.lines)
-print(m1)
-dev.off()
+}
+# for (jtraj in jtrajs){
+# }
+print(Sys.time() - tstart)
