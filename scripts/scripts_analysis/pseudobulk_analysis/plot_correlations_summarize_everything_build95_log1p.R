@@ -19,7 +19,7 @@ library(data.table)
 
 source("scripts/Rfunctions/PseudobulkComparisons.R")
 
-plot.to.file <- FALSE
+plot.to.file <- TRUE
 
 if (plot.to.file){
   pdf("~/data/scchic/pdfs/compare_pseudo_build95_log1p.pdf", useDingbats = FALSE)

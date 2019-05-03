@@ -1,15 +1,43 @@
-PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", jcol = scales::muted("darkblue"), jtitle = "", jcol.low = "gray85", jcol.mid = "gray50"){
+GetTrajColors <- function(as.hash = FALSE){
+  jcols <- c("#A29F9D", "#E7A100", "#6AB7E6")
+  if (!as.hash){
+    return(jcols)
+  } else {
+    jtrajs <- c("eryth", "granu", "lymphoid")
+    names(jcols) <- jtrajs
+    jcols.hash <- hash::hash(as.list(jcols))
+    return(jcols.hash)
+  }
+}
+
+PlotXYNoColor <- function(jsub, xvar, yvar, jcol = "gray80", jsize = 1){
+  m <- ggplot(jsub, aes_string(x = xvar, y = yvar)) + 
+    ggrastr::geom_point_rast(size = jsize, color = jcol) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), axis.text = element_blank(), axis.ticks = element_blank(), panel.border = element_blank()) + 
+    xlab("") + ylab("")
+  return(m)
+}
+PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", jcol = scales::muted("darkblue"), jtitle = "", jcol.low = "gray85", jcol.mid = "gray50", jsize = 1, leg.name = NULL, jjrange = "auto"){
+  if (is.null(leg.name)){
+    leg.name <- cname
+  }
   jsub <- RankOrder(jsub, cname = cname, out.cname = "orderrank")
   jrange <- range(jsub[[cname]])
   jmid <- min(jsub[[cname]]) + diff(range(jsub[[cname]])) / 2
-  m1 <- ggplot(jsub, aes_string(x = xvar, y = yvar, col = cname, order = "orderrank")) + geom_point() + 
+  if (jjrange != "auto"){
+    jrange <- jjrange
+  } 
+  m1 <- ggplot(jsub, aes_string(x = xvar, y = yvar, col = cname, order = "orderrank")) + 
+    ggrastr::geom_point_rast(size = jsize) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom",
                        axis.ticks=element_blank(),
                        axis.text.x=element_blank(),
                        axis.text.y=element_blank(),
                        panel.border=element_blank())  + 
     xlab("") + ylab("") + 
-    scale_color_gradient2(low = "gray85", mid = "gray50", high = jcol, midpoint = jmid, limit = jrange) + 
+    scale_color_gradient2(low = "gray85", mid = "gray50", high = jcol, midpoint = jmid, limit = jrange, name = leg.name) + 
     ggtitle(jtitle)
   return(m1)
 }

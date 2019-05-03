@@ -21,6 +21,25 @@ source("scripts/Rfunctions/VariabilityFunctions.R")
 source("scripts/Rfunctions/Aux.R")
 
 
+# Make as function --------------------------------------------------------
+
+
+jtraj <- "granu"
+BinTrajectory <- function(trajs.spring.lst, jtraj, nearest = 0.1){
+  round.int <- 1 / nearest
+  trajs.sum <- lapply(trajs.spring, function(x) x[[jtraj]] %>% mutate(traj = jtraj)) %>%
+    bind_rows() %>%
+    rowwise() %>%
+    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
+    left_join(., mat.sub.merge) %>%
+    rowwise() %>%
+    mutate(lambda.bin = floor(lambda * round.int) / round.int) %>%
+    group_by(traj, lambda.bin, mark, coord, pos) %>%
+    summarise(exprs = mean(exprs)) %>%
+    return(trajs.sum)
+}
+
+
 
 # Load data  --------------------------------------------------------------
 
@@ -113,7 +132,6 @@ trajs.long <- lapply(trajs.spring, function(x) x[[jtraj]]) %>%
   left_join(., mat.sub.merge) %>%
   rowwise() %>%
   mutate(lambda.bin = floor(lambda * 10) / 10)
-
 trajs.sum <- trajs.long %>%
   group_by(lambda.bin, mark, coord, pos) %>%
   summarise(exprs = mean(exprs))
@@ -139,9 +157,15 @@ m1 <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, desc(lambda.bin)),
   ggtitle(paste(jtraj, jstr)) + 
   ylab("Trajectory") + 
   xlab("Position (MB)")
+print(m.lines)
 print(m1)
 dev.off()
 
+jstrs <- paste("chr", seq(21), ":", sep = "")
+
+for (jstr in jstrs){
+  print(jstr)
+}
 
 # Do SD over time ---------------------------------------------------------
 # 
@@ -151,21 +175,3 @@ dev.off()
 # jmark <- "H3K4me1"
 # mat.sub.gw <- GetMatSub(tm.result.lst, jmark, "", jpseudo, jfac) %>% mutate(mark = jmark)
 # 
-
-# Make as function --------------------------------------------------------
-
-
-jtraj <- "granu"
-BinTrajectory <- function(trajs.spring.lst, jtraj, nearest = 0.1){
-  round.int <- 1 / nearest
-  trajs.sum <- lapply(trajs.spring, function(x) x[[jtraj]] %>% mutate(traj = jtraj)) %>%
-    bind_rows() %>%
-    rowwise() %>%
-    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
-    left_join(., mat.sub.merge) %>%
-    rowwise() %>%
-    mutate(lambda.bin = floor(lambda * round.int) / round.int) %>%
-    group_by(traj, lambda.bin, mark, coord, pos) %>%
-    summarise(exprs = mean(exprs)) %>%
-  return(trajs.sum)
-}

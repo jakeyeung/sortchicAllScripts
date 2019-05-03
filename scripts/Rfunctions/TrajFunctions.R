@@ -1,3 +1,34 @@
+GetTrajMixed <- function(inf.springtraj = "/Users/yeung/data/scchic/robjs/trajectory_from_spring_2019-04-15.RData", 
+                         inf.traj =  "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.WithColnamesLst.2019-04-04.RData"){
+  assertthat::assert_that(file.exists(inf.springtraj))
+  load(inf.springtraj, v=T)
+  assertthat::assert_that(file.exists(inf.traj))
+  load(inf.traj, v=T)
+  
+  trajs.mixed <- c(trajs["H3K4me1"], trajs.spring[c("H3K4me3", "H3K27me3", "H3K9me3")])
+  # rename bcell trajectory as lymphoid
+  names(trajs.mixed$H3K4me1)[which(names(trajs.mixed$H3K4me1) == "lymphoid")] <- "lymphod.naive"
+  names(trajs.mixed$H3K4me1)[which(names(trajs.mixed$H3K4me1) == "bcell")] <- "lymphoid"
+  
+  # handle dat.umap.long
+  dat.umap.mixed <- list(H3K4me1 = dat.umap.long.trajs[["H3K4me1"]], 
+                         H3K4me3 = dat.trajs.long %>% filter(mark == "H3K4me3"),
+                         H3K27me3 = dat.trajs.long %>% filter(mark == "H3K27me3"), 
+                         H3K9me3 = dat.trajs.long %>% filter(mark == "H3K9me3"))
+  return(list(trajs.mixed = trajs.mixed, dat.umap.mixed = dat.umap.mixed))
+}
+
+SwapTrajName <- function(traj.vec){
+  # for H3K4me1 there is bcell and tcell and lymphoid
+  # rename bcell as lymphoid, lymphoid as lymphoid.naive
+  # as variance_over_pseudotime_standarderror.R
+  
+  # first rename lymphoid as lymphoid.naive
+  traj.vec <- gsub("lymphoid", "lymphoid.naive", traj.vec)
+  # rename bcell as lymphoid
+  traj.vec <- gsub("bcell", "lymphoid", traj.vec)
+  return(traj.vec)
+}
 
 RenameTraj <- function(x){
   if (x == "eryth"){
