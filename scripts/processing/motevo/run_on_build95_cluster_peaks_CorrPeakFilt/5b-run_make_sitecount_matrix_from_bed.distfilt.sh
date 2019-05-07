@@ -4,16 +4,16 @@
 # Avoid SQL nonesense and just load data to memory 
 # 2019-02-04
 
-jmem='96G'
-jtime='2:00:00'
+jmem='128G'
+jtime='6:00:00'
 
-# jmarks="H3K27me3"
 # jmarks="H3K4me1 H3K4me3 H3K27me3 H3K9me3"
 # jmarks="H3K27me3 H3K9me3"
-jmarks="H3K4me3"
+jmarks="H3K27me3"
+# jmarks="H3K4me3"
 
-threses="0 1000 10000"
-# threses="1000"
+# threses="0 1000 10000"
+threses="10000"
 
 n=0
 maxjobs=6

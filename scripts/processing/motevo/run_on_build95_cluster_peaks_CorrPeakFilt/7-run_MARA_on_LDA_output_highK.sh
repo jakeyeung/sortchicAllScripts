@@ -7,8 +7,9 @@
 runscript="/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/processing/motevo/lib/run_mara_batch_promoters.sh"
 [[ ! -e $runscript ]] && echo "$runscript not found, exiting" && exit 1
 
-jmarks="H3K4me3"
 # jmarks="H3K4me3"
+# jmarks="H3K4me3"
+jmarks="H3K27me3 H3K9me3"
 
 jthres="0.99"
 jscale=0
@@ -33,7 +34,7 @@ dists="0 1000 10000"
 n=0
 maxjobs=3
 
-jmem='64G'
+jmem='96G'
 jtime='6:00:00'
 
 for dist in $dists; do

@@ -11,7 +11,8 @@ threses="0 1000 10000"
 # marks="H3K27me3 H3K9me3"
 # marks="H3K4me1"
 # marks="H3K4me3"
-marks="H3K27me3"
+# marks="H3K27me3"
+marks="H3K9me3"
 
 n=0
 maxjobs=3

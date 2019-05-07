@@ -8,7 +8,8 @@
 # marks="H3K27me3 H3K9me3"
 # marks="H3K4me1"
 # marks="H3K4me3"
-marks="H3K27me3"
+# marks="H3K27me3"
+marks="H3K9me3"
 suffix="cluster_build95_CorrPeakFilt"
 for mark in $marks; do
     inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_singlegene_${suffix}/${mark}/motevo_outputs/bed/merged_bed_closestbed_long"

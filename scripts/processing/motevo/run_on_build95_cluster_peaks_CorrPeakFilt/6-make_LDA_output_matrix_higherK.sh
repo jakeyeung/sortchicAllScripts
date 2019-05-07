@@ -7,8 +7,8 @@
 
 # jmark="H3K4me1"
 # jmarks="H3K4me1"
-jmarks="H3K4me3"
-# jmarks="H3K27me3 H3K9me3"
+# jmarks="H3K4me3"
+jmarks="H3K27me3 H3K9me3"
 
 thres=0.99
 jbin="TRUE"  # I used TRUE to make initial analysis looked good, should try on FALSE to see if it changes?
