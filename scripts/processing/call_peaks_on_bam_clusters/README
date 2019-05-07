@@ -1,0 +1,16 @@
+For CorrPeakFilt analysis run:
+
+6a-run.take_bin_cells_make_count_matrix_hiddenDomains_OnePeaks_FourMarks.sh
+6a-ZZget_blacklist_from_count_matrix_across_four_marks.sh
+6c-remove_custom_BM_blacklist.sh
+6d-run.take_bin_cells_make_count_matrix_hiddenDomains_CorrPeakFilt.sh
+7-run.run_LDA_model.hiddenDomains.bin.nocellfilt.sh
+8-make_HD_peak_filtered_list.sh
+
+# then go to MotEvo and run get_fasta script
+
+For TSS analysis run:
+4-make_count_matrix_from_gene_tss.sh
+5-run.select_best_gene.sh
+7-run.run_LDA_model.hiddenDomains.bin.nocellfilt.TSSonly.sh
+
