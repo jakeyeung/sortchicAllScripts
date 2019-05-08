@@ -1,8 +1,7 @@
 # Jake Yeung
 # Date of Creation: 2019-05-03
-# File: ~/projects/scchic/scripts/scripts_analysis/build95_primetime/variance_over_pseudotime_heatmaps_zoomed_in.R
-# Zoom in on genomic regions 
-
+# File: ~/projects/scchic/scripts/scripts_analysis/build95_primetime/variance_over_pseudotime_correlations_over_trajectory.R
+# Genome wide 
 
 rm(list=ls())
 
