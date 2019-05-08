@@ -75,9 +75,13 @@ ParseCoord <- function(x){
   return(out)
 }
 
-GetChromo <- function(x){
+GetChromo <- function(x, add.chr = FALSE){
   # chrY:90799295-90803056 -> chrY
-  return(strsplit(x, ":")[[1]][[1]])
+  chromo <- strsplit(x, ":")[[1]][[1]]
+  if (add.chr){
+    chromo <- paste0("chr", chromo)
+  }
+  return(chromo)
 }
 
 GetStart <- function(x){

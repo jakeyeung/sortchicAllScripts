@@ -20,6 +20,7 @@ library(grDevices)
 library(GGally)
 
 source("scripts/Rfunctions/VariabilityFunctions.R")
+source("scripts/Rfunctions/TrajFunctions.R")
 source("scripts/Rfunctions/Aux.R")
 
 FitSlope <- function(dat.sub){
@@ -66,6 +67,10 @@ head(trajs.spring[[4]][[1]])
 inf.dat <- "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.WithColnamesLst.2019-04-04.RData"
 assertthat::assert_that(file.exists(inf.dat))
 load(inf.dat, v=T)
+
+trajs.mixed.lst <- GetTrajMixed()
+trajs.spring <- trajs.mixed.lst$trajs.mixed
+trajs.mixed <- trajs.mixed.lst$trajs.mixed
 
 
 # Get constants -----------------------------------------------------------
@@ -155,6 +160,8 @@ jsub.fits <- trajs.sum %>%
   group_by(pos, mark) %>%
   do(FitSlope(.))
 
+jsub.fits$mark <- factor(jsub.fits$mark, levels = c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"))
+
 jsub.wide <- subset(jsub.fits, select = c(pos, mark, slope)) %>% spread(key = mark, value = slope) %>% ungroup()
 
 chunksize <- 2e7  # 20 MB
@@ -166,9 +173,14 @@ jsub <- trajs.sum %>% filter(pos > 0e7 & pos < 999e7)
 jlims <- range(jsub$exprs)
 jmid <- min(jlims) + (max(jlims) - min(jlims)) / 2
 
+# compare everything with H3K9me3 
+jsub.ref <- subset(jsub.fits, mark == "H3K9me3") %>% ungroup() %>% dplyr::rename(slope.H3K9me3 = slope) %>% dplyr::select(pos, slope.H3K9me3) 
+jsub.compare <- subset(jsub.fits, mark != "H3K9me3")
+jsub.compare <- left_join(jsub.compare, jsub.ref)
 
 
-pdf(file = paste0("~/data/scchic/pdfs/variance_over_pseudotime_heatmaps_zoomed_in.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+
+pdf(file = paste0("~/data/scchic/pdfs/variance_over_pseudotime_heatmaps_zoomed_in_trajsmixed_recolor2.", Sys.Date(), ".pdf"), useDingbats = FALSE)
 for (w in sort(unique(jsub$pos.round))){
   print(paste("w:", w))
   jsubsub <- jsub %>% filter(pos.round == w)
@@ -180,7 +192,10 @@ for (w in sort(unique(jsub$pos.round))){
     # geom_tile(width = 0.1, height = 1) + 
     geom_tile() + 
     theme_bw() + theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-    scale_fill_gradient(high = "darkblue", low = "gray85") + 
+    # scale_fill_gradient(high = "blue", low = "red") +
+    # scale_fill_gradientn(colours = c("darkblue", "blue", "yellow", "red", "darkred"), values = c(-3, -0.5, 0, 0.5, 2)) +
+    # scale_fill_gradientn(colours = colorRamps::blue2red(5)) +
+    scale_fill_gradientn(colours = colorRamps::matlab.like(5)) +
     scale_y_discrete(breaks = seq(0, 1, length.out = 2)) + 
     facet_wrap(~mark, ncol = 1) + 
     ggtitle(paste(jtraj, jstr, w)) + 
@@ -190,7 +205,9 @@ for (w in sort(unique(jsub$pos.round))){
     # geom_tile(width = 0.1, height = 1) + 
     geom_tile() + 
     theme_bw() + theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-    scale_fill_gradient(high = "darkblue", low = "gray85") + 
+    # scale_fill_gradient(high = "darkblue", low = "gray85") + 
+    # scale_fill_gradientn(colours = colorRamps::blue2red(5)) +
+    scale_fill_gradientn(colours = colorRamps::matlab.like(5)) +
     scale_y_discrete(breaks = seq(0, 1, length.out = 2)) + 
     facet_wrap(~mark, ncol = 1) + 
     ggtitle(paste(jtraj, jstr, w)) + 
@@ -205,7 +222,9 @@ m1.all <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, desc(lambda.bi
   # geom_tile(width = 0.1, height = 1) + 
   geom_tile() + 
   theme_bw() + theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  scale_fill_gradient(high = "darkblue", low = "gray85") + 
+  # scale_fill_gradient(high = "darkblue", low = "gray85") + 
+  # scale_fill_gradientn(colours = colorRamps::blue2red(5)) +
+  scale_fill_gradientn(colours = colorRamps::matlab.like(5)) +
   facet_wrap(~mark, ncol = 1) + 
   ggtitle(paste(jtraj, jstr, w)) + 
   ylab("Trajectory") + 
@@ -214,7 +233,9 @@ m1.rev.all <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, lambda.bin
   # geom_tile(width = 0.1, height = 1) + 
   geom_tile() + 
   theme_bw() + theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  scale_fill_gradient(high = "darkblue", low = "gray85") + 
+  # scale_fill_gradient(high = "darkblue", low = "gray85") + 
+  # scale_fill_gradientn(colours = colorRamps::blue2red(5)) +
+  scale_fill_gradientn(colours = colorRamps::matlab.like(5)) +
   facet_wrap(~mark, ncol = 1) + 
   ggtitle(paste(jtraj, jstr, w)) + 
   ylab("Trajectory") + 
@@ -223,7 +244,9 @@ m1.rev.all <- ggplot(jsub, aes(x = pos / 1e6, y = reorder(lambda.bin, lambda.bin
 # show mutual exclusiivity between the two repressive marks 
 m.slopes <- ggplot(jsub.fits, aes(x = pos / 10^6, y = reorder(mark, desc(mark)), fill = slope)) + geom_tile() + 
   theme_bw() + theme(aspect.ratio=0.2, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  scale_fill_gradient2(low = "darkred", mid = "gray85", high = "darkblue", midpoint = 0, name = "Slope [A.U.]") + 
+  # scale_fill_gradient2(low = "darkred", mid = "gray85", high = "darkblue", midpoint = 0, name = "Slope [A.U.]") + 
+  # scale_fill_gradient2(low = "darkred", mid = "gray85", high = "darkblue", midpoint = 0, name = "Slope [A.U.]") + 
+  scale_fill_gradientn(colours = colorRamps::matlab.like(5), name = "Slope [A.U.]") +
   ylab("") + 
   xlab("Position (MB)")
 print(m.slopes)
@@ -231,8 +254,21 @@ print(m.slopes)
 m.cor <- ggpairs(jsub.wide %>% select(-pos),
                  lower = list(continuous = wrap("points", alpha = 0.2, size = 0.5))) + theme_classic() + ggtitle(jstr)
 print(m.cor)
+# do H3K27me3 vs H3K9me3 only 
+m.cor2 <- ggpairs(subset(jsub.wide %>% dplyr::select(H3K9me3, H3K27me3, -pos)), lower = list(continuous = wrap("points", alpha = 0.25, size = 1.5))) + theme_classic(20) + ggtitle(jstr)
+print(m.cor2)
+
+m <- ggplot(jsub.compare, aes(y = slope.H3K9me3, x = slope)) + 
+  geom_point_rast(alpha = 0.2, size = 6) +
+  # geom_point(alpha = 0.2) + 
+  geom_density2d() + facet_wrap(~mark, scales = "free_x") + 
+  theme_bw(18) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  xlab("Slope") + ylab("Slope (H3K9me3)")
+print(m)
 
 dev.off()
+
+
 
 
 # w <- 40000000
