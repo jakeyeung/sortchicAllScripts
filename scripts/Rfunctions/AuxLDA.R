@@ -60,7 +60,7 @@ PlotAllMarks <- function(jgene, jpeak, jmarks, out.objs, custom.settings){
 }
 
 
-LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995, inf = NULL, convert.chr20.21.to.X.Y = TRUE, add.chr.prefix = FALSE){
+LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995, inf = NULL, convert.chr20.21.to.X.Y = TRUE, add.chr.prefix = FALSE, choose.k = "auto"){
   # jbin <- "TRUE"
   # top.thres <- 0.995
   if (is.null(inf)){
@@ -72,7 +72,14 @@ LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995, inf = NULL, convert.c
   }
   assertthat::assert_that(file.exists(inf))
   load(inf, v=T)
-  out.lda <- ChooseBestLDA(out.lda)
+  if (choose.k == "auto"){
+    out.lda <- ChooseBestLDA(out.lda)
+  } else {
+    kvec <- lapply(out.lda, function(x) x@k)
+    i <- which(kvec == choose.k)
+    out.lda <- out.lda[[i]]
+  }
+
   
   if (add.chr.prefix){
     out.lda@terms <- paste0("chr", out.lda@terms)
