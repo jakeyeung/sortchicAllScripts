@@ -76,7 +76,7 @@ LoadLDABins <- function(jmark, jbin=TRUE, top.thres=0.995, inf = NULL, convert.c
     out.lda <- ChooseBestLDA(out.lda)
   } else {
     kvec <- lapply(out.lda, function(x) x@k)
-    i <- which(kvec == choose.k)
+    i <- which(kvec == as.numeric(choose.k))
     out.lda <- out.lda[[i]]
   }
 
