@@ -1,3 +1,26 @@
+BinTrajectory <- function(trajs.spring.lst, jtraj, nearest = 0.1){
+  round.int <- 1 / nearest
+  trajs.sum <- lapply(trajs.spring, function(x) x[[jtraj]] %>% mutate(traj = jtraj)) %>%
+    bind_rows() %>%
+    rowwise() %>%
+    mutate(mark = strsplit(cell, "_")[[1]][[2]]) %>%
+    left_join(., mat.sub.merge) %>%
+    rowwise() %>%
+    mutate(lambda.bin = floor(lambda * round.int) / round.int) %>%
+    group_by(traj, lambda.bin, mark, coord, pos) %>%
+    summarise(exprs = mean(exprs)) %>%
+    return(trajs.sum)
+}
+
+FitSlope <- function(dat.sub){
+  # fit exprs to trajectory to find slope
+  fit <- lm(formula = exprs ~ lambda.bin, data = dat.sub)
+  slope <- fit$coefficients[['lambda.bin']]
+  int <- fit$coefficients[['(Intercept)']]
+  pval <- summary(fit)$coefficients["lambda.bin", "Pr(>|t|)"]
+  return(data.frame(slope = slope, int = int, pval = pval))
+}
+
 GetTrajMixed <- function(inf.springtraj = "/Users/yeung/data/scchic/robjs/trajectory_from_spring_2019-04-15.RData", 
                          inf.traj =  "/Users/yeung/data/scchic/robjs/TFactivity_genelevels_objects_build95.allmarks_reorient_WithTrajs.WithColnamesLst.2019-04-04.RData"){
   assertthat::assert_that(file.exists(inf.springtraj))
@@ -74,7 +97,7 @@ GetTopGenes <- function(dat.long, jcelltype, jtopic, topn = 20){
 }
 
 # do Principal Curves on filtered genes
-InferTrajOnUmap <- function(dat, cname = "granu", init.on = "umap2", flip.lambda = FALSE, return.obj = FALSE){
+InferTrajOnUmap <- function(dat, cname = "granu", init.on = "umap2", flip.lambda = FALSE, return.obj = FALSE, get.raw.lambda = FALSE){
   inmat <- subset(dat[which(dat[[cname]] == TRUE), ], select = c(umap1, umap2, cell))
   rownames(inmat) <- inmat$cell
   inmat$cell <- NULL
@@ -95,6 +118,10 @@ InferTrajOnUmap <- function(dat, cname = "granu", init.on = "umap2", flip.lambda
   dat.pca.proj <- as.data.frame(proj$s)
   dat.pca.proj$cell <- rownames(proj$s)
   # scale lambda from 0 to 1
+  if (get.raw.lambda){
+    # save raw lambda before normalizing
+    dat.pca.proj$lambda.raw <- proj$lambda
+  }
   dat.pca.proj$lambda <- proj$lambda / max(proj$lambda)
   dat.pca.proj <- dat.pca.proj %>% arrange(lambda)
   if (flip.lambda){

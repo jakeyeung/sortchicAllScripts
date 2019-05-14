@@ -1,9 +1,17 @@
-GetTrajColors <- function(as.hash = FALSE){
-  jcols <- c("#A29F9D", "#E7A100", "#6AB7E6")
+GetTrajColors <- function(as.hash = FALSE, add.mega = FALSE){
+  if (!add.mega){
+    jcols <- c("#A29F9D", "#E7A100", "#6AB7E6")
+  } else {
+    jcols <- c("#A29F9D", "#E7A100", "#6AB7E6", "#999999")
+  }
   if (!as.hash){
     return(jcols)
   } else {
-    jtrajs <- c("eryth", "granu", "lymphoid")
+    if (!add.mega){
+      jtrajs <- c("eryth", "granu", "lymphoid")
+    } else {
+      jtrajs <- c("eryth", "granu", "lymphoid", "mega")
+    }
     names(jcols) <- jtrajs
     jcols.hash <- hash::hash(as.list(jcols))
     return(jcols.hash)
@@ -19,26 +27,32 @@ PlotXYNoColor <- function(jsub, xvar, yvar, jcol = "gray80", jsize = 1){
     xlab("") + ylab("")
   return(m)
 }
-PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", jcol = scales::muted("darkblue"), jtitle = "", jcol.low = "gray85", jcol.mid = "gray50", jsize = 1, leg.name = NULL, jjrange = "auto"){
+PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", jcol = scales::muted("darkblue"), jtitle = "", jcol.low = "gray85", jcol.mid = "gray50", jsize = 1, leg.name = NULL, jjrange = "auto", 
+                            cont.color = TRUE, col.palette = NA){
   if (is.null(leg.name)){
     leg.name <- cname
   }
   jsub <- RankOrder(jsub, cname = cname, out.cname = "orderrank")
-  jrange <- range(jsub[[cname]])
-  jmid <- min(jsub[[cname]]) + diff(range(jsub[[cname]])) / 2
-  if (jjrange != "auto"){
-    jrange <- jjrange
-  } 
   m1 <- ggplot(jsub, aes_string(x = xvar, y = yvar, col = cname, order = "orderrank")) + 
     ggrastr::geom_point_rast(size = jsize) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom",
                        axis.ticks=element_blank(),
-                       axis.text.x=element_blank(),
-                       axis.text.y=element_blank(),
+                       # axis.text.x=element_blank(),
+                       # axis.text.y=element_blank(),
                        panel.border=element_blank())  + 
-    xlab("") + ylab("") + 
-    scale_color_gradient2(low = "gray85", mid = "gray50", high = jcol, midpoint = jmid, limit = jrange, name = leg.name) + 
-    ggtitle(jtitle)
+    xlab("") + ylab("") + ggtitle(jtitle)
+  if (cont.color){
+    jrange <- range(jsub[[cname]])
+    jmid <- min(jsub[[cname]]) + diff(range(jsub[[cname]])) / 2
+    # print(jmid)
+    if (jjrange != "auto"){
+      jrange <- jjrange
+    } 
+    m1 <- m1 + 
+      scale_color_gradient2(low = jcol.low, mid = jcol.mid, high = jcol, midpoint = jmid, limit = jrange, name = leg.name)
+  }  else {
+    m1 <- m1 + scale_color_manual(values = col.palette)
+  }
   return(m1)
 }
 

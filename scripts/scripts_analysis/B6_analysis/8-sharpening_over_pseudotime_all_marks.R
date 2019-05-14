@@ -8,19 +8,10 @@ library(tidyr)
 library(ggplot2)
 library(data.table)
 
-LoadGetImputed <- function(inf){
-  load(inf)  # out.objs, dat.umap.long, custom.settings. louv.settings
-  imput.mat <- t(out.objs$tm.result$topics %*% out.objs$tm.result$terms)
-  return(imput.mat)
-}
-
-LoadGetTmResult <- function(inf){
-  load(inf)  # out.objs, dat.umap.long, custom.settings. louv.settings
-  return(out.objs$tm.result)
-}
 
 source("scripts/Rfunctions/VariabilityFunctions.R")
 source("scripts/Rfunctions/Aux.R")
+source("scripts/Rfunctions/AuxB6.R")
 source("scripts/Rfunctions/PlotFunctions.R")
 
 

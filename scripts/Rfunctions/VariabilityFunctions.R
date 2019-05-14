@@ -332,6 +332,11 @@ GetCellSd <- function(dat.mat, grep.str, log2.scale = TRUE, fn = sd){
   return(cell.sd.df)
 }
 
+TotalVar <- function(x){
+  # sum of squares
+  return((x - mean(x)) ^ 2)
+}
+
 MatToLong <- function(imputed.dat, gstr, cells.vec = NULL){
   if (!is.null(cells.vec)){
     jsub <- as.data.frame(imputed.dat[grepl(gstr, rownames(imputed.dat)), cells.vec])
