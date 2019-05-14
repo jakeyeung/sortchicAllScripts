@@ -20,9 +20,15 @@ GetRepB6 <- function(x){
   return(paste0("rep", strsplit(strsplit(x, "-")[[1]][[5]], "_")[[1]][[1]]))
 }
 
-GetCellB6 <- function(x, shift = 1){
+GetCellB6 <- function(x, shift = 0){
   # shift by 1 to get cells to start at 1 rather than 0
   cell <- as.numeric(strsplit(x, "_")[[1]][[4]]) + shift
+  return(paste0("cell", as.character(cell)))
+}
+
+GetCellB6.uniqname <- function(x, shift = 0){
+  # shift by 1 to get cells to start at 1 rather than 0
+  cell <- as.numeric(strsplit(x, "_")[[1]][[2]]) + shift
   return(paste0("cell", as.character(cell)))
 }
 
@@ -34,7 +40,7 @@ ReadDinuc <- function(inf){
     mutate(count = ifelse(is.na(count), 0, count),
            mark = GetMarkB6(samp),
            repl = GetRepB6(samp),
-           cell = GetCellB6(samp))
+           cell = GetCellB6.uniqname(samp, shift = 0))
   return(dat.long)
 }
 
@@ -76,11 +82,12 @@ ReadCellSum <- function(inf){
 
 # Load TA counts ----------------------------------------------------------
 
-indir <- "/Users/yeung/data/scchic/from_cluster/TA_count_frequencies_bugfixed"
+indir <- "/Users/yeung/data/scchic/from_cluster/TA_count_frequencies_bugfixed_uniqname"
 # indir <- "/Users/yeung/data/scchic/from_cluster/TA_count_frequencies_bystrand_B6"
 # indir <- "/Users/yeung/data/scchic/from_cluster/TA_count_frequencies-Ensembl95"
 
-infs <- list.files(indir, pattern = "*.RZcounts_bugfixed.test.csv", full.names = TRUE)
+# infs <- list.files(indir, pattern = "*.RZcounts_bugfixed.test.csv", full.names = TRUE)
+infs <- list.files(indir, pattern = "*.RZcounts_bugfixed.csv", full.names = TRUE)
 # infs <- list.files(indir, pattern = "*.RZcounts.csv", full.names = TRUE)
 # infs <- list.files(indir, pattern = "*.RZcounts_splitRS.csv", full.names = TRUE)
 
@@ -123,8 +130,16 @@ dat.sizes <- lapply(infs, ReadCellSum) %>%
 
 # Label empty wells -------------------------------------------------------
 
-indx.all <- seq(384)
-hascell.indx <- c(seq(1:356),seq(360:379)+360)
+# #  1 index
+# indx.all <- seq(384)
+# hascell.indx <- c(seq(1:356),seq(360:379)+360)
+# empty.indx <- setdiff(indx.all, hascell.indx)
+# empty.names <- paste("cell", empty.indx, sep = "")
+# print(empty.names)
+
+# 0 index
+indx.all <- seq(384) - 1
+hascell.indx <- c(seq(1:356),seq(360:379)+360) - 1
 empty.indx <- setdiff(indx.all, hascell.indx)
 empty.names <- paste("cell", empty.indx, sep = "")
 
@@ -197,8 +212,8 @@ ggplot(dat.merge, aes(x = cellsum.log, y = frac, color = is.empty)) + geom_point
   ylim(c(0, 1))
 
 
-p <- 0.9
-pfrac <- 0.9
+p <- 0.95
+pfrac <- 0.95
 dat.merge.filt <- dat.merge.filt %>%
   # group_by(is.empty) %>%
   # ungroup() %>%
@@ -263,7 +278,7 @@ ggplot(dat.merge.filt, aes(x = cellsum.log, y = frac, color = good.cell)) + geom
 # Write good cells to file  -----------------------------------------------
 
 good.cells <- data.frame(cell = subset(dat.merge.filt, good.cell)$samp)
-fwrite(good.cells, file = paste0("~/data/scchic/quality_control/good_cells.pcounts.", (1-p), ".pfrac.", (1-pfrac), ".txt"))
+fwrite(good.cells, file = paste0("~/data/scchic/quality_control/good_cells.pcounts.", (1-p), ".pfrac.", (1-pfrac), ".txt"), col.names = TRUE)
 
 
 # check cells with 100% frac
