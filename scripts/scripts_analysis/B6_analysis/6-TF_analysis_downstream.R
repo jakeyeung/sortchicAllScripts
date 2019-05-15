@@ -29,7 +29,7 @@ load(inf.traj, v=T)
 
 # Load MARA  --------------------------------------------------------------
 
-kchoose <- 75
+kchoose <- 50
 maradir <- paste0("/Users/yeung/data/scchic/from_cluster/mara_outputs_B6/mara_analysis_cluster_build95_B6_CorrPeakFilt.cells_from_bin_analysis/H3K4me1/mara_output/hiddenDomains_cellmin_0-cellmax_9999999-binarize_TRUE-B6_H3K4me1.filt_0.99.center_TRUE_K50-hiddenDomains_motevo_merged.closest.long.scale_0.center_0.byrow_0.bugfix.filt.0--K", kchoose, "/hiddenDomains_cellmin_0-cellmax_9999999-binarize_TRUE-B6_H3K4me1.filt_0.99.center_TRUE_K", kchoose)
 assertthat::assert_that(dir.exists(maradir))
 
@@ -108,8 +108,8 @@ assertthat::assert_that(length(cbPalette) == K)
 clst <- cutree(clusters, k = K)
 clst.dat <- data.frame(motif = names(clst), clstr = clst)
 
-pdf("~/data/scchic/pdfs/B6_figures/TF_activities.pdf", useDingbats = FALSE)
-  hm.out <- heatmap3(t(jmat[, cells.keep]), margins = c(5, 8), cexRow = 0.25, Colv = TRUE, Rowv = NA,
+pdf(paste0("~/data/scchic/pdfs/B6_figures/TF_activities.K_", kchoose, ".pdf"), useDingbats = FALSE)
+  hm.out <- heatmap3(t(jmat[, cells.keep]), margins = c(5, 8), cexCol = 0.3, Colv = TRUE, Rowv = NA, 
                      labRow = FALSE, scale = "column", revC = TRUE,
                      distfun = dist, hclustfun = hclust, method = jmeth)
   myplclust(clusters, clusters$labels, cbPalette[clst], main = jmeth)
@@ -122,8 +122,6 @@ dev.off()
 
 
 # Correlate with expression  ----------------------------------------------
-
-
 
 
 
