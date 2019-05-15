@@ -137,10 +137,32 @@ print(m)
 PlotXYWithColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", cname = "louvain", cont.color = FALSE, col.palette = cbPalette, jtitle = jmark, jsize = 5)
 
 trajname <- "mega"
-clstr.louv <- c(7)
+clstr.louv <- c(7, 10)  
+dat.umap.sub[[trajname]] <- ifelse(dat.umap.sub$louvain %in% clstr.louv & dat.umap.sub$umap2 > -1, TRUE, FALSE)
+PlotXYWithColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", cname = trajname, cont.color = FALSE, col.palette = cbPalette, jtitle = jmark, jsize = 5)
+
+# make trajectory
+trajs[[jmark]][[trajname]] <- InferTrajOnUmap(dat = dat.umap.sub, cname = trajname, init.on = "umap1", return.obj = FALSE, get.raw.lambda = TRUE)
+trajs.objs[[jmark]][[trajname]] <- InferTrajOnUmap(dat = dat.umap.sub, cname = trajname, init.on = "umap1", return.obj = TRUE, get.raw.lambda = TRUE)$pc.obj
+
+print("DOING MEGA WITH CENTER LOCATION")
+# plot output 
+m <- PlotXYNoColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", jsize = 5) + 
+  geom_path(data = trajs[[jmark]][[trajname]], aes(color = lambda), size = 1)  + 
+  ggtitle(paste(jmark, trajname))
+print(m)
+
+
+# H3K4me1 do mega as island -----------------------------------------------
+
+PlotXYWithColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", cname = "louvain", cont.color = FALSE, col.palette = cbPalette, jtitle = jmark, jsize = 5)
+
+trajname <- "MegaIsland"
+clstr.louv <- c(7)  
 dat.umap.sub[[trajname]] <- ifelse(dat.umap.sub$louvain %in% clstr.louv, TRUE, FALSE)
 PlotXYWithColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", cname = trajname, cont.color = FALSE, col.palette = cbPalette, jtitle = jmark, jsize = 5)
 
+print("DOING MEGA AS ISLAND")
 # make trajectory
 trajs[[jmark]][[trajname]] <- InferTrajOnUmap(dat = dat.umap.sub, cname = trajname, init.on = "umap1", return.obj = FALSE, get.raw.lambda = TRUE)
 trajs.objs[[jmark]][[trajname]] <- InferTrajOnUmap(dat = dat.umap.sub, cname = trajname, init.on = "umap1", return.obj = TRUE, get.raw.lambda = TRUE)$pc.obj
@@ -150,6 +172,7 @@ m <- PlotXYNoColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", jsize = 5) +
   geom_path(data = trajs[[jmark]][[trajname]], aes(color = lambda), size = 1)  + 
   ggtitle(paste(jmark, trajname))
 print(m)
+
 
 
 # H3K4me1 Trajectories natural killer ---------------------------------------------
