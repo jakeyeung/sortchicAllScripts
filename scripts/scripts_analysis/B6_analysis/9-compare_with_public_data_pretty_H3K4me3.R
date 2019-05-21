@@ -54,7 +54,7 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # for Bcell and Neutrophil
 
 
-jmark <- "H3K4me1"
+jmark <- "H3K4me3"
 jthres <- 0.998
 
 infs.h3k4me1 <- list.files(path = dirmain, pattern = paste0(jmark, ".*comparison.txt"))
@@ -99,7 +99,7 @@ cors.merge.h3k4me1$ctype <- gsub("_rep1", "", cors.merge.h3k4me1$compare)
 cors.merge.h3k4me1$color <- sapply(cors.merge.h3k4me1$Sample, function(x) col.hash.h3k4me1[[x]])
 
 
-pdf(patse0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/H3K4me1_ido_amit_comparison.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+pdf(paste0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/", jmark, "_ido_amit_comparison.pdf"), useDingbats = FALSE)
   
   m <- ggplot(dat.umap.long.trajs[[jmark]], aes_string(x = xvar, y = yvar, color = jcol)) + 
     # ggrastr::geom_point_rast(size = jsize) + 
@@ -185,7 +185,7 @@ cors.merge.h3k4me3$color <- sapply(cors.merge.h3k4me3$Sample, function(x) col.ha
 cors.merge.h3k4me3[, ord := sprintf("%02i", frank(cors.merge.h3k4me3, compare, -corr.pears, ties.method = "first"))]
 
 
-pdf(paste0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/", jmark, "_ido_amit_comparison.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+pdf(paste0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/", jmark, "_ido_amit_comparison.pdf"), useDingbats = FALSE)
 
   m <- ggplot(dat.umap.long.trajs[[jmark]], aes_string(x = xvar, y = yvar, color = jcol)) + 
     # ggrastr::geom_point_rast(size = jsize) + 
@@ -291,15 +291,13 @@ print(m.h3k27me3)
 
 
 # LINEAR SPACE
-jthres <- 0.995
+jthres <- 0.999
 jmark <- "H3K27me3"
 compares_keeplin <- c("Erythrobl", "Megakar")
 # compares_keeplin <- c("MatBcell", "ProB", "HSC")
 compares_grepstrlin <- paste(compares_keeplin, collapse = "|")
 
-# dirmain.linear <- "/Users/yeung/data/scchic/from_cluster/pseudobulk_comparisons/merged_softlinks_textfile"
-# assertthat::assert_that(dir.exists(dirmain.linear))
-dirmain.linear <- "/Users/yeung/data/scchic/from_cluster/pseudobulk_comparisons/merged_softlinks_textfile_build95_B6"
+dirmain.linear <- "/Users/yeung/data/scchic/from_cluster/pseudobulk_comparisons/merged_softlinks_textfile"
 assertthat::assert_that(dir.exists(dirmain.linear))
 infs.h3k27me3.linear <- list.files(path = dirmain.linear, pattern = paste0(jmark, ".*comparison.txt"))
 # get celltype and replicate out of it to form the names of list
@@ -313,7 +311,7 @@ infs.h3k27me3.names.linear <- paste(infs.h3k27me3.ctypes.linear, infs.h3k27me3.r
 infs.h3k27me3.linear <- paste(dirmain.linear, infs.h3k27me3.linear, sep = "/")
 names(infs.h3k27me3.linear) <- infs.h3k27me3.names.linear
 
-out.lst.linear <- lapply(names(infs.h3k27me3.linear), function(jname) ComparePublicLinear(infs.h3k27me3.linear[[jname]], thres=jthres, lab = jname, filter.min = TRUE))
+out.lst.linear <- lapply(names(infs.h3k27me3.linear), function(jname) ComparePublicLinear(infs.h3k27me3.linear[[jname]], thres=jthres, lab = jname))
 # summarize for each cell type and rep
 cors.merge.linear <- purrr::reduce(.x = lapply(out.lst.linear, function(x) x$dat.cors), .f = bind_rows) %>%
   rowwise %>%
@@ -348,7 +346,7 @@ print(m.umap.h3k27me3)
 
 # plot outputs along with the UMAP
 
-pdf(paste0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/", jmark, "_ido_amit_comparison.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+pdf(paste0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/", jmark, "_ido_amit_comparison.pdf"), useDingbats = FALSE)
 print(m.umap.h3k27me3)
 print(m.h3k27me3)
 print(m.h3k27me3.linear)
@@ -432,7 +430,7 @@ m.multi.h3k9me3.log2 <- ggplot(cors.merge.multi.h3k9me3, aes(x = ord, y = corr.p
 print(m.multi.h3k9me3.log2)
 
 
-pdf(paste0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/", jmark, "_multimark_comparison.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+pdf(paste0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/", jmark, "_multimark_comparison.pdf"), useDingbats = FALSE)
   m <- ggplot(dat.umap.long.trajs[[jmark]], aes_string(x = xvar, y = yvar, color = jcol)) + 
     # ggrastr::geom_point_rast(size = jsize) + 
     geom_point(size = jsize) + 

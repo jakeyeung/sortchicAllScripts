@@ -12,17 +12,13 @@ library(topicmodels)
 library(hash)
 library(JFuncs)
 
-# source("~/data/scchic/m")
-# source("/Users/yeung/data/scchic/from_cluster/mara_outputs_B6/mara_analysis_cluster_build95_B6_CorrPeakFilt.cells_from_bin_analysis")
 source("scripts/Rfunctions/MaraDownstream.R")
 source("scripts/Rfunctions/PlotFunctions.R")
 
 # Load data ---------------------------------------------------------------
 
 inf <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6/dat_umap_long_with_louvain.H3K4me1.RData"
-
 assertthat::assert_that(file.exists(inf))
-
 load(inf, v=T)
 
 
@@ -75,7 +71,7 @@ jmotif <- "Spic"
 
 # Zscore ------------------------------------------------------------------
 
-jtrajs <- c("granu", "lymphoid", "eryth", "mega")
+jtrajs <- c("granu", "lymphoid", "eryth")
 
 jmark <- "H3K4me1"
 traj.annot <- lapply(jtrajs, function(jtraj) data.frame(cell = trajs[[jmark]][[jtraj]]$cell, traj = jtraj, lambda = trajs[[jmark]][[jtraj]]$lambda)) %>%
@@ -114,7 +110,7 @@ assertthat::assert_that(length(cbPalette) == K)
 clst <- cutree(clusters, k = K)
 clst.dat <- data.frame(motif = names(clst), clstr = clst)
 
-pdf(paste0("~/data/scchic/pdfs/B6_figures/tf_activities/TF_activities.K_", kchoose, ".", Sys.Date(), ".pdf"), useDingbats = FALSE)
+pdf(paste0("~/data/scchic/pdfs/B6_figures/tf_activities/TF_activities.K_", kchoose, ".", Sys.Date(), ".fewer_trajs.pdf"), useDingbats = FALSE)
   hm.out <- heatmap3(t(jmat[, cells.keep]), margins = c(5, 8), cexCol = 0.35, Colv = TRUE, Rowv = NA, 
                      labRow = FALSE, scale = "column", revC = TRUE,
                      distfun = dist, hclustfun = hclust, method = jmeth)
@@ -261,7 +257,7 @@ myplclust(clusters, clusters$labels, cbPalette[clst], main = jmeth)
 jhits <- c("Tal1", "Ets1", "Cebpa", "Foxc1", "Cebpb", "Spic", "Nr4a1", "Ebf3", "Ebf1", "Irf4", "Pax6", "Mafb", "Zeb1", "Meis1", "Bcl6", "Bptf")
 
 
-pdf(paste0("~/data/scchic/pdfs/B6_figures/tf_activities/TF_activity_with_gene_exprs.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+pdf(paste0("~/data/scchic/pdfs/B6_figures/tf_activities/TF_activity_with_gene_exprs.", Sys.Date(), ".fewer_trajs.pdf"), useDingbats = FALSE)
 m <- ggplot(left_join(cor.sum %>% dplyr::rename(motif = gene), clst.dat) %>% mutate(motif.lab = ifelse(zscore > zscore.cutoff, motif, NA)),
             aes(x = cor.out, y = range.sqr, size = zscore, label = motif.lab, color = as.character(clstr))) +
   geom_point(alpha = 1) + geom_text_repel(size = labsize) +
@@ -270,7 +266,7 @@ m <- ggplot(left_join(cor.sum %>% dplyr::rename(motif = gene), clst.dat) %>% mut
   scale_color_manual(values = cbPalette, na.value = "lightgrey", name = "Cluster")
 print(m)
 for (jhit in jhits){
-  m <- ggplot(exprs.long %>% filter(gene == jhit & !is.na(traj)), aes(x = exprs.log2, y = activity, color = traj)) + 
+  m <- ggplot(exprs.long %>% filter(gene == jhit & traj %in% jtrajs), aes(x = exprs.log2, y = activity, color = traj)) + 
     geom_point(alpha = 0.5) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     geom_smooth(method = "lm", se = FALSE, color = "gray50") + 
     scale_color_manual(values = cbPalette2) + ggtitle(jhit) + 
@@ -278,6 +274,8 @@ for (jhit in jhits){
   print(m)
 }
 dev.off()
+
+
 
 # m <- ggplot(cor.sum, aes(x = cor.out, y = range.sqr, label = motif.lab, size = zscore)) + geom_point()  + geom_text_repel(size = 5) + 
 #   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())

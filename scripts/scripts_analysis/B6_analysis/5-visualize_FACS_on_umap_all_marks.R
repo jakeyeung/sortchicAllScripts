@@ -41,6 +41,14 @@ dat.facs.filt <- lapply(jmarks, LoadFACSGetLoadings) %>%
 dat.merge <- left_join(dat.umap.long, dat.facs.filt %>% dplyr::select(cell, loadings, mark)) %>%
   filter(!is.na(loadings))
 
+
+# Save object for Chloe ---------------------------------------------------
+
+head(dat.facs.filt)
+
+save(dat.facs.filt, dat.umap.long, file = "~/data/scchic/robjs/B6_objs/umap_and_facs_data_merged.Rdata")
+
+
 # Make sure loadings are in right region ----------------------------------
 
 mlst <- lapply(jmarks, function(jmark){

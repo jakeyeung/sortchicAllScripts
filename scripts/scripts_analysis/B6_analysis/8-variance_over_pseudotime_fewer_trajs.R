@@ -26,7 +26,8 @@ source("scripts/Rfunctions/PlotFunctions.R")
 # Get constants -----------------------------------------------------------
 
 make.plots <- TRUE
-colhash <- GetTrajColors(as.hash = TRUE, add.mega = TRUE)
+colhash <- GetTrajColors(as.hash = TRUE, add.mega = FALSE)
+jtrajs <- c("granu", "lymphoid", "eryth")
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3")
 colvec <- c("gray85", "gray50", "blue")  
@@ -65,7 +66,6 @@ jthres <- 0.05
 jpseudo <- 0
 jfac <- 10^6
 
-jtrajs <- c("granu", "lymphoid", "eryth", "mega")
 jtraj <- "granu"
 
 # Load data  --------------------------------------------------------------
@@ -132,7 +132,7 @@ m.nofacet <- ggplot(jsub, aes(x = lambda, y = cell.sd, color = jcol, group = tra
   scale_color_identity() + 
   xlab("Pseudotime") + ylab("Genome-wide SD") 
 
-pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory/variance_over_pseudotime.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory/variance_over_pseudotime_fewer_trajs.", Sys.Date(), ".pdf"), useDingbats = FALSE)
   print(m.facet)
   print(m.nofacet)
 dev.off()

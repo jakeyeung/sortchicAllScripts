@@ -22,7 +22,7 @@ suffix <- "_log1p"
 refmark <- "H3K4me1"
 source("scripts/Rfunctions/PseudobulkComparisons.R")
 
-plot.to.file <- TRUE
+plot.to.file <- FALSE
 
 if (plot.to.file){
   pdf(paste0("~/data/scchic/pdfs/B6_figures/compare_pseudo_build95_B6_with_amit", suffix, ".pdf"), useDingbats = FALSE)
@@ -122,8 +122,8 @@ infs.h3k27me3.names.linear <- paste(infs.h3k27me3.ctypes.linear, infs.h3k27me3.r
 infs.h3k27me3.linear <- paste(dirmain.linear, infs.h3k27me3.linear, sep = "/")
 names(infs.h3k27me3.linear) <- infs.h3k27me3.names.linear
 
-
-out.lst.linear <- lapply(names(infs.h3k27me3.linear), function(jname) ComparePublicLinear(infs.h3k27me3.linear[[jname]], thres=jthres, lab = jname))
+# jthres <- 0.995
+out.lst.linear <- lapply(names(infs.h3k27me3.linear), function(jname) ComparePublicLinear(infs.h3k27me3.linear[[jname]], thres=jthres, lab = jname, filter.min = TRUE))
 # summarize for each cell type and rep
 cors.merge.linear <- purrr::reduce(.x = lapply(out.lst.linear, function(x) x$dat.cors), .f = bind_rows) %>%
   rowwise %>%
@@ -154,6 +154,38 @@ m.h3k27me3.linear.spear <- ggplot(cors.merge.h3k27me3.linear %>% filter(grepl(co
   ggtitle(jmark) + xlab("Cluster")
 print(m.h3k27me3.linear.spear)
 
+
+# Check erythro -----------------------------------------------------------
+
+out.lst.linear.debug <- lapply(names(infs.h3k27me3.linear), function(jname) ComparePublicLinear(infs.h3k27me3.linear[[jname]], thres=1, lab = jname))
+names(out.lst.linear.debug) <- names(infs.h3k27me3.linear)
+
+# see what's up 
+out.eryth <- out.lst.linear.debug[[1]]
+
+thres <- 0.995
+ggplot(out.eryth$dat.long.filt %>% 
+         group_by(Sample) %>%
+         # filter(chic > min(chic) & chip > min(chip)) %>%
+         filter(chic > 0.01) %>%
+         filter(log(chic) <= quantile(log(chic), probs = thres) & log(chic) >= quantile(log(chic), probs = 1 - thres)) %>%
+         filter(log(chip) <= quantile(log(chip), probs = thres) & log(chip) >= quantile(log(chip), probs = 1 - thres)), 
+       aes(x = chip, y = chic)) + 
+  geom_point() + facet_wrap(~Sample) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_x_log10() + scale_y_log10()
+
+ggplot(out.eryth$dat.long.filt %>% filter(chic > 5e-2 & chic < 50 & chip < 150), aes(x = chip, y = chic)) + geom_point() + facet_wrap(~Sample) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_x_log10() + scale_y_log10()
+
+# recalc the correlations 
+cor.debug <- out.eryth$dat.long.filt %>% filter(chic > 5e-2 & chic < 8 & chip < 150) %>%
+  group_by(Sample) %>%
+  summarise(cor.out = cor(chic, chip))
+
+cor.debug <- out.eryth$dat.long.filt %>% filter(chic > 1e-3 & chic < 50 & chip < 150) %>%
+  group_by(Sample) %>%
+  summarise(cor.out = cor(chic, chip))
 
 # Why we get pos and neg corr for Erythro? --------------------------------
 
