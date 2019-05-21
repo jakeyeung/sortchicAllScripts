@@ -21,7 +21,9 @@ GetTrajColors <- function(as.hash = FALSE, add.mega = FALSE){
   if (!add.mega){
     jcols <- c("#A29F9D", "#E7A100", "#6AB7E6")
   } else {
-    jcols <- c("#A29F9D", "#E7A100", "#6AB7E6", "#999999")
+    # jcols <- c("#A29F9D", "#E7A100", "#6AB7E6", "#999999")
+    # jcols <- c("#A29F9D", "#E7A100", "#6AB7E6", "#999999")
+    jcols <- c("#999999", "#E69F00", "#56B4E9", "#F0E442")
   }
   if (!as.hash){
     return(jcols)
@@ -51,7 +53,7 @@ PlotXYNoColor <- function(jsub, xvar, yvar, jcol = "gray80", jsize = 1){
   return(m)
 }
 PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", jcol = scales::muted("darkblue"), jtitle = "", jcol.low = "gray85", jcol.mid = "gray50", jsize = 1, leg.name = NULL, jjrange = "auto", 
-                            cont.color = TRUE, col.palette = NA, strip.ticks = FALSE){
+                            cont.color = TRUE, col.palette = NA, strip.ticks = FALSE, manual.mid = NA){
   if (is.null(leg.name)){
     leg.name <- cname
   }
@@ -70,7 +72,11 @@ PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", 
     xlab("") + ylab("") + ggtitle(jtitle)
   if (cont.color){
     jrange <- range(jsub[[cname]])
-    jmid <- min(jsub[[cname]]) + diff(range(jsub[[cname]])) / 2
+    if (is.na(manual.mid)){
+      jmid <- min(jsub[[cname]]) + diff(range(jsub[[cname]])) / 2
+    } else {
+      jmid <- manual.mid
+    }
     # print(jmid)
     if (jjrange != "auto"){
       jrange <- jjrange
