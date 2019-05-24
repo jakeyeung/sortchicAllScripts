@@ -9,6 +9,7 @@ library(ggplot2)
 library(data.table)
 library(topicmodels)
 library(ggrepel)
+library(JFuncs)
 
 source("scripts/Rfunctions/PlotFunctions.R")
 
@@ -76,9 +77,14 @@ ggplot(loadings %>% filter(rnk < 70), aes(x = term, y = log10(weight), label = g
   theme(aspect.ratio=0.3, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   geom_point() + geom_text_repel() + xlab("") + ylab("log10(Region Loading)")
 
-genes.show <- c("Cpeb3", "Sox6", "Tal1", "Aqp", "Hbq", "Hbb", "Slc", "Lmo")
+genes.show <- c("Cpeb3", "Sox6", "Tal1", "Aqp", "Hbq", "Hbb", "Slc", "Lmo", "Gyp")
 genes.show.grep <- paste(genes.show, collapse = "|")
 ggplot(loadings %>% filter(rnk < 70) %>% mutate(gene.lab = ifelse(grepl(genes.show.grep, gene), gene, NA)), aes(x = term, y = log10(weight), label = gene.lab)) + 
+  theme_bw() + 
+  theme(aspect.ratio=0.3, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+  geom_point() + geom_text_repel(size = 7) + xlab("") + ylab("log10(Region Loading)") + ggtitle("Top 70 regions in erythroblast topic")
+
+ggplot(loadings %>% filter(rnk < 70) %>% mutate(gene.lab = ifelse(grepl(genes.show.grep, gene), gene, NA)), aes(x = term, y = log10(weight), label = gene)) + 
   theme_bw() + 
   theme(aspect.ratio=0.3, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   geom_point() + geom_text_repel() + xlab("") + ylab("log10(Region Loading)") + ggtitle("Top 70 regions in erythroblast topic")
@@ -113,31 +119,31 @@ ggplot(dat.sub, aes(x = CellType, y = zscore)) +
 ctypes <- c("granu")
 traj.jsize <- 3
 # plot louvains
-m.louv <- ggplot(dat.umap.long.trajs[[jmark]], aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 3) +
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-                     axis.text = element_blank(), axis.ticks = element_blank(), panel.border = element_blank()) +
-  scale_color_manual(values=cbPalette) +
-  xlab("") + ylab("")
-for (ctype in ctypes){
-  m.louv <- m.louv + geom_path(data = trajs[[jmark]][[ctype]], color = "black", size = traj.jsize, alpha = 0.5, arrow = arrow(ends = "last"))
+
+for (jjmark in jmarks){
+  m.louv <- ggplot(dat.umap.long.trajs[[jjmark]], aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 3) +
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                       axis.text = element_blank(), axis.ticks = element_blank(), panel.border = element_blank()) +
+    scale_color_manual(values=cbPalette) +
+    xlab("") + ylab("")
+  for (ctype in ctypes){
+    m.louv <- m.louv + geom_path(data = trajs[[jjmark]][[ctype]], color = "black", size = traj.jsize, alpha = 0.5, arrow = arrow(ends = "last"))
+  }
+  print(m.louv)
 }
-print(m.louv)
 m.louv.h3k9me3 <- ggplot(dat.umap.long.trajs[["H3K9me3"]], aes(x = umap1, y = umap2, color = louvain)) + geom_point(size = 3) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
                      axis.text = element_blank(), axis.ticks = element_blank(), panel.border = element_blank()) +
   scale_color_manual(values=cbPalette) +
   xlab("") + ylab("")
-
 for (ctype in ctypes){
   m.louv.h3k9me3 <- m.louv.h3k9me3 + geom_path(data = trajs[["H3K9me3"]][[ctype]], color = "black", size = traj.jsize, alpha = 0.5, arrow = arrow(ends = "first"))
 }
 print(m.louv.h3k9me3)
 dev.off()
 
+
 # 
-
-
-
 # # for Granulocytes 
 # jtop <- 47
 # loadings <- subset(terms.filt, topic == jtop)

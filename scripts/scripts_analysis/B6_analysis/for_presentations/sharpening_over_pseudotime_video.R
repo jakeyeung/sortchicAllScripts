@@ -88,12 +88,17 @@ jtraj <- "granu"
     scale_color_gradientn(colours = colorRamps::matlab.like(5)) + 
     xlab("Position (MB)") + ylab("Log2 scChIC Signal")
   print(m.lines)
- 
-gifpath <- paste0("/Users/yeung/data/scchic/pdfs/B6_figures/for_presentation/sharpening.", Sys.Date(), ".gif")
-assertthat::assert_that(dir.exists(dirname(gifpath)))
 
-# make animaition 
-  jsub <- subset(trajs.sum, mark %in% c("H3K4me1", "H3K9me3"))
+
+marks.sub.lst <- list(c("H3K4me1", "H3K9me3"), c("H3K27me3", "H3K9me3"), c("H3K4me1", "H3K9me3"), c("H3K4me1", "H3K27me3"), c("H3K4me1", "H3K27me3")) 
+for (marks.sub in marks.sub.lst){
+  print(marks.sub)
+  marks.str <- paste(marks.sub, collapse = "_")
+  gifpath <- paste0("/Users/yeung/data/scchic/pdfs/B6_figures/for_presentation/sharpening.", Sys.Date(), ".", marks.str, ".gif")
+  assertthat::assert_that(dir.exists(dirname(gifpath)))
+  
+  # make animaition 
+  jsub <- subset(trajs.sum, mark %in% marks.sub)
   anim <- ggplot(subset(jsub, pos.round == w), aes(x = pos / 10^6, y = exprs, color = exprs)) + geom_line() + facet_wrap(~mark, ncol = 1) + 
     theme_bw() +
     theme(aspect.ratio=0.25, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
@@ -104,6 +109,7 @@ assertthat::assert_that(dir.exists(dirname(gifpath)))
       lambda.bin, transition_length = 1, state_length = 0
     ) + 
     ease_aes('linear')
-  animate(anim, fps = 25, start_pause = 0, end_pause = 0, rewind = FALSE, nframes = 100, renderer = gifski_renderer(gifpath))
-  
-  
+  animate(anim, fps = 12, start_pause = 25, end_pause = 0, rewind = FALSE, nframes = 100, renderer = gifski_renderer(gifpath))
+}
+
+# marks.sub <- c("H3K4me1", "H3K9me3")
