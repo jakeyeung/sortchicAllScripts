@@ -22,12 +22,14 @@ outdirplot <- "/Users/yeung/data/scchic/pdfs/B6_figures/trajectories"
 inmain <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6"
 
 # add trajectory
-inf.traj <- "traj_objs_all_marks.Rdata"
+inf.traj <- file.path(datmain, "traj_objs_all_marks.Rdata")
 assertthat::assert_that(file.exists(inf.traj))
 
-inf.objs <- "LDA_objects_all_marks.Rdata"
+inf.objs <- file.path(datmain, "LDA_objects_all_marks.Rdata")
 assertthat::assert_that(file.exists(inf.objs))
 
+inf.termsfilt <- file.path(datmain, "terms_filt_H3K4me1_bin_TRUE_k_50.genomewide.RData")
+assertthat::assert_that(file.exists(inf.termsfilt))
 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#C0C0C0", "#32CD32", "D3D3D3")
 
@@ -35,9 +37,7 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmark
 jmark <- jmarks[["H3K4me1"]]
 inf.dats <- lapply(jmarks, function(jmark) file.path(inmain, paste0("dat_umap_long_with_louvain.", jmark, ".RData")))
 
-inf.termsfilt <- "terms_filt_H3K4me1_bin_TRUE_k_50.genomewide.RData"
 
-assertthat::assert_that(file.exists(inf.termsfilt))
 
 lapply(inf.dats, function(x) assertthat::assert_that(file.exists(x)))
 
