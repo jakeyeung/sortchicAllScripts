@@ -17,21 +17,25 @@ source("scripts/Rfunctions/TrajFunctions.R")
 
 # Constants ---------------------------------------------------------------
 
-outdir <- "/Users/yeung/data/scchic/robjs/B6_objs"
+datmain <- "/Users/yeung/data/scchic/robjs/B6_objs"
 outdirplot <- "/Users/yeung/data/scchic/pdfs/B6_figures/trajectories"
-# outf <- file.path(outdir, "traj_objs_all_marks.Rdata")
-# outfplot <- file.path(outdirplot, "traj_objs_all_marks.pdf")
-# pdf(outfplot, useDingbats = FALSE)
+inmain <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6"
+
+# add trajectory
+inf.traj <- "traj_objs_all_marks.Rdata"
+assertthat::assert_that(file.exists(inf.traj))
+
+inf.objs <- "LDA_objects_all_marks.Rdata"
+assertthat::assert_that(file.exists(inf.objs))
+
 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#C0C0C0", "#32CD32", "D3D3D3")
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 jmark <- jmarks[["H3K4me1"]]
-inmain <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6"
 inf.dats <- lapply(jmarks, function(jmark) file.path(inmain, paste0("dat_umap_long_with_louvain.", jmark, ".RData")))
 
-# inf.termsfilt <- "/Users/yeung/data/scchic/robjs/B6_objs/terms_filt_H3K4me1_bin_TRUE_k_50.RData"
-inf.termsfilt <- "/Users/yeung/data/scchic/robjs/B6_objs/terms_filt_H3K4me1_bin_TRUE_k_50.genomewide.RData"
+inf.termsfilt <- "terms_filt_H3K4me1_bin_TRUE_k_50.genomewide.RData"
 
 assertthat::assert_that(file.exists(inf.termsfilt))
 
@@ -41,12 +45,6 @@ topics.vec <- c(7, 14, 40, 47, 48)
 hits <- c("Hbb-bs", "Il2ra", "Prf1", "S100a8", "Kit", "Gzmb", "Inpp4b", "Irf8", "S100a7a", "S100a6", "Tal1", "Sox6")
 topname <- c("Erythroblasts", "B cells", "NK cells", "Granulocytes", "Progenitors")
 
-# add trajectory
-inf.traj <- "/Users/yeung/data/scchic/robjs/B6_objs/traj_objs_all_marks.Rdata"
-assertthat::assert_that(file.exists(inf.traj))
-
-inf.objs <- "/Users/yeung/data/scchic/robjs/B6_objs/LDA_objects_all_marks.Rdata"
-assertthat::assert_that(file.exists(inf.objs))
 
 
 
