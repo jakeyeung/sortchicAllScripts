@@ -14,6 +14,8 @@ library(tidytext)
 library(umap)
 library(ggrepel)
 
+library(tidyr)
+
 library(hash)
 library(igraph)
 
@@ -26,6 +28,7 @@ source("scripts/Rfunctions/Aux.R")
 source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/PlotFunctions.R")
 
+# out.further <- LDA(out.objs$count.mat, k = 50, model = out.objs$lda, method = "Gibbs")
 
 # Load bulk ---------------------------------------------------------------
 
@@ -57,11 +60,16 @@ assertthat::assert_that(file.exists(inf))
 
 # Process LDA -------------------------------------------------------------
 
-# kchoose <- "auto"
-kchoose <- 50
+kchoose <- "50"
+# kchoose <- 40
 out.objs <- LoadLDABins(jmark, jbin = NA, top.thres = 0.995, inf = inf, convert.chr20.21.to.X.Y = FALSE, add.chr.prefix = TRUE, choose.k = kchoose)
 # load(inf, v=T)
 print(paste("K:", out.objs$out.lda@k))
+
+if (kchoose == "auto"){
+  kchoose <- paste0("auto_", out.objs$out.lda@k)
+}
+
 
 # Plot UMAP ---------------------------------------------------------------
 
@@ -188,6 +196,26 @@ terms.filt <- terms.filt.top %>%
 
 
 
+# Plot umap with toic weights ---------------------------------------------
+
+dat.umap.merge <- left_join(dat.umap.long, topics.mat)
+
+PlotXYWithColor(dat.umap.merge, xvar = "umap1", yvar = "umap2", cname = "X28")
+
+# Sox6 expression?S
+# 
+# opts <- list(iter = 1)
+# out.lda <- LDA(x = out.objs$count.mat, method = "Gibbs", model = out.objs$out.lda, control = opts, k = kchoose)
+# tm.result2 <- posterior(out.lda)
+# 
+# jterm <- subset(terms.filt, gene == "Sox6")$term[[1]]
+# exprs <- data.frame(cell = rownames(tm.result2$topics), exprs = tm.result2$topics %*% tm.result2$terms[, jterm])
+# plot(density(exprs$exprs))
+# 
+# # dat.umap.merge2 <- left_join(dat.umap.merge, exprs)
+# 
+# PlotXYWithColor(dat.umap.merge2, xvar = "umap1", yvar = "umap2", cname = "exprs")
+# plot(density(dat.umap.merge2$exprs))
 
 # plot --------------------------------------------------------------------
 
@@ -334,4 +362,4 @@ dev.off()
 # Write objects -----------------------------------------------------------
 
 
-
+save(terms.filt, file = paste0("~/data/scchic/robjs/B6_objs/terms_filt_", jmark, "_bin_", jbin, "_k_", kchoose, ".RData"))

@@ -1,7 +1,8 @@
 # Jake Yeung
-# Date of Creation: 2019-05-08
-# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/3-downstream_LDA.R
-# Check out LDA outputs
+# Date of Creation: 2019-05-13
+# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/3-downstream_LDA_H3K27me3.R
+# H3K27me3 
+
 
 rm(list=ls())
 
@@ -13,6 +14,7 @@ library(topicmodels)
 library(tidytext)
 library(umap)
 library(ggrepel)
+library(tidyr)
 
 library(hash)
 library(igraph)
@@ -25,7 +27,6 @@ library(org.Mm.eg.db)
 source("scripts/Rfunctions/Aux.R")
 source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/PlotFunctions.R")
-
 
 # Load bulk ---------------------------------------------------------------
 
@@ -44,35 +45,41 @@ dat.long <- gather(dat, key = "CellType", value = "FPKM", -c("Gene_ID", "Gene_Na
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
-jbin <- TRUE; kstr <- "25_30_40_50"
-# jbin <- FALSE; kstr <- "30_40_50"
+# jbin <- TRUE; kstr <- "25_30_40_50"
+jbin <- FALSE; kstr <- "30_40_50"
 keep.top.genes <- 150
 
 
-# jmark <- "H3K4me3"
-jmark <- "H3K4me1"
+jmark <- "H3K27me3"
 inf <- paste0("/Users/yeung/data/scchic/from_cluster/lda_outputs_bins_B6/ldaAnalysisBins_BinCellFilt2/lda_outputs.meanfilt_999.cellmin_0.cellmax_999999.binarize.", jbin, ".no_filt/lda_out_meanfilt.B6_", jmark, "_pcutoff_0.CountThres0.K-", kstr, ".Robj")
 # inf <- paste09"/Users/yeung/data/scchic/from_cluster/lda_outputs_bins_B6/ldaAnalysisBins_BinCellFilt2/lda_outputs.meanfilt_999.cellmin_0.cellmax_999999.binarize.TRUE.no_filt/lda_out_meanfilt.B6_H3K4me3_pcutoff_0.CountThres0.K-25_30_40_50.Robj"
 assertthat::assert_that(file.exists(inf))
 
 # Process LDA -------------------------------------------------------------
 
-# kchoose <- "auto"
-kchoose <- 50
+kchoose <- "auto"
+# kchoose <- 50
 out.objs <- LoadLDABins(jmark, jbin = NA, top.thres = 0.995, inf = inf, convert.chr20.21.to.X.Y = FALSE, add.chr.prefix = TRUE, choose.k = kchoose)
 # load(inf, v=T)
 print(paste("K:", out.objs$out.lda@k))
+  
+if (kchoose == "auto"){
+  kchoose <- paste0("auto_", out.objs$out.lda@k)
+}
 
 # Plot UMAP ---------------------------------------------------------------
 
 jmetric.louv='euclidean'
-jmindist.louv=0.3
+jmindist.louv=0.25
 jseed.louv=123
 
 # nn.louv.new <- c(150, 100, 33, 31)
 
-jmindist.new <- c(0.5, 0.5, 0.3, 0.3)
-nn.new <- c(60, 60, 45, 27)
+jmindist.new <- c(0.5, 0.25, 0.3, 0.3)
+nn.new <- c(48, 36, 45, 27)
+
+names(nn.new) <- jmarks
+
 custom.settings.new.lst <- mapply(function(x, y) GetUmapSettings(x, jmetric.louv, y, jseed.louv), nn.new, jmindist.new, SIMPLIFY = FALSE)
 # custom.settings.louv.new.lst <- lapply(nn.louv.new, function(x) GetUmapSettings(x, jmetric.louv, jmindist.louv, jseed.louv))
 
@@ -92,7 +99,8 @@ ggplot(dat.umap.long, aes(x = umap1, y = umap2)) + geom_point() + theme_bw() + t
 
 # x <- 100
 # x <- 115
-x <- 60  # same louvain
+# x <- nn.new[[1]]  # same louvain
+x <- nn.new[[jmark]]
 jseed <- jseed.louv
 jsettings <- GetUmapSettings(x, jmetric.louv, jmindist.louv, jseed)
 louv.hash <- DoLouvain(out.objs$tm.result$topics, jsettings)
@@ -133,6 +141,8 @@ terms.long <- data.frame(term = colnames(tm.result$terms), as.data.frame(t(tm.re
   arrange(desc(weight)) %>%
   mutate(rnk = seq(length(weight))) %>%
   rowwise()
+
+# Load facs ---------------------------------------------------------------
 
 
 
@@ -235,6 +245,7 @@ print(topics.sum)
 # PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = "X34")
 
 ntopicsfilt <- round(nrow(topics.sum) / 2)
+# ntopicsfilt <- nrow(topics.sum)
 # topics.keep <- topics.sum$topic[1:ntopicsfilt]
 topics.keep <- zscores.sum$topic[1:ntopicsfilt]
 names(topics.keep) <- topics.keep

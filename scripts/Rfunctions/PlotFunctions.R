@@ -1,13 +1,46 @@
-GetTrajColors <- function(as.hash = FALSE){
-  jcols <- c("#A29F9D", "#E7A100", "#6AB7E6")
+myplclust <- function(hclust, lab = hclust$labels, lab.col = rep(1, length(hclust$labels)),
+                      hang = 0.1, ...) {
+  ## modifiction of plclust for plotting hclust objects *in colour*!  Copyright
+  ## Eva KF Chan 2009 Arguments: hclust: hclust object lab: a character vector
+  ## of labels of the leaves of the tree lab.col: colour for the labels;
+  ## NA=default device foreground colour hang: as in hclust & plclust Side
+  ## effect: A display of hierarchical cluster with coloured leaf labels.
+  y <- rep(hclust$height, 2)
+  x <- as.numeric(hclust$merge)
+  y <- y[which(x < 0)]
+  x <- x[which(x < 0)]
+  x <- abs(x)
+  y <- y[order(x)]
+  x <- x[order(x)]
+  plot(hclust, labels = FALSE, hang = hang, ...)
+  text(x = x, y = y[hclust$order] - (max(hclust$height) * hang), labels = lab[hclust$order],
+       col = lab.col[hclust$order], srt = 90, adj = c(1, 0.5), xpd = NA, ...)
+}
+
+GetTrajColors <- function(as.hash = FALSE, add.mega = FALSE){
+  if (!add.mega){
+    jcols <- c("#A29F9D", "#E7A100", "#6AB7E6")
+  } else {
+    # jcols <- c("#A29F9D", "#E7A100", "#6AB7E6", "#999999")
+    # jcols <- c("#A29F9D", "#E7A100", "#6AB7E6", "#999999")
+    jcols <- c("#999999", "#E69F00", "#56B4E9", "#F0E442")
+  }
   if (!as.hash){
     return(jcols)
   } else {
-    jtrajs <- c("eryth", "granu", "lymphoid")
+    if (!add.mega){
+      jtrajs <- c("eryth", "granu", "lymphoid")
+    } else {
+      jtrajs <- c("eryth", "granu", "lymphoid", "mega")
+    }
     names(jcols) <- jtrajs
     jcols.hash <- hash::hash(as.list(jcols))
     return(jcols.hash)
   }
+}
+
+StripTicks <- function(x){
+  return(gsub("`", "", x))
 }
 
 PlotXYNoColor <- function(jsub, xvar, yvar, jcol = "gray80", jsize = 1){
@@ -19,26 +52,40 @@ PlotXYNoColor <- function(jsub, xvar, yvar, jcol = "gray80", jsize = 1){
     xlab("") + ylab("")
   return(m)
 }
-PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", jcol = scales::muted("darkblue"), jtitle = "", jcol.low = "gray85", jcol.mid = "gray50", jsize = 1, leg.name = NULL, jjrange = "auto"){
+PlotXYWithColor <- function(jsub, xvar = "X1", yvar = "X2", cname = "activity", jcol = scales::muted("darkblue"), jtitle = "", jcol.low = "gray85", jcol.mid = "gray50", jsize = 1, leg.name = NULL, jjrange = "auto", 
+                            cont.color = TRUE, col.palette = NA, strip.ticks = FALSE, manual.mid = NA){
   if (is.null(leg.name)){
     leg.name <- cname
   }
-  jsub <- RankOrder(jsub, cname = cname, out.cname = "orderrank")
-  jrange <- range(jsub[[cname]])
-  jmid <- min(jsub[[cname]]) + diff(range(jsub[[cname]])) / 2
-  if (jjrange != "auto"){
-    jrange <- jjrange
+  cname.str <- cname
+  if (strip.ticks){
+    cname <- StripTicks(cname)
   } 
-  m1 <- ggplot(jsub, aes_string(x = xvar, y = yvar, col = cname, order = "orderrank")) + 
+  jsub <- RankOrder(jsub, cname = cname, out.cname = "orderrank")
+  m1 <- ggplot(jsub, aes_string(x = xvar, y = yvar, col = cname.str, order = "orderrank")) + 
     ggrastr::geom_point_rast(size = jsize) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom",
                        axis.ticks=element_blank(),
                        axis.text.x=element_blank(),
                        axis.text.y=element_blank(),
                        panel.border=element_blank())  + 
-    xlab("") + ylab("") + 
-    scale_color_gradient2(low = "gray85", mid = "gray50", high = jcol, midpoint = jmid, limit = jrange, name = leg.name) + 
-    ggtitle(jtitle)
+    xlab("") + ylab("") + ggtitle(jtitle)
+  if (cont.color){
+    jrange <- range(jsub[[cname]])
+    if (is.na(manual.mid)){
+      jmid <- min(jsub[[cname]]) + diff(range(jsub[[cname]])) / 2
+    } else {
+      jmid <- manual.mid
+    }
+    # print(jmid)
+    if (jjrange != "auto"){
+      jrange <- jjrange
+    } 
+    m1 <- m1 + 
+      scale_color_gradient2(low = jcol.low, mid = jcol.mid, high = jcol, midpoint = jmid, limit = jrange, name = leg.name)
+  }  else {
+    m1 <- m1 + scale_color_manual(values = col.palette)
+  }
   return(m1)
 }
 

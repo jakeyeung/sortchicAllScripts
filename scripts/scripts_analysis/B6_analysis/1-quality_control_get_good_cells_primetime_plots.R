@@ -83,21 +83,13 @@ ReadCellSum <- function(inf){
 # Load TA counts ----------------------------------------------------------
 
 indir <- "/Users/yeung/data/scchic/from_cluster/TA_count_frequencies_bugfixed_uniqname"
-# indir <- "/Users/yeung/data/scchic/from_cluster/TA_count_frequencies_bystrand_B6"
-# indir <- "/Users/yeung/data/scchic/from_cluster/TA_count_frequencies-Ensembl95"
-
-# infs <- list.files(indir, pattern = "*.RZcounts_bugfixed.test.csv", full.names = TRUE)
 infs <- list.files(indir, pattern = "*.RZcounts_bugfixed.csv", full.names = TRUE)
-# infs <- list.files(indir, pattern = "*.RZcounts.csv", full.names = TRUE)
-# infs <- list.files(indir, pattern = "*.RZcounts_splitRS.csv", full.names = TRUE)
-
-# dat.long <- lapply(infs, ReadDinucSplit) %>%
-#   bind_rows()
 
 system.time(
   dat.long <- lapply(infs, ReadDinuc) %>%
     bind_rows()
 )
+
 
 # Plot fraction of AT across samples, for each mark -----------------------
 
@@ -107,14 +99,8 @@ dat.sum <- dat.long %>%
   mutate(frac = count / sum(count)) %>%
   arrange(desc(count))
 
-# dat.sum <- dat.long %>%
-#   filter(dinuc != "Missing") %>%
-#   group_by(samp, mark, strand) %>% 
-#   mutate(frac = count / sum(count)) %>%
-#   arrange(desc(count))
 
-# ggplot(dat.sum %>% filter(dinuc == "AT"), aes(x = frac, fill = strand)) + geom_density(alpha = 0.2) + facet_wrap(~mark) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-ggplot(dat.sum %>% filter(dinuc == "AT"), aes(x = frac)) + geom_density(alpha = 0.2) + facet_wrap(~mark) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# ggplot(dat.sum %>% filter(dinuc == "AT"), aes(x = frac)) + geom_density(alpha = 0.2) + facet_wrap(~mark) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ggplot(dat.sum %>% filter(dinuc == "TA"), aes(x = frac)) + geom_density(alpha = 0.2) + facet_wrap(~mark) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 
@@ -161,6 +147,8 @@ ggplot(dat.merge, aes(x = cellsum + 1, y = frac, color = is.empty, size = is.emp
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_x_log10() + 
   facet_wrap(~mark) + xlab("# Unique Cuts") + ylab("Fraction of cuts starting with TA") 
   #scale_x_continuous(breaks= scales::pretty_breaks())
+
+ggplot(dat.merge, aes(x = frac, fill = is.empty)) + geom_histogram() + facet_wrap(~mark) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 dat.means <- dat.merge %>%
   group_by(is.empty, mark) %>%
@@ -221,12 +209,30 @@ dat.merge.filt <- dat.merge.filt %>%
   mutate(good.cellsize = ifelse(cellsum.log > quantile(cellsum.log, probs = (1-p)), TRUE, FALSE),
          good.frac = ifelse(frac > quantile(frac, probs = (1-pfrac)), TRUE, FALSE),
          good.cell = as.logical(good.cellsize * good.frac))
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
+dat.merge.filt$mark <- factor(as.character(dat.merge.filt$mark), levels = jmarks)
 
-ggplot(dat.merge.filt, aes(x = cellsum.log, y = frac, color = good.cell, size = is.empty)) + geom_point(alpha = 0.3) + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+m.final <- ggplot(dat.merge.filt, aes(x = cellsum.log, y = frac, color = good.cell, shape = is.empty)) + geom_point(alpha = 0.3, size = 3) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") +
   facet_wrap(~mark) + 
   ylim(c(0, 1)) + 
+  xlab("Log10 # Unique Cuts") + 
+  ylab("Fraction of Unique Cuts starting with TA") + 
   ggtitle(paste(p, pfrac))
+
+ncells.dat <- subset(dat.merge.filt %>% filter(good.cell)) %>%
+  group_by(mark) %>%
+  summarise(N = length(cellsum))
+ncells.title <- paste(paste(jmarks, ncells.dat$N, sep = ": N="), collapse = "\n")
+medians.dat <- subset(dat.merge.filt %>% filter(good.cell)) %>%
+  group_by(mark) %>%
+  summarise(med.counts = median(cellsum.log))
+
+m.hist <- ggplot(dat.merge.filt %>% filter(good.cell), aes(x = cellsum.log)) + geom_histogram() +
+  facet_wrap(~mark) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") +
+  xlab("Log10 # Unique Cuts") + ggtitle(ncells.title) + 
+  geom_vline(data = medians.dat, mapping = aes(xintercept = med.counts), linetype = "dotted")
 
 
 good.cells <- dat.merge.filt %>%
@@ -278,7 +284,7 @@ ggplot(dat.merge.filt, aes(x = cellsum.log, y = frac, color = good.cell)) + geom
 # Write good cells to file  -----------------------------------------------
 
 good.cells <- data.frame(cell = subset(dat.merge.filt, good.cell)$samp)
-fwrite(good.cells, file = paste0("~/data/scchic/quality_control/good_cells.pcounts.", (1-p), ".pfrac.", (1-pfrac), ".txt"), col.names = TRUE)
+# fwrite(good.cells, file = paste0("~/data/scchic/quality_control/good_cells.pcounts.", (1-p), ".pfrac.", (1-pfrac), ".txt"), col.names = TRUE)
 
 
 # check cells with 100% frac
@@ -289,47 +295,7 @@ ggplot(dat.merge, aes(y = cellsum.log, x = is.empty)) + geom_boxplot()
 ggplot(dat.merge, aes(y = frac, x = is.empty)) + geom_boxplot()
 
 
-# indir <- "/Users/yeung/data/scchic/from_cluster/count_mat_from_bam"
-# 
-# infs <- list.files(indir, pattern = "*slidewin.csv.gz", full.names = TRUE)
-# 
-# dat.mat <- lapply(infs, ReadMat)
-# 
-# dat.cellsums <- lapply(dat.mat %>% dplyr::select(-coord), function(x) colSums(x, na.rm = TRUE))
-
-
-
-# Plot 2D -----------------------------------------------------------------
-
-
-
-
-# 
-# # Check fastq -------------------------------------------------------------
-# 
-# dat.fastq.tmp <- readRDS("/Users/yeung/data/scchic/robjs/dat.sum_parsed_barcode_diinuc_counts.rds")
-# plot(density(subset(dat.fastq.tmp, dinuc == "TA")$dinuc.frac))
-# 
-# # Weird? Compare with fastq analysis --------------------------------------
-# 
-# inmain <- "/Users/yeung/data/scchic/from_cluster/count_summaries_B6/parsed2_filt_counts"
-# infs <- list.files(inmain, pattern = "*.parsed.out.gz", full.names = TRUE)
-# 
-# dat.fastq <- lapply(infs, function(inf){
-#   dat.tmp <- fread(inf, col.names = c("countsSampname", "barcode", "dinuc"))
-#   # split first col
-#   dat.tmp$counts <- as.numeric(sapply(dat.tmp$countsSampname, function(x) strsplit(x, " ")[[1]][[1]]))
-#   dat.tmp$sampname <- sapply(dat.tmp$countsSampname, function(x) strsplit(x, " ")[[1]][[2]])
-#   dat.tmp$countsSampname <- NULL
-#   return(dat.tmp)
-# }) %>%
-#   bind_rows()
-# 
-# dat.fastq <- dat.fastq %>%
-#   group_by(sampname) %>%
-#   mutate(frac = counts / sum(counts),
-#          mark = strsplit(sampname, "\\.")[[1]][[1]])
-#  
-# # plot fraction of TA
-# ggplot(dat.fastq %>% filter(dinuc == "TA"), aes(x = frac)) + geom_density() + facet_wrap(~mark)
-# 
+pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/quality_controls_B6/quality_controls_all_marks.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+  print(m.final)
+  print(m.hist)
+dev.off()

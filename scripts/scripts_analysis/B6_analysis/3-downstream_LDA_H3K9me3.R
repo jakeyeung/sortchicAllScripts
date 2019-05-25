@@ -1,7 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-05-08
-# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/3-downstream_LDA.R
-# Check out LDA outputs
+# Date of Creation: 2019-05-10
+# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/3-downstream_LDA_H3K9me3.R
+# H3K9me3 may be different settings
 
 rm(list=ls())
 
@@ -13,6 +13,7 @@ library(topicmodels)
 library(tidytext)
 library(umap)
 library(ggrepel)
+library(tidyr)
 
 library(hash)
 library(igraph)
@@ -44,13 +45,13 @@ dat.long <- gather(dat, key = "CellType", value = "FPKM", -c("Gene_ID", "Gene_Na
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
-jbin <- TRUE; kstr <- "25_30_40_50"
-# jbin <- FALSE; kstr <- "30_40_50"
+# jbin <- TRUE; kstr <- "25_30_40_50"
+jbin <- FALSE; kstr <- "30_40_50"
 keep.top.genes <- 150
 
 
 # jmark <- "H3K4me3"
-jmark <- "H3K4me1"
+jmark <- "H3K9me3"
 inf <- paste0("/Users/yeung/data/scchic/from_cluster/lda_outputs_bins_B6/ldaAnalysisBins_BinCellFilt2/lda_outputs.meanfilt_999.cellmin_0.cellmax_999999.binarize.", jbin, ".no_filt/lda_out_meanfilt.B6_", jmark, "_pcutoff_0.CountThres0.K-", kstr, ".Robj")
 # inf <- paste09"/Users/yeung/data/scchic/from_cluster/lda_outputs_bins_B6/ldaAnalysisBins_BinCellFilt2/lda_outputs.meanfilt_999.cellmin_0.cellmax_999999.binarize.TRUE.no_filt/lda_out_meanfilt.B6_H3K4me3_pcutoff_0.CountThres0.K-25_30_40_50.Robj"
 assertthat::assert_that(file.exists(inf))
@@ -71,8 +72,8 @@ jseed.louv=123
 
 # nn.louv.new <- c(150, 100, 33, 31)
 
-jmindist.new <- c(0.5, 0.5, 0.3, 0.3)
-nn.new <- c(60, 60, 45, 27)
+jmindist.new <- c(0.5, 0.5, 0.3, 0.5)
+nn.new <- c(60, 60, 45, 30)
 custom.settings.new.lst <- mapply(function(x, y) GetUmapSettings(x, jmetric.louv, y, jseed.louv), nn.new, jmindist.new, SIMPLIFY = FALSE)
 # custom.settings.louv.new.lst <- lapply(nn.louv.new, function(x) GetUmapSettings(x, jmetric.louv, jmindist.louv, jseed.louv))
 
@@ -133,6 +134,8 @@ terms.long <- data.frame(term = colnames(tm.result$terms), as.data.frame(t(tm.re
   arrange(desc(weight)) %>%
   mutate(rnk = seq(length(weight))) %>%
   rowwise()
+
+# Load facs ---------------------------------------------------------------
 
 
 

@@ -42,7 +42,7 @@ SwitchColnames <- function(cnames, inf.experinames = "data/outputs/experinames.t
   return(cnames.new)
 }
 
-LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA.bc", fix.tech.rep = FALSE, rep.prefix = "rep", swap.tech.rep = NULL, filesuffix = ""){
+LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA.bc", fix.tech.rep = FALSE, rep.prefix = "rep", swap.tech.rep = NULL, filesuffix = "", make.cnames = TRUE){
   act.mat <- fread(file.path(mdir, paste0("Activities", filesuffix)), header = FALSE)
   se.mat <- fread(file.path(mdir, paste0("StandardError", filesuffix)), header = FALSE)
   cnames <- unlist(fread(file.path(mdir, paste0("Colnames", filesuffix)), header = FALSE), use.names = FALSE)
@@ -50,46 +50,50 @@ LoadMARA <- function(mdir, bc.inf = "data/barcode_summaries/barcodes/maya_384NLA
   zscores <- fread(file.path(mdir, "Zscores"), header = FALSE)
   colnames(zscores) <- c("motif", "zscore")
   zscores <- zscores %>% arrange(desc(zscore))
-  
-  barcodes <- read.table(bc.inf, col.names = "Barcodes", stringsAsFactors = FALSE)
-  cellhash <- hash(rownames(barcodes), unlist(barcodes))
-  cellhash.bc <- hash(unlist(barcodes), paste("cell", rownames(barcodes), sep = ""))
-  
-  cnames.new <- sapply(cnames, function(x){
-    jmark <- strsplit(x, "\\.")[[1]][[1]]
-    jtiss <- strsplit(x, "\\.")[[1]][[2]]
-    jmouse <- strsplit(x, "\\.")[[1]][[3]]
-    jrep <- paste0(rep.prefix, strsplit(x, "\\.")[[1]][[4]])
-    jcell <- cellhash.bc[[strsplit(x, "\\.")[[1]][[6]]]]
-    xnew <- paste(jtiss, jmark, jmouse, jrep, jcell, sep = "_")
-  })
-  if (fix.tech.rep){
-    for (mouse in c("m1", "m2")){
-      # get tech reps for each mouse
-      cnames.i <- grep(mouse, cnames.new)
-      cnames.sub <- cnames.new[cnames.i]
-      techreps <- unique(sapply(cnames.sub, function(x) strsplit(x, "_")[[1]][[4]]))  # repS9 and repS11
-      techreps.number <- sapply(techreps, function(techrep) readr::parse_number(techrep))  # 9, 11
-      # convert number to rank
-      techreps.rank <- rank(techreps.number)
-      techreps.new <- paste("rep", techreps.rank, sep = "")
-      cnames.sub.new <- cnames.sub  # init
-      for (i in seq(length(techreps.new))){
-        techrep <- techreps[[i]]
-        techrep.new <- techreps.new[[i]]
-        cnames.sub.new <- gsub(paste0("_", techrep, "_"), paste0("_", techrep.new, "_"), cnames.sub.new)
+
+  if (make.cnames){
+    barcodes <- read.table(bc.inf, col.names = "Barcodes", stringsAsFactors = FALSE)
+    cellhash <- hash(rownames(barcodes), unlist(barcodes))
+    cellhash.bc <- hash(unlist(barcodes), paste("cell", rownames(barcodes), sep = ""))
+    cnames.new <- sapply(cnames, function(x){
+      jmark <- strsplit(x, "\\.")[[1]][[1]]
+      jtiss <- strsplit(x, "\\.")[[1]][[2]]
+      jmouse <- strsplit(x, "\\.")[[1]][[3]]
+      jrep <- paste0(rep.prefix, strsplit(x, "\\.")[[1]][[4]])
+      jcell <- cellhash.bc[[strsplit(x, "\\.")[[1]][[6]]]]
+      xnew <- paste(jtiss, jmark, jmouse, jrep, jcell, sep = "_")
+    })
+    if (fix.tech.rep){
+      for (mouse in c("m1", "m2")){
+        # get tech reps for each mouse
+        cnames.i <- grep(mouse, cnames.new)
+        cnames.sub <- cnames.new[cnames.i]
+        techreps <- unique(sapply(cnames.sub, function(x) strsplit(x, "_")[[1]][[4]]))  # repS9 and repS11
+        techreps.number <- sapply(techreps, function(techrep) readr::parse_number(techrep))  # 9, 11
+        # convert number to rank
+        techreps.rank <- rank(techreps.number)
+        techreps.new <- paste("rep", techreps.rank, sep = "")
+        cnames.sub.new <- cnames.sub  # init
+        for (i in seq(length(techreps.new))){
+          techrep <- techreps[[i]]
+          techrep.new <- techreps.new[[i]]
+          cnames.sub.new <- gsub(paste0("_", techrep, "_"), paste0("_", techrep.new, "_"), cnames.sub.new)
+        }
+        # replace repS11 with rep1
+        # cnames.sub.new <- mapply(function(techrep, techrep.new, cname) return(gsub(techrep, techrep.new, cname)), techreps, techreps.new, cnames.sub)
+        cnames.new[cnames.i] <- cnames.sub.new
       }
-      # replace repS11 with rep1
-      # cnames.sub.new <- mapply(function(techrep, techrep.new, cname) return(gsub(techrep, techrep.new, cname)), techreps, techreps.new, cnames.sub)
-      cnames.new[cnames.i] <- cnames.sub.new
     }
+    
+    if (!is.null(swap.tech.rep)){
+      # need to source
+      # source("scripts/Rfunctions/MatchCellNameToSample.R")
+      cnames.new <- sapply(cnames.new, function(x) SwapRepNameInCell(x, swap.tech.rep))
+    }
+  } else {
+    cnames.new <- cnames
   }
   
-  if (!is.null(swap.tech.rep)){
-    # need to source
-    # source("scripts/Rfunctions/MatchCellNameToSample.R")
-    cnames.new <- sapply(cnames.new, function(x) SwapRepNameInCell(x, swap.tech.rep))
-  }
   
   colnames.lst <- data.frame(old.colnames = cnames, new.colnames = cnames.new)
   

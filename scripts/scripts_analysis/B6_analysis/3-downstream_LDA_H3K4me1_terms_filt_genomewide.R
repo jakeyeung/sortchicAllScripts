@@ -1,7 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-05-08
-# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/3-downstream_LDA.R
-# Check out LDA outputs
+# Date of Creation: 2019-05-21
+# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/3-downstream_LDA_H3K4me1_terms_filt_genomewide.R
+# Terms filt GW
 
 rm(list=ls())
 
@@ -13,6 +13,8 @@ library(topicmodels)
 library(tidytext)
 library(umap)
 library(ggrepel)
+
+library(tidyr)
 
 library(hash)
 library(igraph)
@@ -26,6 +28,7 @@ source("scripts/Rfunctions/Aux.R")
 source("scripts/Rfunctions/AuxLDA.R")
 source("scripts/Rfunctions/PlotFunctions.R")
 
+# out.further <- LDA(out.objs$count.mat, k = 50, model = out.objs$lda, method = "Gibbs")
 
 # Load bulk ---------------------------------------------------------------
 
@@ -57,11 +60,16 @@ assertthat::assert_that(file.exists(inf))
 
 # Process LDA -------------------------------------------------------------
 
-# kchoose <- "auto"
-kchoose <- 50
+kchoose <- "50"
+# kchoose <- 40
 out.objs <- LoadLDABins(jmark, jbin = NA, top.thres = 0.995, inf = inf, convert.chr20.21.to.X.Y = FALSE, add.chr.prefix = TRUE, choose.k = kchoose)
 # load(inf, v=T)
 print(paste("K:", out.objs$out.lda@k))
+
+if (kchoose == "auto"){
+  kchoose <- paste0("auto_", out.objs$out.lda@k)
+}
+
 
 # Plot UMAP ---------------------------------------------------------------
 
@@ -144,7 +152,7 @@ terms.long <- data.frame(term = colnames(tm.result$terms), as.data.frame(t(tm.re
 
 # annotate terms
 terms.filt.top <- terms.long %>%
-  filter(rnk < 1000) %>%
+  filter(rnk < Inf) %>%  # genomewide 
   rowwise()
 
 
@@ -186,152 +194,166 @@ terms.filt <- terms.filt.top %>%
   group_by(gene) %>%
   filter(weight == max(weight))
 
-
-
-
-# plot --------------------------------------------------------------------
-
-
-topics.all <- topics.sum$topic
-names(topics.all) <- topics.all
-
-top.genes.all.lst <- lapply(topics.all, function(jtopic){
-  jtmp <- subset(terms.filt, topic == jtopic)$gene
-  jtmp <- jtmp[1:min(length(jtmp), keep.top.genes)]
-  return(jtmp)
-})
-
-# get averag zscore across celltypes for each topic
-zscores.avg.all <- lapply(topics.all, function(jtopic){
-  jtopic <- as.character(jtopic)
-  top.genes <- top.genes.all.lst[[jtopic]]
-  jsub <- subset(dat.long, Gene_Name %in% top.genes) %>%
-    group_by(CellType) %>%
-    summarise(zscore = mean(zscore)) %>%
-    ungroup() %>%
-    mutate(weight = exp(zscore) / sum(exp(zscore)))
-  jsub$topic <- jtopic
-  return(jsub)
-}) %>%
-  bind_rows()
-
-
-
-# Order topics by celltype identity ---------------------------------------
-
-zscores.sum <- zscores.avg.all %>%
-  group_by(topic) %>%
-  summarise(entropy = -sum(weight * log(weight))) %>%
-  arrange(entropy)
-  
-
-# Plot top hits -----------------------------------------------------------
-
-print(topics.sum)
-# plot a topic
-# PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = "X24")
-# PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = "X13")
-# PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = "X26")
-# PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = "X34")
-
-ntopicsfilt <- round(nrow(topics.sum) / 2)
-# topics.keep <- topics.sum$topic[1:ntopicsfilt]
-topics.keep <- zscores.sum$topic[1:ntopicsfilt]
-names(topics.keep) <- topics.keep
-
-topics.ordered <- zscores.sum$topic
-
-genes.keep <- subset(terms.filt, topic %in% topics.keep)$gene # remove meaningless topics
-
-
-
-top.genes.lst <- lapply(topics.keep, function(jtopic){
-  jtmp <- subset(terms.filt, topic == jtopic)$gene
-  jtmp <- jtmp[1:min(length(jtmp), keep.top.genes)]
-  return(jtmp)
-})
-
-# do all topics
-
-
-
-# get averag zscore across celltypes for each topic
-zscores.avg <- lapply(topics.keep, function(jtopic){
-  jtopic <- as.character(jtopic)
-  top.genes <- top.genes.lst[[jtopic]]
-  jsub <- subset(dat.long, Gene_Name %in% top.genes) %>%
-    group_by(CellType) %>%
-    summarise(zscore = mean(zscore)) %>%
-    ungroup() %>%
-    mutate(weight = exp(zscore) / sum(exp(zscore)))
-  jsub$topic <- jtopic
-  return(jsub)
-}) %>%
-  bind_rows()
-
-
-# Check top topics --------------------------------------------------------
-
-# topvecs <- topics.sum$topic[1:10]
-
-dat.withtopic <- left_join(dat.umap.long, topics.long) 
-
-pdf(paste0("~/data/scchic/pdfs/B6_figures/B6_", jmark, "_bin_", jbin, "_k_", kchoose, "_topics_plot_", Sys.Date(), ".pdf"), useDingbats = FALSE)
-for (topvec in topics.keep){
-  m1 <- PlotXYWithColor(dat.withtopic %>% filter(topic == topvec), xvar = "umap1", yvar = "umap2", cname = "weight", jtitle = topvec)
-  print(m1)
-}
-dev.off()
-
-
-
-
-# do all the topics 
-
-# this goes into main figure probably
-
-pdf(paste0("~/data/scchic/pdfs/B6_figures/B6_", jmark, "_bin_", jbin, "_k_", kchoose, "_celltypes_by_topic_only.keepgenes.", keep.top.genes, ".", Sys.Date(), ".winbugfix.pdf"), useDingbats = FALSE)
-# ctypes.filt <- c("T_cell", "nucleate_erythrocyte", "natural_killer_cell", "lymphocyte_of_B_lineage", "granulocyte", "Kit_and_Sca1-positive_hematopoietic_stem_cell")
-topskeep <- topics.sum$topic[1:5]
-m1 <- ggplot(zscores.avg %>% filter(topic %in% topskeep), aes(y = topic, x = CellType, size = weight, color = weight)) + geom_point() + theme_bw() + 
-  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
-print(m1)
-for (jtop in topics.keep){
-  # plot also the UMAP 
-  m.umap <- PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = paste0("X", jtop), jtitle = jtop)
-  jsub.avg <- subset(zscores.avg.all %>% filter(topic == jtop)) %>%
-    arrange(desc(zscore))
-  ctypevec <- jsub.avg$CellType
-  jsub <- subset(dat.long, Gene_Name %in% top.genes.all.lst[[as.character(jtop)]])
-  jsub.avg$CellType <- factor(jsub.avg$CellType, levels = ctypevec)
-  jsub$CellType <- factor(jsub$CellType, levels = ctypevec)
-  # reorder by avg?
-  # sort things
-  m.genes <- ggplot(jsub, aes(x = CellType, y = zscore)) + geom_boxplot() + geom_point() + 
-    theme_bw() + 
-    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust=1, vjust = 1)) + 
-    ggtitle(paste("Topic", jtop))
-  m.top <- ggplot(jsub.avg, aes(x = CellType, y = weight)) + geom_bar(stat = "identity") + 
-    theme_bw() + 
-    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust=1, vjust = 1)) + 
-    ggtitle(paste("Topic:", jtop))
-  # show top loadings
-  hits.sub <- subset(terms.filt, topic == jtop & rnk <= keep.top.genes)
-  hits.sub <- OrderDecreasing(hits.sub, jfactor = "termgene", jval = "weight")
-  m.hits <- ggplot(hits.sub, aes(x = termgene, y = log10(weight), label = gene)) +
-    geom_text_repel() +
-    theme_bw() + theme(aspect.ratio=0.5, panel.grid.major = element_blank(),
-                       panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1)) +
-    ggtitle(paste("Topic:", jtop))
-  print(m.umap)
-  print(m.genes)
-  print(m.top)
-  print(m.hits)
-}
-dev.off()
-
-
-# Write objects -----------------------------------------------------------
-
-
-
+save(terms.filt, file = paste0("~/data/scchic/robjs/B6_objs/terms_filt_", jmark, "_bin_", jbin, "_k_", kchoose, ".genomewide.RData"))
+# 
+# 
+# # Plot umap with toic weights ---------------------------------------------
+# 
+# dat.umap.merge <- left_join(dat.umap.long, topics.mat)
+# 
+# PlotXYWithColor(dat.umap.merge, xvar = "umap1", yvar = "umap2", cname = "X28")
+# 
+# # Sox6 expression?S
+# # 
+# # opts <- list(iter = 1)
+# # out.lda <- LDA(x = out.objs$count.mat, method = "Gibbs", model = out.objs$out.lda, control = opts, k = kchoose)
+# # tm.result2 <- posterior(out.lda)
+# # 
+# # jterm <- subset(terms.filt, gene == "Sox6")$term[[1]]
+# # exprs <- data.frame(cell = rownames(tm.result2$topics), exprs = tm.result2$topics %*% tm.result2$terms[, jterm])
+# # plot(density(exprs$exprs))
+# # 
+# # # dat.umap.merge2 <- left_join(dat.umap.merge, exprs)
+# # 
+# # PlotXYWithColor(dat.umap.merge2, xvar = "umap1", yvar = "umap2", cname = "exprs")
+# # plot(density(dat.umap.merge2$exprs))
+# 
+# # plot --------------------------------------------------------------------
+# 
+# 
+# topics.all <- topics.sum$topic
+# names(topics.all) <- topics.all
+# 
+# top.genes.all.lst <- lapply(topics.all, function(jtopic){
+#   jtmp <- subset(terms.filt, topic == jtopic)$gene
+#   jtmp <- jtmp[1:min(length(jtmp), keep.top.genes)]
+#   return(jtmp)
+# })
+# 
+# # get averag zscore across celltypes for each topic
+# zscores.avg.all <- lapply(topics.all, function(jtopic){
+#   jtopic <- as.character(jtopic)
+#   top.genes <- top.genes.all.lst[[jtopic]]
+#   jsub <- subset(dat.long, Gene_Name %in% top.genes) %>%
+#     group_by(CellType) %>%
+#     summarise(zscore = mean(zscore)) %>%
+#     ungroup() %>%
+#     mutate(weight = exp(zscore) / sum(exp(zscore)))
+#   jsub$topic <- jtopic
+#   return(jsub)
+# }) %>%
+#   bind_rows()
+# 
+# 
+# 
+# # Order topics by celltype identity ---------------------------------------
+# 
+# zscores.sum <- zscores.avg.all %>%
+#   group_by(topic) %>%
+#   summarise(entropy = -sum(weight * log(weight))) %>%
+#   arrange(entropy)
+#   
+# 
+# # Plot top hits -----------------------------------------------------------
+# 
+# print(topics.sum)
+# # plot a topic
+# # PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = "X24")
+# # PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = "X13")
+# # PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = "X26")
+# # PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = "X34")
+# 
+# ntopicsfilt <- round(nrow(topics.sum) / 2)
+# # topics.keep <- topics.sum$topic[1:ntopicsfilt]
+# topics.keep <- zscores.sum$topic[1:ntopicsfilt]
+# names(topics.keep) <- topics.keep
+# 
+# topics.ordered <- zscores.sum$topic
+# 
+# genes.keep <- subset(terms.filt, topic %in% topics.keep)$gene # remove meaningless topics
+# 
+# 
+# 
+# top.genes.lst <- lapply(topics.keep, function(jtopic){
+#   jtmp <- subset(terms.filt, topic == jtopic)$gene
+#   jtmp <- jtmp[1:min(length(jtmp), keep.top.genes)]
+#   return(jtmp)
+# })
+# 
+# # do all topics
+# 
+# 
+# 
+# # get averag zscore across celltypes for each topic
+# zscores.avg <- lapply(topics.keep, function(jtopic){
+#   jtopic <- as.character(jtopic)
+#   top.genes <- top.genes.lst[[jtopic]]
+#   jsub <- subset(dat.long, Gene_Name %in% top.genes) %>%
+#     group_by(CellType) %>%
+#     summarise(zscore = mean(zscore)) %>%
+#     ungroup() %>%
+#     mutate(weight = exp(zscore) / sum(exp(zscore)))
+#   jsub$topic <- jtopic
+#   return(jsub)
+# }) %>%
+#   bind_rows()
+# 
+# 
+# # Check top topics --------------------------------------------------------
+# 
+# # topvecs <- topics.sum$topic[1:10]
+# 
+# dat.withtopic <- left_join(dat.umap.long, topics.long) 
+# 
+# for (topvec in topics.keep){
+#   m1 <- PlotXYWithColor(dat.withtopic %>% filter(topic == topvec), xvar = "umap1", yvar = "umap2", cname = "weight", jtitle = topvec)
+#   print(m1)
+# }
+# 
+# 
+# 
+# 
+# # do all the topics 
+# 
+# # this goes into main figure probably
+# 
+# # ctypes.filt <- c("T_cell", "nucleate_erythrocyte", "natural_killer_cell", "lymphocyte_of_B_lineage", "granulocyte", "Kit_and_Sca1-positive_hematopoietic_stem_cell")
+# topskeep <- topics.sum$topic[1:5]
+# m1 <- ggplot(zscores.avg %>% filter(topic %in% topskeep), aes(y = topic, x = CellType, size = weight, color = weight)) + geom_point() + theme_bw() + 
+#   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+# print(m1)
+# for (jtop in topics.keep){
+#   # plot also the UMAP 
+#   m.umap <- PlotXYWithColor(left_join(dat.umap.long, topics.mat), xvar = "umap1", yvar = "umap2", cname = paste0("X", jtop), jtitle = jtop)
+#   jsub.avg <- subset(zscores.avg.all %>% filter(topic == jtop)) %>%
+#     arrange(desc(zscore))
+#   ctypevec <- jsub.avg$CellType
+#   jsub <- subset(dat.long, Gene_Name %in% top.genes.all.lst[[as.character(jtop)]])
+#   jsub.avg$CellType <- factor(jsub.avg$CellType, levels = ctypevec)
+#   jsub$CellType <- factor(jsub$CellType, levels = ctypevec)
+#   # reorder by avg?
+#   # sort things
+#   m.genes <- ggplot(jsub, aes(x = CellType, y = zscore)) + geom_boxplot() + geom_point() + 
+#     theme_bw() + 
+#     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust=1, vjust = 1)) + 
+#     ggtitle(paste("Topic", jtop))
+#   m.top <- ggplot(jsub.avg, aes(x = CellType, y = weight)) + geom_bar(stat = "identity") + 
+#     theme_bw() + 
+#     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust=1, vjust = 1)) + 
+#     ggtitle(paste("Topic:", jtop))
+#   # show top loadings
+#   hits.sub <- subset(terms.filt, topic == jtop & rnk <= keep.top.genes)
+#   hits.sub <- OrderDecreasing(hits.sub, jfactor = "termgene", jval = "weight")
+#   m.hits <- ggplot(hits.sub, aes(x = termgene, y = log10(weight), label = gene)) +
+#     geom_text_repel() +
+#     theme_bw() + theme(aspect.ratio=0.5, panel.grid.major = element_blank(),
+#                        panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1)) +
+#     ggtitle(paste("Topic:", jtop))
+#   print(m.umap)
+#   print(m.genes)
+#   print(m.top)
+#   print(m.hits)
+# }
+# 
+# 
+# # Write objects -----------------------------------------------------------

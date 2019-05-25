@@ -48,7 +48,7 @@ ComparePublicLog <- function(inf, thres = 0.995, lab = "MyLabel", clip.chic.only
   return(list(dat.long.filt = dat.long.filt, dat.cors = dat.cors, m = m))
 }
 
-ComparePublicLinear <- function(inf, thres = 0.995, lab = "MyLabel", pseudocount = 1){
+ComparePublicLinear <- function(inf, thres = 0.995, lab = "MyLabel", pseudocount = 1, filter.min = FALSE){
   dat <- data.table::fread(inf, sep = "\t")
   
   datref <- dat[, 1]
@@ -65,12 +65,24 @@ ComparePublicLinear <- function(inf, thres = 0.995, lab = "MyLabel", pseudocount
   
   # remove NaNs
   
-  dat.long.filt <- dat.long %>%
-    filter(!is.nan(chip)) %>%
-    group_by(Sample) %>%
-    filter(log(chic) <= quantile(log(chic), probs = thres) & log(chic) >= quantile(log(chic), probs = 1 - thres)) %>%
-    filter(log(chip) <= quantile(log(chip), probs = thres) & log(chip) >= quantile(log(chip), probs = 1 - thres)) %>%
-    mutate(compare = lab)
+  if (!filter.min){
+    dat.long.filt <- dat.long %>%
+      filter(!is.nan(chip)) %>%
+      group_by(Sample) %>%
+      filter(log(chic) <= quantile(log(chic), probs = thres) & log(chic) >= quantile(log(chic), probs = 1 - thres)) %>%
+      filter(log(chip) <= quantile(log(chip), probs = thres) & log(chip) >= quantile(log(chip), probs = 1 - thres)) %>%
+      mutate(compare = lab)
+  } else {
+    dat.long.filt <- dat.long %>%
+      filter(!is.nan(chip)) %>%
+      group_by(Sample) %>%
+      # filter(chic > min(chic) & chip > min(chip)) %>%
+      filter(chic > 5e-2) %>%
+      filter(log(chic) <= quantile(log(chic), probs = thres) & log(chic) >= quantile(log(chic), probs = 1 - thres)) %>%
+      filter(log(chip) <= quantile(log(chip), probs = thres) & log(chip) >= quantile(log(chip), probs = 1 - thres)) %>%
+      mutate(compare = lab)
+    
+  }
   
   # dat.long.filt <- subset(dat.long.filt, !is.nan(chip))
   
