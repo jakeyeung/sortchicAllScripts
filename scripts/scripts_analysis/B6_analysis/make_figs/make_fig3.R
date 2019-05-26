@@ -35,6 +35,10 @@ jpseudo <- 0
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2")  # for TF clusters
 cbPalette2 <- c("#999999", "#E69F00", "#56B4E9", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#C0C0C0", "#32CD32", "D3D3D3", "#009E73")  # for Louvain
 
+# significant TFs and label size for dot plot
+zscore.cutoff <- 2
+labsize <- 5
+
 # Check paths -------------------------------------------------------------
 
 
@@ -257,8 +261,7 @@ print(m)
 
 # color by cluster 
 
-zscore.cutoff <- 2
-labsize <- 5
+
 clusters$labels
 myplclust(clusters, clusters$labels, cbPalette[clst], main = jmeth)
 jhits <- c("Tal1", "Ets1", "Cebpa", "Foxc1", "Cebpb", "Spic", "Nr4a1", "Ebf3", "Ebf1", "Irf4", "Pax6", "Mafb", "Zeb1", "Meis1", "Bcl6", "Bptf")
