@@ -13,6 +13,7 @@
     - scripts/scripts_analysis: All analysis run on Rstudio, interactive plots. Paths here often are local on computer. Maybe we can fix this by getting an Rstudio server, but need support from IT department.
     - scripts/scripts_analysis/primetime: After exploring some datasets, I put analyses that generates "pretty figures" here.
     - scripts/scripts_analysis/primetime_from_server: Primetime scripts that can run from the server 
+    - scripts/processing/first_pipeline/rerun_all_Ensembl95_B6: analysis for preprocessing and counting TA 
 
 ** How to run LDA
 
@@ -32,3 +33,4 @@ To use run_LDA_model.R all you need is a count matrix (in normal or sparse forma
 - Some packages are install.packages() some are through bioconductor
 
 - One exception: JFuncs is installed through github devtools::install_github("jakeyeung/JFuncs")
+
