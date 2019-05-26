@@ -18,10 +18,18 @@ source("scripts/Rfunctions/TrajFunctions.R")
 
 # Constants ---------------------------------------------------------------
 
+args <- commandArgs(trailingOnly = TRUE)
+
 # datmain <- "/Users/yeung/data/scchic/robjs/B6_objs"
 datmain <- "/hpc/hub_oudenaarden/jyeung/data/scChiC/from_macbook/B6_objs"
 # outdirplot <- "/Users/yeung/data/scchic/pdfs/B6_figures/trajectories"
-outdirplot <- "/tmp"
+if (length(args) == 0){
+  outdirplot <- "/tmp"
+} else {
+  outdirplot <- args[[1]]
+  assertthat::assert_that(dir.exists(outdirplot))
+}
+print(paste("outdirplot:", outdirplot))
 # inmain <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6"
 inmain <- "/hpc/hub_oudenaarden/jyeung/data/scChiC/from_macbook/bamlist_for_merging_build95_B6"
 
@@ -71,7 +79,7 @@ colsvec <- list(H3K4me1 = "cyan1", H3K4me3 = "darkblue", H3K27me3 = "darkorange1
 
 mlst <- lapply(jmarks, function(jmark) PlotXYNoColor(dat.umap.long.trajs[[jmark]], xvar = "umap1", yvar = "umap2", jcol = colsvec[[jmark]], jsize = 1))
 
-pdf(file = "/tmp/fig_2_output.pdf", useDingbats = FALSE)
+pdf(file = file.path(outdirplot, "fig_2_output.pdf"), useDingbats = FALSE)
 
 multiplot(mlst[[1]], mlst[[2]], mlst[[3]], mlst[[4]], cols = 4)
 
@@ -106,16 +114,16 @@ for (jtopic in topics.vec){
                        axis.text.y=element_blank(),
                        panel.border=element_blank())  + 
     xlab("") + ylab("") + ggtitle(jtitle) + 
-    scale_color_gradientn(colours = RColorBrewer::brewer.pal(7, "Reds"))
+    # scale_color_gradientn(colours = RColorBrewer::brewer.pal(7, "Reds"))
     # scale_color_gradientn(colours = RColorBrewer::brewer.pal(7, "YlOrRd"))
-    # scale_color_gradient(low = "gray85", high = scales::muted("darkred"))
+    scale_color_gradient(low = "gray85", high = scales::muted("darkred"))
   print(m1)
 }
 
 
 # eryth, bcells, nk cells, granu, progenitors
 topics.vec <- c(7, 14, 40, 47, 48)
-hits <- c("Hbb-bs", "Il2ra", "Prf1", "S100a8", "Kit", "Gzmb", "Inpp4b", "Irf8", "S100a7a", "S100a6", "Tal1", "Sox6")
+hits <- c("Hbb-bs", "Il2ra", "Prf1", "S100a8", "Kit", "Gzmb", "Inpp4b", "Irf8", "S100a7a", "S100a6", "Tal1", "Sox6", "Gypa")
 topname <- c("Erythroblasts", "B cells", "NK cells", "Granulocytes", "Progenitors")
 
 
