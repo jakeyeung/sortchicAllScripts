@@ -111,7 +111,7 @@ for (jtopic in topics.vec){
 
 # eryth, bcells, nk cells, granu, progenitors
 topics.vec <- c(7, 14, 40, 47, 48)
-hits <- c("Hbb-bs", "Il2ra", "Prf1", "S100a8", "Kit", "Gzmb", "Inpp4b", "Irf8", "S100a7a", "S100a6", "Tal1", "Sox6")
+hits <- c("Hbb-bs", "Il2ra", "Prf1", "S100a8", "Kit", "Gzmb", "Inpp4b", "Irf8", "S100a7a", "S100a6", "Tal1", "Sox6", "Hbb-y", "Gypa")
 topname <- c("Erythroblasts", "B cells", "NK cells", "Granulocytes", "Progenitors")
 
 
