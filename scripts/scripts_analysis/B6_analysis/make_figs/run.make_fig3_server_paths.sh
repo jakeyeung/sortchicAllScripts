@@ -7,8 +7,8 @@
 bs="/hpc/hub_oudenaarden/jyeung/code_for_analysis/scchic/scripts/scripts_analysis/B6_analysis/make_figs/make_fig3_server_paths.R"
 [[ ! -e $bs ]] && echo "$bs not found, exiting" && exit 1
 
-outdir="/hpc/hub_oudenaarden/jyeung/tmp"
-
+# outdir="/hpc/hub_oudenaarden/jyeung/tmp"
+outdir="$1"
 [[ ! -d $outdir ]] && echo "$outdir not found, exiting" && exit 1
 
 wd="/hpc/hub_oudenaarden/jyeung/code_for_analysis/scchic"
