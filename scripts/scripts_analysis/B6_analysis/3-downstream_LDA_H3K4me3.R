@@ -45,8 +45,8 @@ dat.long <- gather(dat, key = "CellType", value = "FPKM", -c("Gene_ID", "Gene_Na
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
-# jbin <- TRUE; kstr <- "25_30_40_50"
-jbin <- FALSE; kstr <- "30_40_50"
+jbin <- TRUE; kstr <- "25_30_40_50"
+# jbin <- FALSE; kstr <- "30_40_50"
 keep.top.genes <- 150
 
 
@@ -58,8 +58,8 @@ assertthat::assert_that(file.exists(inf))
 
 # Process LDA -------------------------------------------------------------
 
-kchoose <- "auto"
-# kchoose <- 50
+# kchoose <- "auto"
+kchoose <- 50
 out.objs <- LoadLDABins(jmark, jbin = NA, top.thres = 0.995, inf = inf, convert.chr20.21.to.X.Y = FALSE, add.chr.prefix = TRUE, choose.k = kchoose)
 # load(inf, v=T)
 print(paste("K:", out.objs$out.lda@k))
@@ -155,7 +155,7 @@ terms.long <- data.frame(term = colnames(tm.result$terms), as.data.frame(t(tm.re
 
 # annotate terms
 terms.filt.top <- terms.long %>%
-  filter(rnk < 1000) %>%
+  # filter(rnk < 1000) %>%  # DO GENOME WIDE
   rowwise()
 
 
@@ -194,8 +194,8 @@ terms.filt <- terms.filt.top %>%
   mutate(termgene = ifelse(!is.null(terms.hash[[term]]), terms.hash[[term]], NA)) %>%
   filter(!is.na(termgene)) %>%
   mutate(gene = sapply(termgene, function(x) strsplit(x, ";")[[1]][[2]])) %>%
-  group_by(gene) %>%
-  filter(weight == max(weight))
+  group_by(gene)  # dont filter use 
+  # filter(weight == max(weight))
 
 
 
@@ -345,5 +345,6 @@ dev.off()
 
 # Write objects -----------------------------------------------------------
 
+save(terms.filt, file = paste0("~/data/scchic/robjs/B6_objs/terms_filt_", jmark, "_bin_", jbin, "_k_", kchoose, ".genomewide_nofilt.RData"))
 
 

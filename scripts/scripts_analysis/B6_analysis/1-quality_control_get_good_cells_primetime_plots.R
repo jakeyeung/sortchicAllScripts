@@ -234,6 +234,12 @@ m.hist <- ggplot(dat.merge.filt %>% filter(good.cell), aes(x = cellsum.log)) + g
   xlab("Log10 # Unique Cuts") + ggtitle(ncells.title) + 
   geom_vline(data = medians.dat, mapping = aes(xintercept = med.counts), linetype = "dotted")
 
+m.hist.all <- ggplot(dat.merge.filt, aes(x = cellsum.log, fill = good.cell)) + geom_histogram() +
+  facet_wrap(~mark) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") +
+  xlab("Log10 # Unique Cuts") + ggtitle(ncells.title) + 
+  geom_vline(data = medians.dat, mapping = aes(xintercept = med.counts), linetype = "dotted")
+
 
 good.cells <- dat.merge.filt %>%
   group_by(mark) %>%
@@ -298,4 +304,5 @@ ggplot(dat.merge, aes(y = frac, x = is.empty)) + geom_boxplot()
 pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/quality_controls_B6/quality_controls_all_marks.", Sys.Date(), ".pdf"), useDingbats = FALSE)
   print(m.final)
   print(m.hist)
+  print(m.hist.all)
 dev.off()
