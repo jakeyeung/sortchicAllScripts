@@ -10,7 +10,8 @@ library(ggplot2)
 library(data.table)
 library(GGally)
 library(colorRamps)
-
+# library(ggrastr)
+library(parallel)
 
 source("scripts/Rfunctions/VariabilityFunctions.R")
 source("scripts/Rfunctions/Aux.R")
@@ -71,7 +72,8 @@ trajnames <- c("lymphoid", "granu", "eryth", "mega")
 # jtraj <- "eryth"
 
 
-for (jtraj in trajnames){
+# for (jtraj in trajnames){
+mclapply(trajnames, function(jtraj){
   print(jtraj)
   outpdf <- file.path(outdir, paste0("heatmap_exprs_over_traj_", jtraj, ".", Sys.Date(), ".pdf"))
   if (file.exists(outpdf)){
@@ -130,13 +132,15 @@ for (jtraj in trajnames){
     print(m1.rev)
   }
   dev.off()
-}
+# }
+}, mc.cores = length(trajnames))
 
 # Do slope calculations  --------------------------------------------------
 
-jtraj <- "granu"
+# jtraj <- "granu"
 
-for (jtraj in trajnames){
+# for (jtraj in trajnames){
+mclapply(trajnames, function(jtraj){
   print(jtraj)
   outpdf <- file.path(outdir, paste0("heatmap_exprs_over_traj_slopes_", jtraj, ".", Sys.Date(), ".pdf"))
   pdf(outpdf, useDingbats = FALSE)
@@ -181,12 +185,13 @@ for (jtraj in trajnames){
   print(m.cor2)
   
   m <- ggplot(jsub.compare, aes(y = slope.H3K9me3, x = slope)) +
-    geom_point_rast(alpha = 0.2, size = 6) +
-    # geom_point(alpha = 0.2) +
+    # geom_point_rast(alpha = 0.2, size = 6) +
+    geom_point(alpha = 0.2) +
     geom_density2d() + facet_wrap(~mark, scales = "free_x") +
     theme_bw(18) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
     xlab("Slope") + ylab("Slope (H3K9me3)")
   print(m)
   
   dev.off()
-}
+# }
+}, mc.cores = length(trajnames))
