@@ -1,9 +1,12 @@
 # Jake Yeung
-# Date of Creation: 2019-05-14
-# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/8-variance_over_pseudotime.R
-# Variance over pseudotime break down by chromosome and also across chromosome 
+# Date of Creation: 2019-06-02
+# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/analysis_checks/decompose_variance_by_chromosome.R
+# Decompose variance by chromosome 
 
-rm(list=ls())
+
+# Measure total variance and then break it down by chromosomes ------------
+
+
 
 library(data.table)
 library(dplyr)
@@ -89,7 +92,7 @@ cells.sd <- lapply(jmarks, function(jmark){
   dat.mat <-  t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics)
   # log2 transform
   dat.mat <- log2(dat.mat * jfac + jpseudo)
-  cells.sd <- GetCellSd(dat.mat, "", log2.scale = FALSE, fn = sd) %>%
+  cells.sd <- GetCellSd(dat.mat, "", log2.scale = FALSE) %>%
     mutate(mark = jmark)
   return(cells.sd)
 })
@@ -132,10 +135,13 @@ m.nofacet <- ggplot(jsub, aes(x = lambda, y = cell.sd, color = jcol, group = tra
   scale_color_identity() + 
   xlab("Pseudotime") + ylab("Genome-wide SD") 
 
-pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory/variance_over_pseudotime_fewer_trajs.", Sys.Date(), ".pdf"), useDingbats = FALSE)
-  print(m.facet)
-  print(m.nofacet)
-dev.off()
+# pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory/variance_over_pseudotime_fewer_trajs.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+print(m.facet)
+print(m.nofacet)
+# dev.off()
+
+# Break down variance by chromosomes  -------------------------------------
+
 
 # Break down variance by chromosomes  -------------------------------------
 
@@ -168,7 +174,7 @@ cells.var.chromo.within <- lapply(jmarks, function(jmark){
     dat.mat <- log2(dat.mat * jfac + jpseudo)
     cells.sd <- GetCellSd(dat.mat, grep.str = jstr, log2.scale = FALSE, fn = SumSqrDev) %>%
       mutate(mark = jmark)
-    jtest <- apply(dat.mat, MARGIN = 2, FUN = SumSqrDev)
+    # jtest <- apply(dat.mat, MARGIN = 2, FUN = SumSqrDev)
     return(cells.sd)
   }) %>%
     bind_rows()
@@ -211,7 +217,7 @@ dat.mat.global.mean <- dat.mat.global.mean[order(names(dat.mat.global.mean))]
 chromo.constant <- cells.chromo.mean %>%
   group_by(label) %>%
   summarise(nbins = unique(nbins))
-  
+
 cells.chromo.mean.wide <- tidyr::spread(cells.chromo.mean, key = cell, value = chromo.mean)
 cells.chromo.mean.wide.mat <- as.matrix(cells.chromo.mean.wide %>% dplyr::select(-label, -nbins))
 rownames(cells.chromo.mean.wide.mat) <- cells.chromo.mean.wide$label
@@ -239,15 +245,68 @@ cells.var.merged$jdiff <- cells.var.merged$cell.var.across.expect - cells.var.me
 cells.var.merged$within.frac <- cells.var.merged$cell.var.within.sum / cells.var.merged$cell.var
 plot(density(cells.var.merged$jdiff))
 
-
-
 # Break down variance by cells --------------------------------------------
 
 plot(density(cells.var.merged$cell.var.within.sum / cells.var.merged$cell.var))
-
 ggplot(cells.var.merged, aes(x = within.frac)) + geom_histogram() + facet_wrap(~mark)
 
-
 # Add trajectory info and plot --------------------------------------------
+
+cells.var.long <- cells.var.merged %>%
+  dplyr::select(-cell.var.across.expect) %>%
+  tidyr::gather(key = varname, value = varval, -c(cell, label, mark, jdiff, within.frac))
+cells.var.merged2 <- left_join(cells.var.long, trajs.long %>% dplyr::select(mark, cell, lambda, lambda.bin, traj))
+cells.var.merged2$mark <- factor(cells.var.merged2$mark, levels = c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"))
+
+# normalization factor
+chromo.constant.sum <- chromo.constant %>%
+  summarise(nbins = sum(nbins))
+
+jtrajname <- "granu"
+
+# save outputs
+save(cells.var.merged2, cells.chromo.mean.wide.mat, dat.mat.global.mean, chromo.constant, cells.var.chromo.within, file = "/Users/yeung/data/scchic/robjs/B6_objs/variance_decomposed_within_across.RData")
+
+pdf("/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory/decompose_variance.pdf", useDingbats = FALSE)
+for (jtrajname in jtrajs){
+  m.var <- ggplot(cells.var.merged2 %>% filter(traj == jtrajname), aes(x = lambda, y = varval / chromo.constant.sum$nbins, color = varname, group = varname)) + geom_point(alpha = 0.2) + facet_wrap(~mark) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_smooth(method = "lm", se = FALSE, size = 2) + 
+    xlab("Pseudotime") + ylab("Variance (log2 signal ^ 2)") + 
+    scale_color_discrete(name = "", labels = c("VarGlobal", "VarAcross", "VarWithin")) + 
+    ggtitle(jtrajname)
+  print(m.var)
+  
+  ssdiff <- sweep(x = cells.chromo.mean.wide.mat, MARGIN = 2, STATS = dat.mat.global.mean, FUN = "-") ^ 2
+  ssdiff <- sweep(x = ssdiff, MARGIN = 1, STATS = chromo.constant$nbins, FUN = "*")
+  chromo.mean.dat <- data.frame(chromo.var = unlist(data.frame(ssdiff)), 
+                                chromo = rep(rownames(ssdiff), ncol(ssdiff)), 
+                                cell = rep(colnames(ssdiff), each = nrow(ssdiff)), stringsAsFactors = FALSE) %>%
+    rowwise() %>%
+    mutate(mark = strsplit(cell, "-")[[1]][[4]])
+  m.withinbychromo <- ggplot(cells.var.chromo.within, aes(x = log10(cell.var.within), fill = mark)) + geom_density(alpha = 0.25) + facet_wrap(~label)
+  m.acrossvar <- ggplot(chromo.mean.dat, aes(x = log10(chromo.var), fill = mark)) + geom_density(alpha = 0.25) + facet_wrap(~chromo) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  print(m.withinbychromo)
+  print(m.acrossvar)
+}
+dev.off()
+
+
+
+# ggplot(cells.var.merged2 %>% filter(traj == jtrajname & varname == "cell.var.across"), aes(x = lambda, y = varval, color = varname)) + geom_point() + facet_wrap(~mark) + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
+# # by fractions?
+# ggplot(cells.var.merged2 %>% filter(traj == jtrajname), aes(x = lambda, y = within.frac)) + geom_point() + facet_wrap(~mark) + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
+# ggplot(cells.var.merged2 %>% filter(traj == jtrajname), aes(x = lambda, y = 1 - within.frac)) + geom_point() + facet_wrap(~mark) + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
+
+# Why is H3K9me3 an outlier?  ---------------------------------------------
+
+# maybe the chrX and chrY are weird?
+
 
 

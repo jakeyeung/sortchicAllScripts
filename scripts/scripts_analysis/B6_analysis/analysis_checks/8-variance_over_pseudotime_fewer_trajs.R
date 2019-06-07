@@ -1,8 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2019-05-27
-# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/make_figs/make_fig4_chromosome_over_traj.R
-# First half of fig 4: Over chromosomes
-
+# Date of Creation: 2019-05-14
+# File: ~/projects/scchic/scripts/scripts_analysis/B6_analysis/8-variance_over_pseudotime.R
+# Variance over pseudotime break down by chromosome and also across chromosome 
 
 rm(list=ls())
 
@@ -23,13 +22,6 @@ source("scripts/Rfunctions/VariabilityFunctions.R")
 source("scripts/Rfunctions/Aux.R")
 source("scripts/Rfunctions/AuxB6.R")
 source("scripts/Rfunctions/PlotFunctions.R")
-
-inf.traj <- paste0("/Users/yeung/data/scchic/robjs/B6_objs/traj_objs_all_marks.Rdata")
-assertthat::assert_that(file.exists(inf.traj))
-indir <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6"
-assertthat::assert_that(dir.exists(indir))
-
-pdfout <- paste0("/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory/variance_over_pseudotime_fewer_trajs.", Sys.Date(), ".pdf")
 
 # Get constants -----------------------------------------------------------
 
@@ -78,7 +70,7 @@ jtraj <- "granu"
 
 # Load data  --------------------------------------------------------------
 
-
+indir <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6"
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 # jmark <- jmarks[["H3K4me1"]]
 infs <- lapply(jmarks, function(jmark) list.files(indir, pattern = paste0(jmark, ".RData"), full.names = TRUE))
@@ -87,7 +79,7 @@ tm.result.lst <- lapply(infs, LoadGetTmResult)
 
 # Load trajectories -------------------------------------------------------
 
-
+inf.traj <- paste0("/Users/yeung/data/scchic/robjs/B6_objs/traj_objs_all_marks.Rdata")
 load(inf.traj, v=T)
 
 
@@ -97,7 +89,7 @@ cells.sd <- lapply(jmarks, function(jmark){
   dat.mat <-  t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics)
   # log2 transform
   dat.mat <- log2(dat.mat * jfac + jpseudo)
-  cells.sd <- GetCellSd(dat.mat, "", log2.scale = FALSE, fn = var) %>%
+  cells.sd <- GetCellSd(dat.mat, "", log2.scale = FALSE, fn = sd) %>%
     mutate(mark = jmark)
   return(cells.sd)
 })
@@ -130,8 +122,7 @@ m.facet <- ggplot(jsub, aes(x = lambda, y = cell.sd, color = jcol, group = traj)
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
                      axis.text.x = element_blank(), axis.ticks.x = element_blank()) +  
   scale_color_identity() + 
-  xlab("Pseudotime") +
-  ylab(expression('Variance ' * group("[", log[2] * ("signal")^{2}, "]")))
+  xlab("Pseudotime") + ylab("Genome-wide SD") 
 
 m.nofacet <- ggplot(jsub, aes(x = lambda, y = cell.sd, color = jcol, group = traj)) + 
   facet_wrap(~mark, nrow = 1) + 
@@ -139,42 +130,9 @@ m.nofacet <- ggplot(jsub, aes(x = lambda, y = cell.sd, color = jcol, group = tra
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
                      axis.text.x = element_blank(), axis.ticks.x = element_blank(), legend.position = "bottom") +  
   scale_color_identity() + 
-  xlab("Pseudotime") + 
-  ylab(expression('Variance ' * 
-                    group("[", log[2] * ("signal")^{2}, "]")))
-  # ylab(group("Variance [" ~ log[2] ~ signal ~ "]"~^{2}))
+  xlab("Pseudotime") + ylab("Genome-wide SD") 
 
-# plot UMAP with pseudotime 
-
-
-# Add variance to UMAP data  ----------------------------------------------
-
-dat.umap.long.trajs.merged <- left_join(bind_rows(dat.umap.long.trajs), cells.sd.merge %>% dplyr::select(cell, cell.sd, mark))
-
-# 
-# jtitle <- ""
-# jcname <- "cell.sd"
-# xvar <- "umap1"
-# yvar <- "umap2"
-# dat.plot <- dat.umap.long.trajs.merged %>% filter(mark == "H3K4me1")
-# dat.plot <- RankOrder(dat.plot, cname = jcname, out.cname = "orderrank")
-# m1 <- ggplot(dat.plot, aes_string(x = xvar, y = yvar, col = jcname, order = "orderrank")) +
-#   ggrastr::geom_point_rast(size = jsize) +
-#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom",
-#                      axis.ticks=element_blank(),
-#                      axis.text.x=element_blank(),
-#                      axis.text.y=element_blank(),
-#                      panel.border=element_blank())  +
-#   xlab("") + ylab("") + ggtitle(jtitle) +
-#   scale_color_gradient(low = "gray85", high = scales::muted("cyan"))
-# print(m1)
-
-
-pdf(pdfout, useDingbats = FALSE)
-print(m.facet)
-print(m.nofacet)
-for (jmark in jmarks){
-  m.umap <- PlotXYWithColor(dat.umap.long.trajs.merged %>% filter(mark == jmark), xvar = "umap1", yvar = "umap2", cname = "cell.sd", jcol.low = "gray85", jcol.mid = "gray50", jcol = "cyan", jsize = 4, manual.mid = 2.5)
-  print(m.umap)
-}
+pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory/variance_over_pseudotime_fewer_trajs.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+  print(m.facet)
+  print(m.nofacet)
 dev.off()

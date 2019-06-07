@@ -45,14 +45,19 @@ dat.merge <- left_join(dat.umap.long, dat.facs.filt %>% dplyr::select(cell, load
 # Save object for Chloe ---------------------------------------------------
 
 head(dat.facs.filt)
-
-save(dat.facs.filt, dat.umap.long, file = "~/data/scchic/robjs/B6_objs/umap_and_facs_data_merged.Rdata")
+outf <- "~/data/scchic/robjs/B6_objs/umap_and_facs_data_merged.Rdata"
+if (!file.exists(outf)){
+  save(dat.facs.filt, dat.umap.long, file = outf)
+}
 
 
 # Make sure loadings are in right region ----------------------------------
 
+pdfout <- "/Users/yeung/data/scchic/pdfs/B6_figures/facs_on_umap/facs_on_umap.pdf"
+pdf(pdfout, useDingbats = FALSE)
 mlst <- lapply(jmarks, function(jmark){
   m <- PlotXYWithColor(dat.merge %>% filter(mark == jmark), xvar = "umap1", yvar = "umap2", cname = "loadings", jtitle = jmark, jsize = 4) 
   # print(m)
 })
 multiplot(mlst[[1]], mlst[[2]], mlst[[3]], mlst[[4]], cols = 4)
+dev.off()

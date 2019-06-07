@@ -40,7 +40,8 @@ la.ctypes$mark <- sapply(la.ctypes$mark_ctype, function(x) strsplit(x, "_")[[1]]
 themesize <- 18
 xvar <- "umap1"; yvar <- "umap2"; jsize <- 2; jcol <- "louvain"
 
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#C0C0C0", "#32CD32", "D3D3D3")
+# cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#C0C0C0", "#32CD32", "D3D3D3")
+cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#C0C0C0", "#32CD32", "D3D3D3")
 
 # First do the activators -------------------------------------------------
 
@@ -99,7 +100,7 @@ cors.merge.h3k4me1$ctype <- gsub("_rep1", "", cors.merge.h3k4me1$compare)
 cors.merge.h3k4me1$color <- sapply(cors.merge.h3k4me1$Sample, function(x) col.hash.h3k4me1[[x]])
 
 
-pdf(patse0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/H3K4me1_ido_amit_comparison.", Sys.Date(), ".pdf"), useDingbats = FALSE)
+pdf(paste0("~/data/scchic/pdfs/B6_figures/compare_with_bulk/H3K4me1_ido_amit_comparison.", Sys.Date(), ".pdf"), useDingbats = FALSE)
   
   m <- ggplot(dat.umap.long.trajs[[jmark]], aes_string(x = xvar, y = yvar, color = jcol)) + 
     # ggrastr::geom_point_rast(size = jsize) + 

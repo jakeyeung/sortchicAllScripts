@@ -28,7 +28,8 @@ source("scripts/Rfunctions/PlotFunctions.R")
 
 # Constants ---------------------------------------------------------------
 
-outdir <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6"
+outdir <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6_stringent"
+dir.create(outdir)
 
 # Load bulk ---------------------------------------------------------------
 
