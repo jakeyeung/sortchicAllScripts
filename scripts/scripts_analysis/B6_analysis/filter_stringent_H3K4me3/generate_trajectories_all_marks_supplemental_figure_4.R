@@ -4,6 +4,7 @@
 # Remake figures for main Figure 2.
 # 
 
+rm(list=ls())
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -53,14 +54,22 @@ ncells <- lapply(jmarks, function(jmark) return(length(unique(dat.umap.long.traj
 
 mlst <- lapply(jmarks, function(jmark) PlotXYNoColor(dat.umap.long.trajs[[jmark]], xvar = "umap1", yvar = "umap2", jcol = colsvec[[jmark]], jsize = 1) + ggtitle(ncells[[jmark]]))
 
-
 # Plot with louvains ------------------------------------------------------
 
-dat.umap.sub <- dat.umap.long.trajs$H3K4me3
-trajname <- "lymphoid"
-m <- PlotXYNoColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", jsize = 5) + 
-  geom_path(data = trajs[[jmark]][[trajname]], inherit.aes = FALSE, aes(x = umap1, y = umap2), size = 2, arrow = arrow())  + 
-  ggtitle(paste(jmark, trajname))
-print(m)
+trajnames <- c("eryth", "granu", "lymphoid")
+# trajname <- "granu"
+# get colors
+colhash <- GetTrajColors(as.hash = TRUE, add.mega = FALSE)
 
+pdf("/Users/yeung/data/scchic/pdfs/B6_figures/stringent_pdfs/trajectories_stringent/trajectories_all_summarized.pdf", useDingbats = FALSE)
+for (jmark in jmarks){
+  dat.umap.sub <- dat.umap.long.trajs[[jmark]]
+  m <- PlotXYNoColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", jsize = 2) + 
+      ggtitle(paste(jmark))
+  for (trajname in trajnames){
+    m <- m + geom_path(data = trajs[[jmark]][[trajname]], inherit.aes = FALSE, aes(x = umap1, y = umap2), size = 3, color = colhash[[trajname]])
+  }
+  print(m)
+}
+dev.off()
 

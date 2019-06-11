@@ -84,7 +84,8 @@ print(m)
 
 # H3K4me3 Trajectories lymphoid  --------------------------------------------
 
-trajname <- "lymphoid"
+# trajname <- "lymphoid"
+trajname <- "granu"
 PlotXYWithColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", cname = "louvain", cont.color = FALSE, col.palette = cbPalette, jtitle = jmark, jsize = 5)
 
 louv.clstr <- c(8, 1, 5)
@@ -105,7 +106,8 @@ print(m)
 # H3K4me3 Trajectories granulocytes  --------------------------------------------
 
 
-trajname <- "granu"
+# trajname <- "granu"
+trajname <- "lymphoid"
 PlotXYWithColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", cname = "louvain", cont.color = FALSE, col.palette = cbPalette, jtitle = jmark, jsize = 5)
 
 louv.clstr <- c(6, 2, 8)  # some outlier cells? 

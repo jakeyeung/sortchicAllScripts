@@ -26,7 +26,9 @@ FitGetPval <- function(jsub, jform){
   return(data.frame(pval = pval, slope.val = slope.val, slope.se = slope.se))
 }
 
-
+SumSqrDev <- function(x){
+  return( sum( (x - mean(x)) ^ 2 ))
+}
 
 # Load data ---------------------------------------------------------------
 
@@ -220,9 +222,7 @@ print(m.nofacet)
 
 # Break down variance by chromosomes  -------------------------------------
 
-SumSqrDev <- function(x){
-  return( sum( (x - mean(x)) ^ 2 ))
-}
+
 
 cells.var <- lapply(jmarks, function(jmark){
   dat.mat <-  t(tm.result.lst[[jmark]]$terms) %*% t(tm.result.lst[[jmark]]$topics)
@@ -511,7 +511,8 @@ m.all.log.smooth <- ggplot(cell.sums.merged.all %>% filter(!is.na(traj)), aes(x 
 steps <- c("gray95", "gray70", "gray60",  "red")
 pal.sums <- color.palette(steps, c(10, 5, 10), space="rgb")
 
-pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory/cell_counts_over_umap.", Sys.Date(), ".stringent.pdf"), useDingbats=FALSE)
+# pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory/cell_counts_over_umap.", Sys.Date(), ".stringent.pdf"), useDingbats=FALSE)
+pdf(paste0("/Users/yeung/data/scchic/pdfs/B6_figures/stringent_pdfs/variance_over_trajectory_stringent.", Sys.Date(), ".stringent.pdf"), useDingbats=FALSE)
 # plot cell sums in linear
 jcname <- "cell.sum.log10"
 for (jmark in jmarks){
@@ -566,12 +567,47 @@ for (jmark in jmarks){
 }
 # put marks in one graphs
 
-
+# jtmp <- cell.sums.merged.all %>% filter(!is.na(traj)) %>% filter(mark == "H3K4me3" & traj == "granu")
+# jfit.tmp <- lm(formula = as.formula("cell.sum.log10 ~ lambda"), jtmp)
 
 
 # fit the intrachromosomal variance over pseudotime
 
 # ggplot(jfits, aes(x = traj, y = -log10(pval))) + facet_wrap(~mark) + geom_bar(stat = "identity") + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+jfits <- cell.sums.merged.all %>%
+  filter(!is.na(traj)) %>%
+  group_by(mark, traj) %>%
+  mutate(cell.sum.log2 = log2(cell.sum)) %>%
+  do(FitGetPval(., jform = as.formula("cell.sum.log2 ~ lambda"))) %>% 
+  rowwise() %>%
+  mutate(jcol = colhash[[traj]]) %>%
+  arrange(desc(pval))
+
+jfits.merged <- cell.sums.merged.all %>%
+  filter(!is.na(traj)) %>%
+  group_by(mark) %>%
+  mutate(cell.sum.log2 = log2(cell.sum)) %>%
+  do(FitGetPval(., jform = as.formula("cell.sum.log2 ~ lambda"))) %>%
+  rowwise() %>%
+  mutate(jcol = colhash[[traj]]) %>%
+  arrange(desc(pval))
+
+jfits.var <- cells.var.merged2 %>% filter(!is.na(traj)) %>%
+  group_by(mark, traj) %>%
+  filter(varname == "cell.var.within.sum") %>%
+  mutate(varval = varval / chromo.constant.sum$nbins) %>%
+  do(FitGetPval(., jform = as.formula("varval ~ lambda"))) %>%
+  rowwise() %>%
+  mutate(jcol = colhash[[traj]])
+
+jfits.merged.var <- cells.var.merged2 %>% filter(!is.na(traj)) %>%
+  group_by(mark) %>%
+  filter(varname == "cell.var.within.sum") %>%
+  mutate(varval = varval / chromo.constant.sum$nbins) %>%
+  do(FitGetPval(., jform = as.formula("varval ~ lambda"))) %>%
+  rowwise() %>%
+  mutate(jcol = colhash[[traj]])
 
 m.reg.sum <- ggplot(jfits, aes(x = traj, y = slope.val, ymin = slope.val - slope.se, ymax = slope.val + slope.se, fill = jcol)) + 
   facet_wrap(~mark, nrow = 1) + 
@@ -606,6 +642,12 @@ dev.off()
 # (jpval <- FitGetPval(cell.sums.merged.all %>% filter(!is.na(traj)) %>% filter(mark == "H3K4me1" & traj == "eryth")))
 
 # show slope value with error bar 
+
+
+
+
+# Save tables  ------------------------------------------------------------
+
 
 save(jfits, jfits.merged, cell.sums.merged.all, file = "/Users/yeung/data/scchic/robjs/fits_cell_sum_along_traj/fits_cell_size_along_traj.RData")
 save(jfits.var, jfits.merged.var, cells.var.merged2, file = "/Users/yeung/data/scchic/robjs/fits_cell_sum_along_traj/variance_along_traj.RData")
