@@ -65,7 +65,7 @@ pdf("/Users/yeung/data/scchic/pdfs/B6_figures/stringent_pdfs/trajectories_string
 for (jmark in jmarks){
   dat.umap.sub <- dat.umap.long.trajs[[jmark]]
   m <- PlotXYNoColor(dat.umap.sub, xvar = "umap1", yvar = "umap2", jsize = 2) + 
-      ggtitle(paste(jmark))
+    ggtitle(paste(jmark))
   for (trajname in trajnames){
     m <- m + geom_path(data = trajs[[jmark]][[trajname]], inherit.aes = FALSE, aes(x = umap1, y = umap2), size = 3, color = colhash[[trajname]])
   }
