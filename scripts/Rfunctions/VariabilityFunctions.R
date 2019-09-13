@@ -1,3 +1,14 @@
+FitGetPval <- function(jsub, jform){
+  jfit <- lm(formula = jform, data = jsub)
+  pval <- summary(jfit)$coefficients[2, "Pr(>|t|)"]
+  slope.val <- summary(jfit)$coefficients[2, "Estimate"]
+  slope.se <- summary(jfit)$coefficients[2, "Std. Error"]
+  return(data.frame(pval = pval, slope.val = slope.val, slope.se = slope.se))
+}
+
+SumSqrDev <- function(x){
+  return( sum( (x - mean(x)) ^ 2 ))
+}
 
 BinTrajectory <- function(trajs.spring.lst, jtraj, nearest = 0.1){
   round.int <- 1 / nearest
