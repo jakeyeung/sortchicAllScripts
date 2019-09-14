@@ -221,13 +221,7 @@ for (col.i in seq(ncol(dat.mat))){
 # boxplots can vary widely across samples
 boxplot(dat.mat, main = "Before normalization")
 
-cnames.tmp <- colnames(dat.mat)
-rnames.tmp <- rownames(dat.mat)
-dat.mat <- preprocessCore::normalize.quantiles(dat.mat, copy = TRUE)  # strong normalization,
-colnames(dat.mat) <- cnames.tmp
-rownames(dat.mat) <- rnames.tmp
 
-boxplot(dat.mat, main = "After normalization")
 ```
 
 
@@ -245,6 +239,13 @@ zero.fill <- min(dat.topics.filt[which(dat.topics.filt > 0)])
 dat.topics.filt[which(dat.topics.filt == 0)] <- zero.fill
 dat.topics.filt <- sweep(dat.topics.filt, MARGIN = 2, STATS = colSums(dat.topics.filt), FUN = "/")
 
+cnames.tmp <- colnames(dat.topics.filt)
+rnames.tmp <- rownames(dat.topics.filt)
+dat.topics.filt <- preprocessCore::normalize.quantiles(dat.topics.filt, copy = TRUE)  # strong normalization,
+colnames(dat.topics.filt) <- cnames.tmp
+rownames(dat.topics.filt) <- rnames.tmp
+
+boxplot(dat.topics.filt, main = "Data used for constructing probabilities")
 probs.lst.filt <- as.list(as.data.frame(dat.topics.filt))
 # name the list just to be safe
 probs.lst.filt <- lapply(probs.lst.filt, function(x){
@@ -282,8 +283,8 @@ all.cells <- subset(dat.umap.long.trajs[[jmark]])$cell
 names(all.cells) <- all.cells
 cell.names <- names(all.cells)
 
-cell.counts <- Matrix::colSums(count.filt)/5  # approximately account for sliding window
-cell.counts.downsamp <- Matrix::colSums(count.filt)/5
+cell.counts <- Matrix::colSums(count.filt)  # note we keep sliding window
+cell.counts.downsamp <- Matrix::colSums(count.filt)
 
 # calculate data given model 
 topics.keep <- c(7,14,28,47,3,40,13)
@@ -360,9 +361,44 @@ m.pretty <- ggplot(LL.dat.merge.pretty,
   scale_color_manual(values = cbPalette) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   ggtitle(jmark, "Probabilistic celltype inference using multinomial likelihood, \n with Ido Amit ChIP-seq data as underlying genomic region proportions")
-
-
 print(m.pretty)
+
+# show cell by cell
+
+# regress out cell.size relationship with LL
+
+ggplot(LL.dat.merge, aes(x = log10(cell.size), y = LL.max)) + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+ggplot(LL.dat.merge, aes(x = log10(cell.size), y = -LL.max)) + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+ggplot(LL.dat.merge, aes(x = cell.size, y = -LL.max)) + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+jfit <- lm(formula = LL.max ~ cell.size + I(sqrt(cell.size)), data = LL.dat.merge)
+# jfit <- lm(formula = LL.max ~ cell.size + I(log(cell.size)), data = LL.dat.merge)
+plot(LL.dat.merge$cell.size, LL.dat.merge$LL.max, pch = 20)
+lines(sort(LL.dat.merge$cell.size), predict(jfit, newdata = data.frame(cell.size = sort(LL.dat.merge$cell.size))), type = "l", lwd = 5, col = "blue")
+
+# get corectted LL.maxx
+LL.dat.merge.cor <- LL.dat.merge %>%
+  ungroup() %>%
+  mutate(LL.pred = predict(jfit)) %>%
+  rowwise() %>%
+  mutate(LL.max.norm = LL.max - LL.pred)
+
+# when cell size is small, you can't get large deltas across LL. 
+# when cell size is big, then things start becoming very unlikely, therefore also less deltas? Strange
+ggplot(LL.dat.merge.cor, aes(x = log10(cell.size), y = LL.max.norm)) + geom_point() +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+# comparing likelihoods across cells still not solved!
+m.likelihoods <- ggplot(LL.dat.merge.cor %>% mutate(ctype.pred = ifelse(is.na(ctype.pred), "znone", ctype.pred)), 
+       aes(x = umap1, y = umap2, color = LL.max)) + geom_point() + 
+  scale_color_viridis_c() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~ctype.pred)
+print(m.likelihoods)
 ```
 
 
