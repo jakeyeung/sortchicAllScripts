@@ -1,0 +1,420 @@
+---
+title: Automatically assigning celltypes to scChIC-seq data from bulk ChIP-seq
+author: Jake Yeung
+path: "~/projects/scchic/scripts/scripts_analysis/revisions/probabilistic_celltype_assignment_H3K27me3.R"
+date: 2019-09-14
+output:
+   html_document:
+     toc: true
+     highlight: zenburn
+---
+
+## Introduction
+
+I mentioned before that I think the scChIC-seq data (and probably scRNA-seq) of a single cell contains a lot more information than people think, 
+because we’re able to do things like unmix doubly stained cells on a cell-by-cell basis, if we define the right likelihood model.
+
+The nice thing about the bone marrow is that there is publicly available chip-seq data from which to compare (namingly, Lara-Astiaso, Science 2014 from Amit lab). 
+
+A naive way of assigning celltypes is to make a 2D summary of your data, create clusters, generate pseudobulk from clusters, and find which pseudobulk corresponds to which celltype, 
+given a publicly available dataset (we did this by just calculating correlations, between pseudobulk and public data).
+
+The output of this was less than satisfactory, mostly because it's difficult to compare across many correlations 
+(interpretation of correlation nonlinear and complicated: correlation of 0.7 versus 0.6 is not the same as correlation of 0.9 versus 0.8. Difference between 0.9 and 0.8 is much bigger than 0.7 versus 0.6.).
+
+It would be nice to systematically calculate the likelihood that the single-cell data was generated from a particular ChIP-seq bulk sample, then compare across many bulk samples to 
+calculate the probability that a cell came from a particular sample. 
+
+The main take home message is that there is a surprisingly large amount of information coming from scChIC-seq data of an individual cell such that you can do celltype calling without creating
+pseudobulk (as long as you have good collection of annotated bulk data). I am pretty sure this also applies to scRNA-seq. 
+
+
+
+## The generative model of scChIC-seq data
+
+We assume the single scChIC-seq data is being generated from a multinomial process (e.g., drawing balls in an urn). 
+In the balls in and urn analogy, the multinomial process is parametrized by a vector $\vec{p}$ of length $|p| = K$ representing the probability of drawing a ball from each of the K colors.
+In the scChIC-seq data, drawing a ball is sequencing a UMI, and the K colors represent the K different genomic regions from which to draw a UMI. 
+
+The multinomial likelihood $L$ of seeing a vector $\vec{y}$ of UMI counts across the K genomic bins in a cell (total UMI counts in the cell, $N = \sum_i{y}$), is:
+$$L = P(\vec{y} | \vec{p}, N) \propto \prod_{k=1}^K{\left( p_k \right) ^ {y_k}}$$
+
+If you have M annotated celltypes from which to select, then the game is to parametrize M probability vectors $\vec{p_1}, \vec{p_2}, ..., \vec{p_M}$ such that you can take your single-cell observation $\vec{y}$ and
+calculate the likelihood for each of the probability vectors, i.e., calculate $L_1, L_2, ..., L_M$ and then select the model with the highest likelihood. We can therefore use $\vec{L}$ to calculate the probability
+that a cell came a celltype.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+
+library(JFuncs)
+library(dplyr)
+library(ggplot2)
+library(data.table)
+library(topicmodels)
+library(tidytext)
+library(umap)
+library(ggrepel)
+
+library(tidyr)
+
+library(hash)
+library(igraph)
+
+library(ChIPseeker)
+library(GenomicRanges)
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(org.Mm.eg.db)
+
+library(scchicFuncs)
+library(ggrepel)
+
+library(preprocessCore)
+
+library(here)
+
+setwd(here())
+
+source("scripts/Rfunctions/VariabilityFunctions.R")
+source("scripts/Rfunctions/Aux.R")
+source("scripts/Rfunctions/AuxB6.R")
+source("scripts/Rfunctions/PlotFunctions.R")
+
+# jmark <- "H3K4me1"
+jmark <- "H3K27me3"
+
+# load publicly available data
+# indir <- "/Users/yeung/data/scchic/from_cluster/revision_objs/public_data_objs"
+indir <- "/Users/yeung/data/scchic/from_cluster/revision_objs/Wu_GenomeRes_2014_build95_B6_revisions"
+
+infs <- list.files(indir, pattern = paste0(jmark, ".*\\.tab"), full.names = TRUE)
+ctypes <- sapply(infs, function(inf) paste(strsplit(basename(inf), split = "_")[[1]][2:3], collapse = "_"), USE.NAMES = FALSE)
+names(infs) <- ctypes
+
+dat.chipseq <- lapply(ctypes, function(ctype){
+  dat.tmp <- fread(infs[[ctype]])
+  dat.tmp$ctype <- ctype
+  # take first 4 columns for now, rest are chic
+  dat.tmp <- dat.tmp[, c(1:4)]
+  colnames(dat.tmp) <- c("chr", "start", "end", ctype)
+  return(dat.tmp)
+}) %>%
+  purrr::reduce(left_join)
+# https://stackoverflow.com/questions/8091303/simultaneously-merge-multiple-data-frames-in-a-list/34393416#34393416
+
+# remove lowly expressed bins and do PCA
+jcutoff <- 5
+cols.keep <- !colnames(dat.chipseq) %in% c("chr", "start", "end")
+
+plot(density(na.omit(rowMeans(dat.chipseq[, cols.keep], na.rm = TRUE))))
+abline(v = jcutoff)
+dat.filt <- dat.chipseq[which(rowMeans(dat.chipseq[, cols.keep]) > jcutoff), ]
+plot(density(rowMeans(dat.filt[, cols.keep], na.rm = TRUE)))
+
+
+# load all chicseq data
+
+# load trajs, load H3K4me3 separately because we analyzed it separately
+inf.traj.stringent <- "/Users/yeung/data/scchic/robjs/B6_objs_stringent/traj_objs_H3K4me3.stringent.Rdata"
+load(inf.traj.stringent, v=T)
+dat.umap.long.trajs.stringent <- dat.umap.long.trajs$H3K4me3
+trajs.stringent <- trajs$H3K4me3
+trajs.objs.stringent <- trajs.objs$H3K4me3
+inf.traj <- "/Users/yeung/data/scchic/robjs/B6_objs/traj_objs_all_marks.Rdata"
+load(inf.traj, v=T)
+dat.umap.long.trajs$H3K4me3 <- dat.umap.long.trajs.stringent
+trajs$H3K4me3 <- trajs.stringent
+trajs.objs$H3K4me3 <- trajs.objs.stringent
+
+
+# get probability
+# # load data from LDA
+indir <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6"
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
+infs <- lapply(jmarks, function(jmark) list.files(indir, pattern = paste0(jmark, ".RData"), full.names = TRUE))
+infs.stringent <- "/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6_stringent/dat_umap_long_with_louvain.H3K4me3.stringent_filter.RData"
+infs$H3K4me3 <- infs.stringent
+tm.result.lst <- lapply(infs, LoadGetTmResult)
+
+
+inf.raw <- paste0("/Users/yeung/data/scchic/count_mat_binfilt_cellfilt_for_LDA/B6_", jmark, "_pcutoff_0.95_binfilt_cellfilt.2019-05-11.RData")
+load(inf.raw, v=T)
+
+
+
+# keep only bins that are interesting across topics
+
+term.mat <- tm.result.lst[[jmark]]$terms
+
+
+topics.sum <- OrderTopicsByEntropy(tm.result.lst[[jmark]])
+topics.sum$topic <- gsub("^X", "", topics.sum$topic)
+topics.keep <- topics.sum$topic[1:20]
+names(topics.keep) <- topics.keep
+
+nterms.keep <- 1000
+terms.keep <- lapply(topics.keep, FUN = function(jtop){
+  eryth.terms <- term.mat[jtop, ]
+  jterms <- names(head(sort(eryth.terms, decreasing=TRUE), n = nterms.keep))
+  return(jterms)
+}) %>%
+  unlist()
+
+# hande duplicates
+terms.keep <- unique(terms.keep)
+
+
+
+```
+
+
+## Analysis and results
+
+### Quick PCA of the Lara-Astiaso ChIP-seq bone marrow data
+
+Check that the ChIPseq data looks reasonable.
+
+```{r pcacheck}
+
+dat.input <- as.matrix(t(subset(dat.filt, select = c(-chr, -start, -end))))
+dat.input.norm <- t(scale(t(dat.input), center = TRUE, scale = TRUE))
+dat.input.norm <- scale(dat.input.norm, center = TRUE, scale = TRUE)
+
+dat.pca <- prcomp(dat.input.norm, center = FALSE, scale. = FALSE)
+
+dat.proj <- dat.input %*% dat.pca$rotation %*% diag(dat.pca$sdev)
+
+dat.proj.long <- data.frame(celltype = rownames(dat.proj), pc1 = dat.proj[, 1], pc2 = dat.proj[, 2], stringsAsFactors = FALSE)
+
+ggplot(dat.proj.long, aes(x = pc1, y = pc2, label = celltype)) + geom_point() + geom_text_repel() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0) + geom_hline(yintercept = 0)
+
+```
+
+### Normalize across samples to ensure ChIP-seq signal across bulk samples is comparable
+
+We will use quantlile normalization to ensure comoparability across samples. 
+Since we don't care about the absolute value of the underlying signal, we normalize the quantiles
+so samples are comparable. 
+
+The key is you want relative signal across bins to be comparable across samples. I think quantile
+normalization is an easy way to achieve this (I tried without, still works for this dataset, but doing the
+quantile normalization is likely to be more robust).
+
+
+```{r normalizemagic}
+
+# handle the NaNs
+dat.mat <- as.matrix(dat.chipseq[, -c(1,2,3)])
+rownames(dat.mat) <- paste(dat.chipseq$chr, paste(dat.chipseq$start, dat.chipseq$end, sep = "-"), sep = ":")
+
+# set NaNs to zeros (rowwise??)
+dat.mat[which(is.nan(dat.mat))] <- 0  # we can't have zeros in probability vector, fill these zeros with something else later
+
+# remove the top outlier in each
+for (col.i in seq(ncol(dat.mat))){
+  print(col.i)
+  vec.tmp <- dat.mat[, col.i]
+  row.i <- which(vec.tmp == max(vec.tmp))
+  dat.mat[row.i, col.i] <- 0
+}
+
+# boxplots can vary widely across samples
+boxplot(dat.mat, main = "Before normalization")
+
+
+```
+
+
+## Set up probability vectors for multinomial likelihoods
+
+Now that we have processed our reference dataset, let's construct our probability vectors and calculate likelihoods.
+
+```{r probs}
+
+
+dat.topics.filt <- dat.mat[unlist(terms.keep), ]
+
+# handle zeros
+zero.fill <- min(dat.topics.filt[which(dat.topics.filt > 0)])
+dat.topics.filt[which(dat.topics.filt == 0)] <- zero.fill
+dat.topics.filt <- sweep(dat.topics.filt, MARGIN = 2, STATS = colSums(dat.topics.filt), FUN = "/")
+
+cnames.tmp <- colnames(dat.topics.filt)
+rnames.tmp <- rownames(dat.topics.filt)
+dat.topics.filt <- preprocessCore::normalize.quantiles(dat.topics.filt, copy = TRUE)  # strong normalization,
+colnames(dat.topics.filt) <- cnames.tmp
+rownames(dat.topics.filt) <- rnames.tmp
+
+boxplot(dat.topics.filt, main = "Data used for constructing probabilities")
+probs.lst.filt <- as.list(as.data.frame(dat.topics.filt))
+# name the list just to be safe
+probs.lst.filt <- lapply(probs.lst.filt, function(x){
+  names(x) <- rownames(dat.topics.filt)
+  return(x)
+}) 
+
+
+# use same bins between ChIC and ChIP
+
+# dat.mat.filt <- dat.mat
+bins.keep <- rownames(dat.mat)
+# filter for bins 
+# add chr to rownames
+rownames(count.dat$counts) <- sapply(rownames(count.dat$counts), function(x) paste0("chr", x), USE.NAMES = FALSE)
+count.filt <- count.dat$counts[bins.keep, ]
+
+
+
+
+# check we didnt' filter out too many bins
+par(mfrow=c(2,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+plot(hist(Matrix::colSums(count.filt), breaks = 100))
+plot(hist(Matrix::colSums(count.dat$counts), breaks = 100))
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+
+```
+
+## Calculate likelihood cell by cell
+
+
+```{r infercelltype}
+
+all.cells <- subset(dat.umap.long.trajs[[jmark]])$cell
+names(all.cells) <- all.cells
+cell.names <- names(all.cells)
+
+cell.counts <- Matrix::colSums(count.filt)  # note we keep sliding window
+cell.counts.downsamp <- Matrix::colSums(count.filt)
+# 
+# # calculate data given model 
+# topics.keep <- c(7,14,28,47,3,40,13)
+# names(topics.keep) <- topics.keep
+# 
+# nterms.keep <- 1000
+# terms.keep <- lapply(topics.keep, FUN = function(jtop){
+#   eryth.terms <- term.mat[jtop, ]
+#   jterms <- names(head(sort(eryth.terms, decreasing=TRUE), n = nterms.keep))
+#   return(jterms)
+# }) %>%
+#   unlist()
+# 
+# # hande duplicates
+# terms.keep <- unique(terms.keep)
+
+LL.ctype.lst <- lapply(all.cells, function(cell.name){
+  cell.vec <- count.filt[terms.keep, cell.name]
+  LL.vec <- sapply(probs.lst.filt, function(jprob){
+    assertthat::assert_that(all(names(cell.vec) == names(jprob)))
+    return(dmultinom(x = cell.vec, prob = jprob, log = TRUE))
+  })
+})
+# calculate probability of model given data 
+p.ctype.lst <- lapply(LL.ctype.lst, SoftMax)
+
+# summaize
+LL.dat <- lapply(cell.names, function(cname){
+  LL.vec <- LL.ctype.lst[[cname]]
+  p.vec <- p.ctype.lst[[cname]]
+  cell.count = cell.counts[[cname]]
+  cell.count.downsamp = cell.counts.downsamp[[cname]]
+  if (all(is.infinite(LL.vec))){
+    LL.max <- NA
+    p.max <- NA
+    best.ctype <- NA
+  } else {
+    LL.max <- max(LL.vec)
+    p.max <- max(p.vec)
+    best.ctype <- names(which.max(LL.vec))
+  }
+  dat.tmp <- data.frame(cell = cname, LL.max = LL.max, p.max = p.max, ctype.pred = best.ctype, cell.size = cell.count, cell.count.downsamp = cell.count.downsamp)
+  return(dat.tmp) 
+}) %>%
+  bind_rows()
+
+LL.sum <- LL.dat %>%
+  group_by(ctype.pred) %>%
+  summarise(ncell = length(ctype.pred))
+
+print(LL.sum)
+
+LL.dat.merge <- left_join(dat.umap.long.trajs[[jmark]], LL.dat)
+
+```
+
+### Show UMAP of celltype assignments
+
+
+```{r output}
+
+cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+
+# reduce number of colors by merging known groups together
+# collapse EryA and EryB together
+# collapse CD4, CD8 together
+LL.dat.merge.pretty <- LL.dat.merge %>%
+  rowwise() %>%
+  mutate(ctype.pred = ifelse(ctype.pred == "EryA" | ctype.pred == "EryB", "EryAorB", ctype.pred),
+         ctype.pred = ifelse(ctype.pred == "CD4" | ctype.pred == "CD8", "CD4or8", ctype.pred))
+
+m.pretty <- ggplot(LL.dat.merge.pretty, 
+       aes(x = umap1, y = umap2, color = ctype.pred)) + geom_point(alpha=0.75, size = 3) + 
+  scale_color_manual(values = cbPalette) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  ggtitle(jmark, "Probabilistic celltype inference using multinomial likelihood, \n with Ido Amit ChIP-seq data as underlying genomic region proportions")
+print(m.pretty)
+```
+
+### Aside: try to compare likelihoods across cells
+
+```{r likelihoods}
+
+# regress out cell.size relationship with LL
+
+ggplot(LL.dat.merge, aes(x = log10(cell.size), y = LL.max)) + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+# ggplot(LL.dat.merge, aes(x = log10(cell.size), y = -LL.max)) + geom_point() + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
+# ggplot(LL.dat.merge, aes(x = cell.size, y = -LL.max)) + geom_point() + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+jfit <- lm(formula = LL.max ~ cell.size + I(sqrt(cell.size)), data = LL.dat.merge)
+# jfit <- lm(formula = LL.max ~ cell.size + I(log(cell.size)), data = LL.dat.merge)
+plot(LL.dat.merge$cell.size, LL.dat.merge$LL.max, pch = 20)
+lines(sort(LL.dat.merge$cell.size), predict(jfit, newdata = data.frame(cell.size = sort(LL.dat.merge$cell.size))), type = "l", lwd = 5, col = "blue")
+
+# get corectted LL.maxx
+LL.dat.merge.cor <- LL.dat.merge %>%
+  ungroup() %>%
+  mutate(LL.pred = predict(jfit)) %>%
+  rowwise() %>%
+  mutate(LL.max.norm = LL.max - LL.pred)
+
+# when cell size is small, you can't get large deltas across LL. 
+# when cell size is big, then things start becoming very unlikely, therefore also less deltas? Strange
+ggplot(LL.dat.merge.cor, aes(x = log10(cell.size), y = LL.max.norm)) + geom_point() +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+# comparing likelihoods across cells still not solved!
+m.likelihoods <- ggplot(LL.dat.merge.cor %>% mutate(ctype.pred = ifelse(is.na(ctype.pred), "znone", ctype.pred)), 
+       aes(x = umap1, y = umap2, color = LL.max)) + geom_point() + 
+  scale_color_viridis_c() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~ctype.pred)
+print(m.likelihoods)
+```
+
+
+
+
+## Discussion
+
+Inferring cell type cell-by-cell is possible because there is a lot of information from individual cells of scChIC-seq data (no clustering needing). 
+
+Of course, if there are novel celltypes that are not in the model, the method does not figure this out. We would need to interrogate the likelihoods of each cell and 
+find outlier cells that seem to be very unlikely across all models. 
+
+
+
