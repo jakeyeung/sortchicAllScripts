@@ -12,6 +12,10 @@ library(data.table)
 library(JFuncs)
 library(topicmodels)
 library(ggrepel)
+library(here)
+library(scchicFuncs)
+
+setwd(here())
 
 source("scripts/Rfunctions/AuxB6.R")
 source("scripts/Rfunctions/PlotFunctions.R")
