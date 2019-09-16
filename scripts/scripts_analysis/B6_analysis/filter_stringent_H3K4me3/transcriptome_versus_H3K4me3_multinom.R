@@ -88,12 +88,32 @@ dat.norm.long <- gather(data.frame(gene = rownames(dat.mat), dat.mat), key = "ce
 terms.keep.dat <- out2.df.closest %>%
   group_by(gene) %>%
   filter(dist.to.tss == min(dist.to.tss))
-terms.keep <- terms.keep.dat$region_coord
+terms.closest <- terms.keep.dat$region_coord
 
-term2gene <- hash(terms.keep.dat$region_coord, terms.keep.dat$gene)
-gene2term <- hash(terms.keep.dat$gene, terms.keep.dat$region_coord)
+terms.sum <- terms.filt %>%
+  group_by(gene) %>%
+  dplyr::filter(rnk == min(rnk))
+
+# term2gene <- hash(terms.keep.dat$region_coord, terms.keep.dat$gene)
+# gene2term <- hash(terms.keep.dat$gene, terms.keep.dat$region_coord)
+
+term2gene <- hash(terms.sum$term, terms.sum$gene)
+gene2term <- hash(terms.sum$gene, terms.sum$term)
 
 genes.keep <- rownames(dat.mat)
+
+
+
+# Find correlated celltypes -----------------------------------------------
+
+
+dat.pca <- prcomp(t(dat.mat), center = TRUE, scale. = TRUE)
+dat.proj <- t(dat.mat) %*% dat.pca$rotation %*% diag(dat.pca$sdev)
+
+plot(dat.proj[, 1], dat.proj[, 2])
+text(dat.proj[, 1], dat.proj[, 2], labels = rownames(dat.proj))
+
+
 
 # Order entropies, and check z-scores -------------------------------------
 
@@ -146,14 +166,27 @@ rownames(count.dat$counts) <- paste("chr", rownames(count.dat$counts), sep = "")
 all.cells <- colnames(count.dat$counts)
 names(all.cells) <- all.cells
 
-genes.all <- rownames(dat.mat)
-terms.all <- subset(terms.keep.dat, gene %in% genes.all)$region_coord
+# take most interesting topics
+top.nterms <- 150
+topics.keep <- topics.sum$topic
+terms.all <- unique(subset(terms.sum %>% arrange(desc(weight)), rnk <= top.nterms)$term)
 
-genes.keep <- sapply(terms.all, function(x) term2gene[[x]])
-terms.keep <- sapply(genes.keep, function(x) gene2term[[x]])
+genes.all <- unlist(sapply(terms.all, function(x) term2gene[[x]]))
+
+# genes.keep <- intersect(genes.all, rownames(dat.mat))
+# terms.keep <- sapply(genes.keep, function(x) gene2term[[x]])
+
+
+# genes.all <- rownames(dat.mat)
+# terms.all <- subset(terms.keep.dat, gene %in% genes.all)$region_coord
+# 
+# genes.keep <- sapply(terms.all, function(x) term2gene[[x]])
+# terms.keep <- sapply(genes.keep, function(x) gene2term[[x]])
 
 count.filt <- count.dat$counts[terms.keep, ]
 rownames(count.filt) <- genes.keep
+
+
 
 # Do likelihoods ----------------------------------------------------------
 
@@ -163,7 +196,11 @@ jcutoff <- 1.8
 plot(density(rowMeans(dat.mat)))
 abline(v = jcutoff)
 
-dat.mat.filt <- dat.mat[rowMeans(dat.mat) > jcutoff, ]
+dat.mat.filt <- dat.mat[apply(dat.mat, 1, max) > jcutoff, ]
+
+genes.keep <- intersect(genes.all, rownames(dat.mat.filt))
+terms.keep <- sapply(genes.keep, function(x) gene2term[[x]])
+
 dat.mat.filt <- dat.mat.filt[genes.keep, ]
 
 # handle zeros
@@ -194,6 +231,7 @@ LL.ctype.lst <- lapply(all.cells, function(cell.name){
   cell.vec <- count.filt[genes.filt, cell.name]
   LL.vec <- sapply(probs.lst.filt, function(jprob){
     assertthat::assert_that(all(names(cell.vec) == names(jprob)))
+    # return(dmultinom(x = cell.vec, prob = jprob, log = TRUE))
     return(dmultinom(x = cell.vec, prob = jprob, log = TRUE))
   })
 })
@@ -244,15 +282,31 @@ ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = p.max)) + geom_point() +
   scale_color_viridis_c() + 
   facet_wrap(~ctype.pred) + theme_bw () + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-# why monocytes?
-granu.genes <- subset(terms.filt, topic == "42")$gene[1:10]
+ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = LL.max/cell.size)) + geom_point() + 
+  scale_color_viridis_c() + 
+  facet_wrap(~ctype.pred) + theme_bw () + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-probs.lst.filt$granulocyte[granu.genes]
-probs.lst.filt$monocyte[granu.genes]
+# # why megakaryocytes? 
+# mega.genes <- sort(probs.lst.filt$megakaryocyte, decreasing = TRUE)[1:10]
+# 
+# plot(probs.lst.filt$megakaryocyte, probs.lst.filt$lymphocyte_of_B_lineage)
+# text(probs.lst.filt$megakaryocyte, probs.lst.filt$lymphocyte_of_B_lineage, names(probs.lst.filt[[1]]))
+# abline(a = 0, b = 1)
+# 
+# plot(probs.lst.filt$megakaryocyte, probs.lst.filt$granulocyte)
+# text(probs.lst.filt$megakaryocyte, probs.lst.filt$granulocyte, names(probs.lst.filt[[1]]))
+# abline(a = 0, b = 1)
 
-# why does top 10 granu genes show separation ? 
-ggplot(subset(dat.norm.long, gene %in% granu.genes), 
-       aes(x = forcats::fct_reorder(celltype, zscore, median), y = zscore, group = celltype)) + 
-  geom_point() +  geom_boxplot() + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
+# # why monocytes?
+# granu.genes <- subset(terms.filt, topic == "42")$gene[1:10]
+# 
+# probs.lst.filt$granulocyte[granu.genes]
+# probs.lst.filt$monocyte[granu.genes]
+# 
+# # why does top 10 granu genes show separation ? 
+# ggplot(subset(dat.norm.long, gene %in% granu.genes), 
+#        aes(x = forcats::fct_reorder(celltype, zscore, median), y = zscore, group = celltype)) + 
+#   geom_point() +  geom_boxplot() + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
