@@ -13,7 +13,6 @@ library(JFuncs)
 library(topicmodels)
 
 library(preprocessCore)
-
 library(here())
 
 library(hash)
@@ -21,12 +20,14 @@ library(hash)
 library(scchicFuncs)
 
 setwd(here())
-
 source("scripts/Rfunctions/PlotFunctions.R")
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
-jmark <- "H3K4me3"
-jmethod <- "pearson"
+# jmark <- "H3K4me3"
+# jmark <- "H3K4me1"
+jmark <- "H3K9me3"
+# jmark <- "H3K27me3"
+
 # Load data ---------------------------------------------------------------
 
 # inf <- "/Users/yeung/data/scchic/robjs/B6_objs_stringent/terms_filt_H3K4me3_bin_TRUE_k_50.genomewide_nofilt.stringent_filter.RData"
@@ -40,9 +41,11 @@ tm.result.stringent <- posterior(out.objs$out.lda)
 
 inf.lda.all <- "/Users/yeung/data/scchic/robjs/B6_objs/LDA_objects_all_marks.Rdata"
 load(inf.lda.all, v=T)
-
-
 out.objs$H3K4me3 <- out.objs.stringent
+tm.result.lst <- lapply(out.objs, function(x) posterior(x$out.lda))
+tm.result.lst[["H3K4me3"]] <- tm.result.stringent
+
+
 
 inf.objs <- "/Users/yeung/data/scchic/robjs/B6_objs_stringent/traj_objs_H3K4me3.stringent.Rdata"
 load(inf.objs, v=T)
@@ -132,13 +135,13 @@ text(dat.proj[, 1], dat.proj[, 2], labels = rownames(dat.proj))
 
 # Order entropies, and check z-scores -------------------------------------
 
-topics.mat <- tm.result.stringent$topics
+topics.mat <- tm.result.lst[[jmark]]$topics
 colnames(topics.mat) <- paste("Topic", colnames(topics.mat), sep = "_")
 topics.mat <- data.frame(cell = rownames(topics.mat), topics.mat, stringsAsFactors = FALSE)
 
 dat.umap.merge <- left_join(dat.umap.long.trajs[[jmark]], topics.mat)
 
-topics.sum <- OrderTopicsByEntropy(tm.result.stringent, jquantile = 0.99) %>%
+topics.sum <- OrderTopicsByEntropy(tm.result.lst[[jmark]], jquantile = 0.99) %>%
   mutate(topic = gsub("^X", "Topic_", topic))
 
 jtopic <- "Topic_2"
@@ -183,11 +186,11 @@ names(all.cells) <- all.cells
 
 # take most interesting topics
 top.nterms <- 150
-# topics.keep <- topics.sum$topic
-topics.keep <- c("Topic_40", "Topic_39", "Topic_27",   # monocyte
-                 "Topic_19", "Topic_8", "Topic_34", 
-                 "Topic_11", "Topic_6", "Topic_49", 
-                 "Topic_14", "Topic_1", "Topic_42")
+topics.keep <- topics.sum$topic
+# topics.keep <- c("Topic_40", "Topic_39", "Topic_27",   # monocyte
+#                  "Topic_19", "Topic_8", "Topic_34", 
+#                  "Topic_11", "Topic_6", "Topic_49", 
+#                  "Topic_14", "Topic_1", "Topic_42")
 
 terms.all <- unique(subset(terms.sum %>% arrange(desc(weight)), rnk <= top.nterms)$term)
 genes.all <- unlist(sapply(terms.all, function(x) term2gene[[x]]))
@@ -207,9 +210,7 @@ print(paste("N genes after:", length(genes.all)))
 # genes.keep <- sapply(terms.all, function(x) term2gene[[x]])
 # terms.keep <- sapply(genes.keep, function(x) gene2term[[x]])
 
-# do below
-# count.filt <- count.dat$counts[terms.keep, ]
-# rownames(count.filt) <- genes.keep
+
 
 
 
@@ -238,7 +239,9 @@ genes.filt <- intersect(rownames(dat.mat.filt), genes.keep)
 
 # dat.mat.filt <- dat.mat.filt[genes.filt, ]
 # try using zscore
-dat.mat.filt <- 2^dat.norm.zscore.mat[genes.filt, ]
+dat.mat.filt <- 2^(-1 * dat.norm.zscore.mat[genes.filt, ])
+# flip sign because represssive?
+
 
 # make likelihoods
 probs.lst.filt <- as.list(as.data.frame(dat.mat.filt))
@@ -247,6 +250,7 @@ probs.lst.filt <- lapply(probs.lst.filt, function(x){
   names(x) <- rownames(dat.mat.filt)
   return(x)
 }) 
+
 
 
 # Prepare count mat -------------------------------------------------------
@@ -325,11 +329,6 @@ ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = p.max)) + geom_point() +
 ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = LL.max/cell.size)) + geom_point() + 
   scale_color_viridis_c() + 
   facet_wrap(~ctype.pred) + theme_bw () + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
-
-# Debug below -------------------------------------------------------------
-
-
 # 
 # # why megakaryocytes?
 # # mega.genes <- sort(probs.lst.filt$megakaryocyte, decreasing = TRUE)[1:10]
