@@ -5,3 +5,4 @@
 outputs_R
 *.html
 *.pdf
+*scripts/transfer_scripts
