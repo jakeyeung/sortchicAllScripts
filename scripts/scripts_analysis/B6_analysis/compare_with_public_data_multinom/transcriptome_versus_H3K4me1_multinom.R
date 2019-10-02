@@ -22,6 +22,12 @@ library(scchicFuncs)
 setwd(here())
 source("scripts/Rfunctions/PlotFunctions.R")
 
+
+
+# Constants ---------------------------------------------------------------
+
+
+
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 # jmark <- "H3K4me3"
 jmark <- "H3K4me1"
