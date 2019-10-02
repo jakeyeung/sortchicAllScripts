@@ -13,13 +13,18 @@ library(data.table)
 library(umap)
 library(here)
 
+library(Matrix)
+
+library(scchicFuncs)
+
+library(ggrepel)
+
 setwd(here())
 
 source("scripts/Rfunctions/VariabilityFunctions.R")
 source("scripts/Rfunctions/Aux.R")
 source("scripts/Rfunctions/AuxB6.R")
 source("scripts/Rfunctions/PlotFunctions.R")
-
 
 
 # Functions ---------------------------------------------------------------
@@ -128,9 +133,20 @@ load(inf.raw, v=T)
 probs.lst.filt <- readRDS("/Users/yeung/data/scchic/public_data/proportions_vectors_Lara-Astiaso.H3K4me3.2019-09-15.rds")
 
 
-# Set up likelihoods ------------------------------------------------------
+# Add decoys --------------------------------------------------------------
 
 terms.keep <- names(probs.lst.filt[[1]])
+# names(terms.keep) <- terms.keep
+
+p.avg <- rowMeans(as.data.frame(probs.lst.filt))
+p.flat <- rep(1 / length(p.avg), length(p.avg))
+
+probs.lst.filt$Avg <- p.avg
+probs.lst.filt$Unif <- p.flat
+
+
+# Set up likelihoods ------------------------------------------------------
+
 
 count.filt <- count.dat$counts
 count.filt <- count.filt[terms.keep, ]
@@ -178,7 +194,6 @@ LL.sum <- LL.dat %>%
 
 LL.dat.merge <- left_join(umap.merged, LL.dat)
 
-
 # Plot again --------------------------------------------------------------
 
 cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
@@ -188,6 +203,9 @@ LL.dat.merge.pretty <- LL.dat.merge %>%
   mutate(ctype.pred = ifelse(ctype.pred == "EryA" | ctype.pred == "EryB", "EryAorB", ctype.pred),
          ctype.pred = ifelse(ctype.pred == "CD4" | ctype.pred == "CD8", "CD4or8", ctype.pred))
 
+# use cutoff to be confident on celltype prediction 
+
+
 m.pretty <- ggplot(LL.dat.merge.pretty,
                    aes(x = umap1, y = umap2, color = ctype.pred)) + geom_point(alpha=0.75, size = 3) + 
   scale_color_manual(values = cbPalette) +
@@ -196,11 +214,61 @@ m.pretty <- ggplot(LL.dat.merge.pretty,
   facet_wrap(~batch)
 print(m.pretty)
 
+# find an MF and Mono, whicih they different from Granu and B?
+# take a low probaibility MF
+
+# take all mono and arrange by rank?
+jctype <- "Mono"
+jctype <- "MF"
+jctype <- "GN"
+jctype <- "B"
+jsub.not <- subset(LL.dat.merge, ctype.pred != jctype) %>% arrange(p.max) %>%
+  mutate(rnk = 0,
+         p.adj = NA)
+jsub <- subset(LL.dat.merge, ctype.pred == jctype) %>% arrange(p.max) %>%
+  mutate(rnk = seq(length(cell)),
+         p.adj = ifelse(p.max > -0.1, p.max, NA))
+jsub.merged <- bind_rows(jsub, jsub.not)
+ggplot(jsub.merged, aes(x = umap1, y = umap2, color = rnk)) + 
+  geom_point(alpha = 0.9) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + ggtitle("H3K4me3") + 
+  scale_color_viridis_c()
+ggplot(jsub.merged, aes(x = umap1, y = umap2, color = p.adj)) + 
+  geom_point(alpha = 0.9) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + ggtitle("H3K4me3") + 
+  scale_color_viridis_c(na.value = "gray85")
+plot(jsub$rnk, jsub$p.max)
+
+jsub <- subset(LL.dat.merge, ctype.pred == "Mono") %>% arrange(desc(p.max))
+jcell <- jsub$cell[[1]]
+Lvec <- sort(LL.ctype.lst[[jcell]], decreasing = TRUE)
+Pvec <- sort(p.ctype.lst[[jcell]], decreasing = TRUE)
+plot(Lvec)
+text(Lvec, labels = names(Lvec))
+
+plot(Pvec)
+text(Pvec, labels = names(Lvec))
+
+# plot on umap
+ggplot(umap.merged %>% rowwise() %>% mutate(is.cell = cell == jcell), aes(x = umap1, y = umap2, color = is.cell, size = is.cell)) + 
+  geom_point(alpha = 0.7) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + ggtitle("H3K4me3")
+
+
 # plot probability?
-m.pretty.prob <- ggplot(LL.dat.merge.pretty,
+m.pretty.prob <- ggplot(LL.dat.merge.pretty %>% filter(batch == "Ctrl"),
                    aes(x = umap1, y = umap2, color = p.max)) + geom_point(alpha=0.75, size = 3) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  ggtitle(jmark, "Probabilistic celltype inference using multinomial likelihood, \n with Ido Amit ChIP-seq data as underlying genomic region proportions") + 
+  ggtitle(jmark, "probabilistic celltype inference using multinomial likelihood, \n with ido amit chip-seq data as underlying genomic region proportions") + 
+  facet_grid(batch~ctype.pred) +
+  scale_color_viridis_c()
+print(m.pretty.prob)
+
+# plot probability?
+m.pretty.prob <- ggplot(ll.dat.merge.pretty,
+                   aes(x = umap1, y = umap2, color = p.max)) + geom_point(alpha=0.75, size = 3) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+  ggtitle(jmark, "probabilistic celltype inference using multinomial likelihood, \n with ido amit chip-seq data as underlying genomic region proportions") + 
   facet_grid(batch~ctype.pred) +
   scale_color_viridis_c()
 print(m.pretty.prob)
@@ -211,8 +279,6 @@ celltype.fc <- LL.dat.merge %>%
   summarise(cell.count = length(cell)) %>%
   group_by(batch) %>%
   mutate(cell.frac = cell.count / sum(cell.count))
-
-
 
 jctypes <- unique(celltype.fc$ctype.pred)
 names(jctypes) <- jctypes

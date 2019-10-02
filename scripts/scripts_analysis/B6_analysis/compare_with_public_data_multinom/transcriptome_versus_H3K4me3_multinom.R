@@ -128,8 +128,7 @@ dat.proj <- t(dat.mat) %*% dat.pca$rotation %*% diag(dat.pca$sdev)
 plot(dat.proj[, 1], dat.proj[, 2])
 text(dat.proj[, 1], dat.proj[, 2], labels = rownames(dat.proj))
 
-
-
+#
 # Order entropies, and check z-scores -------------------------------------
 
 topics.mat <- tm.result.stringent$topics
@@ -149,7 +148,7 @@ terms.filt$topicstr <- paste("Topic", terms.filt$topic, sep = "_")
 
 jtopics <- topics.sum$topic
 
-pdf(paste0("/Users/yeung/data/scchic/pdfs/revisions/compare_", jmark, "_with_tx_quantilenorm.pdf"), useDingbats = FALSE)
+pdf(paste0("/Users/yeung/data/scchic/pdfs/revisions/compare_", jmark, "_with_tx_quantilenorm", Sys.Date(), ".pdf"), useDingbats = FALSE)
 for (jtopic in jtopics){
   print(jtopic)
   m.umap <- PlotXYWithColor(dat.umap.merge, xvar = "umap1", yvar = "umap2", cname = jtopic, cont.color = TRUE, jsize = 4) + scale_color_viridis_c()
@@ -158,9 +157,9 @@ for (jtopic in jtopics){
   jgenes <- jsub$gene
   m.celltype <- ggplot(subset(dat.norm.long, gene %in% jgenes),
                        aes(x = forcats::fct_reorder(.f = celltype, .x = zscore, .fun = median, .desc = TRUE), y = zscore)) +
-    geom_boxplot() + 
-    geom_jitter(width = 0.2) + 
-    theme_bw() + 
+    geom_boxplot() +
+    geom_jitter(width = 0.2) +
+    theme_bw() +
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
   print(m.umap)
   print(m.celltype)
@@ -185,8 +184,8 @@ names(all.cells) <- all.cells
 top.nterms <- 150
 # topics.keep <- topics.sum$topic
 topics.keep <- c("Topic_40", "Topic_39", "Topic_27",   # monocyte
-                 "Topic_19", "Topic_8", "Topic_34", 
-                 "Topic_11", "Topic_6", "Topic_49", 
+                 "Topic_19", "Topic_8", "Topic_34",
+                 "Topic_11", "Topic_6", "Topic_49",
                  "Topic_14", "Topic_1", "Topic_42")
 
 terms.all <- unique(subset(terms.sum %>% arrange(desc(weight)), rnk <= top.nterms)$term)
@@ -203,7 +202,7 @@ print(paste("N genes after:", length(genes.all)))
 
 # genes.all <- rownames(dat.mat)
 # terms.all <- subset(terms.keep.dat, gene %in% genes.all)$region_coord
-# 
+#
 # genes.keep <- sapply(terms.all, function(x) term2gene[[x]])
 # terms.keep <- sapply(genes.keep, function(x) gene2term[[x]])
 
@@ -246,7 +245,7 @@ probs.lst.filt <- as.list(as.data.frame(dat.mat.filt))
 probs.lst.filt <- lapply(probs.lst.filt, function(x){
   names(x) <- rownames(dat.mat.filt)
   return(x)
-}) 
+})
 
 
 # Prepare count mat -------------------------------------------------------
@@ -276,7 +275,7 @@ LL.ctype.lst <- lapply(all.cells, function(cell.name){
 
 # Summarize fits ----------------------------------------------------------
 
-# calculate probability of model given data 
+# calculate probability of model given data
 p.ctype.lst <- lapply(LL.ctype.lst, SoftMax)
 
 cell.counts <- Matrix::colSums(count.dat$counts) / 5
@@ -300,31 +299,112 @@ LL.dat <- lapply(cell.names, function(cname){
     best.ctype <- names(which.max(LL.vec))
   }
   dat.tmp <- data.frame(cell = cname, LL.max = LL.max, p.max = p.max, ctype.pred = best.ctype, cell.size = cell.count, cell.count.downsamp = cell.count.downsamp, stringsAsFactors = FALSE)
-  return(dat.tmp) 
+  return(dat.tmp)
 }) %>%
   bind_rows()
 
+pcutoff <- log(0.9999)
+
+LL.dat <- LL.dat %>%
+  rowwise() %>%
+  mutate(ctype.stringent = ifelse(p.max >= pcutoff, ctype.pred, NA))
+
 LL.sum <- LL.dat %>%
-  group_by(ctype.pred) %>%
-  summarise(ncell = length(ctype.pred))
+  group_by(ctype.stringent) %>%
+  summarise(ncell = length(ctype.stringent))
 
 print(LL.sum)
 
 LL.dat.merge <- left_join(dat.umap.long.trajs[[jmark]], LL.dat)
 
 cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
-ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = ctype.pred)) + geom_point() + 
+
+ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = ctype.stringent)) + geom_point() +
   scale_color_manual(values = cbPalette) +
   theme_bw () + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
+ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = ctype.pred)) + geom_point() +
+  scale_color_manual(values = cbPalette) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~ctype.pred)
 
-ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = p.max)) + geom_point() + 
-  scale_color_viridis_c() + 
+ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = p.max)) + geom_point() +
+  scale_color_viridis_c() +
   facet_wrap(~ctype.pred) + theme_bw () + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = LL.max/cell.size)) + geom_point() + 
-  scale_color_viridis_c() + 
+ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = LL.max/cell.size)) + geom_point() +
+  scale_color_viridis_c() +
   facet_wrap(~ctype.pred) + theme_bw () + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+
+
+# Test a cell -------------------------------------------------------------
+
+plot(probs.lst.filt$granulocyte, probs.lst.filt$monocyte, pch = 20)
+text(probs.lst.filt$granulocyte, probs.lst.filt$monocyte, labels = names(probs.lst.filt[[1]]))
+
+jcell <- (subset(LL.dat.merge, ctype.stringent == "monocyte") %>% filter(umap2 == min(umap2)))$cell
+
+# compare likelihoods
+Lvec <- sort(LL.ctype.lst[[jcell]], decreasing = TRUE)
+Pvec <- sort(p.ctype.lst[[jcell]], decreasing = TRUE)
+
+plot(x = seq(length(Lvec)), y = Lvec)
+text(x = seq(length(Lvec)), y = Lvec, labels = names(Lvec))
+
+# look at raw vector see why
+cell.vec <- count.filt[genes.filt, jcell][names(probs.lst.filt[[1]])]
+
+jgenes.remove <- c("")
+par(mfrow=c(2,2), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+jctypes <- c("monocyte", "granulocyte", "nucleate_erythrocyte", "natural_killer_cell")
+# jctype <- "monocyte"
+for (jctype in jctypes){
+  ptmp <- probs.lst.filt[[jctype]] ^ (1 / 2)
+  ptmp <- ptmp / sum(ptmp)
+  
+  # jgenes.filt <- names(ptmp)[which(!names(ptmp) %in% jgenes.remove)]
+  
+  L <- dmultinom(x = cell.vec, prob = ptmp, log = TRUE)
+  plot(x = cell.vec, y = ptmp, main = signif(L, digits = 4), pch = 20, xlab = jctype, ylab = jcell)
+  text(x = cell.vec, y = ptmp, labels = names(cell.vec))
+}
+par(mfrow=c(1,1), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+
+# what is exprs of top granu genes across counts?
+jsub <- count.filt[genes.filt, ]
+
+# top 10 granu genes
+
+
+# Plot top genes in UMAP --------------------------------------------------
+
+
+jctype <- "monocyte"
+jctype <- "granulocyte"
+jgenes.tmp <- names(sort(probs.lst.filt[[jctype]], decreasing = TRUE)[1:50])
+
+# jgene <- "S100a7a"
+# jgene <- jgenes.tmp[[6]]
+
+pdf(paste0("/Users/yeung/data/scchic/pdfs/celltyping_analysis_debugging/h3k4me3_debugging_", jctype, "_jgenes.pdf"), useDingbats = FALSE)
+boxplot(dat.mat.filt[jgenes.tmp, ], xaxt = "n")
+text(seq_along(dat.mat.filt[jgenes.tmp, ]), par("usr")[3] - 0.5, labels = names(dat.mat.filt[jgenes.tmp, ]), srt = 45, adj = 1, xpd = TRUE)
+# qplot(dat.mat.filt[jgenes.tmp, ], geom = "boxplot")
+for (jgene in jgenes.tmp){
+  gene.counts <- data.frame(cell = colnames(count.filt), UMI = count.filt[jgene, ])
+  LL.dat.merge.counts <- left_join(LL.dat.merge, gene.counts)
+  m <- ggplot(LL.dat.merge.counts, aes(x = umap1, y = umap2, color = UMI, size = UMI)) + geom_point() +
+    scale_color_viridis_c() +
+    ggtitle(jgene) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  print(m)
+}
+dev.off()
+
+
+# Find monocyte-specific genes --------------------------------------------
+
 
 
 # Debug below -------------------------------------------------------------
