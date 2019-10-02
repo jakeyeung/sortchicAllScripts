@@ -1,1 +1,0 @@
-/home/hub_oudenaarden/jyeung/projects/scChiC/scripts/scripts_analysis/quality_controls/summarize_barcodes.R
