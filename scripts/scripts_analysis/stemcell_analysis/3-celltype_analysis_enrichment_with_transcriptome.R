@@ -451,8 +451,8 @@ LL.dat <- LL.dat %>%
 LL.dat.merge <- left_join(dat.umap.pred.merged , LL.dat)
 
 cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
-ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = ctype.stringent)) + geom_point() + 
-  scale_color_manual(values = cbPalette) +
+m.umap.celltype <- ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = ctype.stringent)) + geom_point() + 
+  scale_color_manual(values = cbPalette, na.value = "grey95") +
   theme_bw () + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = p.max)) + geom_point() + 
@@ -464,7 +464,7 @@ ggplot(LL.dat.merge, aes(x = umap1, y = umap2, color = LL.max/cell.size)) + geom
   facet_wrap(~ctype.stringent) + theme_bw () + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 # show enrihment before and after
-ggplot(subset(LL.dat.merge, !is.na(ctype.stringent)), aes(x = umap1, y = umap2, color = is.stem)) + geom_point() + 
+m.enrichment.umap <- ggplot(subset(LL.dat.merge, !is.na(ctype.stringent)), aes(x = umap1, y = umap2, color = is.stem)) + geom_point() + 
   scale_color_manual(values = cbPalette) +
   theme_bw () + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   facet_wrap(~ctype.stringent)
@@ -515,6 +515,19 @@ m.barplot <- ggplot(celltype.fc.merge, aes(x = forcats::fct_reorder(.f = ctype.s
   ggtitle("Celltype counts lineage-neg versus control, ordered by decreasing odds ratio")
 print(m.barplot)
 
+
+# write outputs
+outpdf <- paste0("/Users/yeung/data/scchic/pdfs/stemcell_analysis/celltype_enrichment_with_tx.", Sys.Date(), ".pdf")
+
+pdf(outpdf, useDingbats = FALSE)
+
+  print(m.umap.celltype)
+  print(m.umap.celltype + facet_wrap(~is.stem))
+  print(m.enrichment.umap)
+  print(m.enrichment)
+  print(m.barplot)
+
+dev.off()
 
 
 
