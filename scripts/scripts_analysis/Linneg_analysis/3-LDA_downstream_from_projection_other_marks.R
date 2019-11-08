@@ -31,10 +31,15 @@ umap.settings$min_dist <- mindist; umap.settings$n_neighbors <- nneigh
 # Load original data  -----------------------------------------------------
 
 
-jmark <- "H3K27me3"
 # jmark <- "H3K4me1"
+# jmark <- "H3K9me3"
+# jmark <- "H3K27me3"
+jmark <- "H3K9me3"
 jbin <- "FALSE"
-outpdf <- paste0("/Users/yeung/data/scchic/pdfs/B6_figures/linneg/", jmark, "_enrichment.pdf")
+
+# jmark <- "H3K4me3"
+# jbin <- "FALSE"
+outpdf <- paste0("/Users/yeung/data/scchic/pdfs/B6_figures/linneg/", jmark, "_enrichment.", Sys.Date(), ".pdf")
 
 assertthat::assert_that(!file.exists(outpdf))
 
@@ -238,15 +243,16 @@ ggplot(umap.merged.louvain, aes(x = umap1, y = umap2, color = louvain)) + geom_p
 # PDFs  -------------------------------------------------------------------
 
 
-m.scatter <- ggplot(umap.merged, aes(x = umap1, y = umap2, color = batch)) + geom_point(alpha = 0.7, size = 1.5) + 
+m.scatter <- ggplot(umap.merged, aes(x = umap1, y = -umap2, color = batch)) + geom_point(alpha = 0.7, size = 1.5) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + ggtitle(jmark)
-m.louvain <- ggplot(umap.merged.louvain, aes(x = umap1, y = umap2, color = louvain)) + geom_point()+ 
+m.louvain <- ggplot(umap.merged.louvain, aes(x = umap1, y = -umap2, color = louvain)) + geom_point()+ 
   theme_minimal() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_manual(values = cbPalette) + facet_wrap(~batch)
 
-m.var <- ggplot(umap.merged.var.intra, aes(x = umap1, y = umap2, color = intravar)) + geom_point(size = 2.5) + 
+m.var <- ggplot(umap.merged.var.intra, aes(x = umap1, y = -umap2, color = intravar)) + geom_point(size = 2.5) + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_viridis_c(direction = -1) + 
   facet_wrap(~batch)
 
 
@@ -254,8 +260,9 @@ ksout <- ks.test(subset(umap.merged.var.intra, batch == "Ctrl")$intravar, subset
 ksout$p.value
 
 m.var.density <- ggplot(umap.merged.var.intra, aes(x = intravar, fill = batch)) + geom_density(alpha = 0.5, size = 1) + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
-  ggtitle("KS test Pval < 2.2e-16")
+  theme_bw(24) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+  xlab("Intrachromosomal Variance") + ylab("Density") + 
+  ggtitle(jmark, paste("KS test Pval", ksout$p.value))
 
 pdf(outpdf, useDingbats = FALSE)
   print(m.scatter)
@@ -263,7 +270,6 @@ pdf(outpdf, useDingbats = FALSE)
   print(m.var)
   print(m.var.density)
 dev.off()
-
 
 
 

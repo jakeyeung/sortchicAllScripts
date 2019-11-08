@@ -24,6 +24,8 @@ library(GenomicRanges)
 
 library(ggrepel)
 
+library(DESeq2)
+
 # Functions ---------------------------------------------------------------
 
 
@@ -120,6 +122,8 @@ identical(dat.filt, dat.test)
 
 # jdiff <- unlist(dat.filt - dat.test)
 
+
+
 # Do analysis seurat ------------------------------------------------------
 
 bm <- CreateSeuratObject(dat.filt, project = "BM", assay = "RNA", meta.data = meta)
@@ -135,6 +139,7 @@ bm <- FindClusters(bm, verbose = FALSE)
 DimPlot(bm, label = TRUE, group.by = "cluster") + scale_color_viridis_d()
 
 FeaturePlot(bm, features = c("Elane--chr10", "Retnlg--chr16", "Ngp--chr9"), pt.size = 0.2, ncol = 3)
+
 
 meta <- left_join(meta, data.frame(cell = rownames(bm@reductions$umap@cell.embeddings), bm@reductions$umap@cell.embeddings, stringsAsFactors = FALSE))
 
@@ -268,15 +273,17 @@ count.long.merge <- left_join(count.long, subset(meta.neutro, select = c(-is.neu
   # summarise(count.sum = sum(count.norm)) %>%
   summarise(count.sum = sum(count.raw)) %>%
   group_by(clstr.name) %>%
-  mutate(count.norm = 10^6 * count.sum / sum(count.sum)) 
+  mutate(count.norm = 10^6 * count.sum / sum(count.sum)) %>%
   rowwise() %>%
   mutate(logcount.norm = log2(count.norm + 1)) %>%
   group_by(gene) %>%
   mutate(zscore = scale(logcount.norm, center = TRUE, scale = TRUE))
 
 count.mat.bulk <- count.long.merge %>%
-  dplyr::select(gene, clstr.name, logcount.norm) %>%
-  tidyr::spread(key = clstr.name, value = logcount.norm) %>%
+  # dplyr::select(gene, clstr.name, logcount.norm) %>%
+  # tidyr::spread(key = clstr.name, value = logcount.norm) %>%
+  dplyr::select(gene, clstr.name, count.sum) %>%
+  tidyr::spread(key = clstr.name, value = count.sum) %>%
   as.data.frame()
 
 
@@ -285,10 +292,28 @@ count.mat.bulk$gene <- NULL
 
 boxplot(count.mat.bulk, main = "Before quant norm")
 
+
+
+
 # remove outliers, low number of genes?
 cname.remove <- "neutro4"
 cname.keep.i <- which(!colnames(count.mat.bulk) %in% cname.remove)
 count.mat.bulk <- count.mat.bulk[, cname.keep.i]
+
+
+# do DESeq2 variance stabilization 
+
+metadata <- data.frame(ctype = colnames(count.mat.bulk), stringsAsFactors = FALSE)
+rownames(metadata) <- colnames(count.mat.bulk)
+
+count.mat.bulk.int <- matrix(as.integer(as.matrix(count.mat.bulk)), 
+                             nrow = nrow(count.mat.bulk), ncol = ncol(count.mat.bulk), 
+                             dimnames = list(rownames(count.mat.bulk), colnames(count.mat.bulk)))
+dds <- DESeqDataSetFromMatrix(countData = count.mat.bulk.int, colData = metadata, design = ~1)
+vsd <- vst(dds)
+
+boxplot(assay(vsd))
+
 
 
 rnames.orig <- rownames(count.mat.bulk)

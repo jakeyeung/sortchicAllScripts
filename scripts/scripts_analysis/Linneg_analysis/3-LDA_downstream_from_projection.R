@@ -237,6 +237,7 @@ m.louvain <- ggplot(umap.merged.louvain, aes(x = umap1, y = umap2, color = louva
 m.var <- ggplot(umap.merged.var.intra, aes(x = umap1, y = umap2, color = intravar)) + geom_point(size = 2.5) + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_viridis_c(direction = -1) + 
   facet_wrap(~batch)
 
 
@@ -244,10 +245,12 @@ ksout <- ks.test(subset(umap.merged.var.intra, batch == "Ctrl")$intravar, subset
 ksout$p.value
 
 m.var.density <- ggplot(umap.merged.var.intra, aes(x = intravar, fill = batch)) + geom_density(alpha = 0.5, size = 1) + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
-  ggtitle("KS test Pval < 2.2e-16")
+  theme_bw(24) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+  xlab("Intrachromosomal Variance") + ylab("Density") + 
+  ggtitle("H3K4me3", paste("KS test Pval", ksout$p.value))
 
-outpdf <- "/Users/yeung/data/scchic/pdfs/B6_figures/linneg/H3K4me3_enrichment.pdf"
+
+outpdf <- paste0("/Users/yeung/data/scchic/pdfs/B6_figures/linneg/H3K4me3_enrichment.", Sys.Date(), ".pdf")
 pdf(outpdf, useDingbats = FALSE)
   print(m.scatter)
   print(m.louvain)

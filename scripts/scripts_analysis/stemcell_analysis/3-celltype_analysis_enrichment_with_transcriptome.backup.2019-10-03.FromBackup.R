@@ -22,8 +22,6 @@ library(org.Mm.eg.db)
 library(ChIPseeker)
 library(GenomicRanges)
 
-library(DESeq2)
-
 
 # Functions ---------------------------------------------------------------
 
@@ -97,7 +95,7 @@ inf <- "/Users/yeung/data/scchic/public_data/bone_marrow_grun/GSE76983_expdata_B
 dat <- fread(inf, header = TRUE) %>%
   as.data.frame()
 gene.names <- dat$GENEID
-gene.names <- make.names(sapply(gene.names, function(x) strsplit(x, "__")[[1]][[1]]), unique = TRUE)
+gene.names <- sapply(gene.names, function(x) strsplit(x, "__")[[1]][[1]])
 
 # inf.test <- "/Users/yeung/data/scchic/public_data/bone_marrow_grun/transcript_counts_bone_marrow.txt.gz"
 inf.test <- "/Users/yeung/data/scchic/public_data/bone_marrow_grun/transcript_counts_bone_marrow.xls"
@@ -189,29 +187,13 @@ count.long <- left_join(count.long, subset(meta.neutro, select = c(-is.neutro, -
   summarise(count.norm = sum(count.norm)) %>%
   mutate(logcount.norm = log2(count.norm + 1))
 
-
-# do DESeq2 normalization to handle differences 
-count.sum.umi <- count.long %>%
-  dplyr::select(gene, clstr.name, count.norm) %>%
-  tidyr::spread(key = clstr.name, value = count.norm) %>%
+count.mat <- count.long %>%
+  dplyr::select(gene, clstr.name, logcount.norm) %>%
+  tidyr::spread(key = clstr.name, value = logcount.norm) %>%
   as.data.frame()
-rownames(count.sum.umi) <- count.sum.umi$gene
-count.sum.umi$gene <- NULL
-metadata <- data.frame(ctype = colnames(count.sum.umi), stringsAsFactors = FALSE)
-rownames(metadata) <- colnames(count.sum.umi)
 
-dds <- DESeqDataSetFromMatrix(countData = count.sum.umi, colData = metadata, design = ~1)
-vsd <- vst(dds)
-boxplot(assay(vsd))
-
-vsd <- count.mat
-
-# count.mat <- count.long %>%
-#   dplyr::select(gene, clstr.name, logcount.norm) %>%
-#   tidyr::spread(key = clstr.name, value = logcount.norm) %>%
-#   as.data.frame()
-# rownames(count.mat) <- count.mat$gene
-# count.mat$gene <- NULL
+rownames(count.mat) <- count.mat$gene
+count.mat$gene <- NULL
 
 dat.pca <- prcomp(t(count.mat), center = TRUE, scale. = TRUE)
 
@@ -283,8 +265,7 @@ ggplot(dat.umap.pred.merged, aes(x = umap1, y = umap2)) + geom_point() +
 
 inf.lda <- "/Users/yeung/data/scchic/from_cluster/oud3700/ldaAnalysisBins_PZ-Bl6-BM-StemCells/lda_out_meanfilt.PZ-Bl6-BM-StemCells_H3K4me1_matsMergedAll_2019-09-29.CountThres0.K-30_35_50.OutObjs.RData"
 load(inf.lda, v=T)
-count.dat <- list()
-count.dat$counts <- out.objs$count.mat
+
 
 # Layer on K4me1 data -----------------------------------------------------
 
@@ -548,9 +529,6 @@ pdf(outpdf, useDingbats = FALSE)
 
 dev.off()
 
-
-
-# Do for Grun -------------------------------------------------------------
 
 
 
