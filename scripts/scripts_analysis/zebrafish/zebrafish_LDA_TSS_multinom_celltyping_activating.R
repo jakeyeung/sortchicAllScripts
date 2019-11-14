@@ -55,7 +55,7 @@ zscore.cutoff <- "top500"
 jprefix <- "ZFWKM"
 jprefix.proj <- "ZFWKMCD41plus"
 
-jmark <- "H3K4me3"
+jmark <- "H3K4me1"
 winsize <- 100000L
 
 outdir <- "/Users/yeung/data/scchic/pdfs/zebrafish/celltyping"
