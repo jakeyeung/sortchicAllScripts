@@ -27,7 +27,7 @@ gstr <- "*ZFWKM-H3K27me3.*.csv"
 gstr2 <- "*ZFWKM-H3K27me3.*.rds"
 
 (infs.rz <- list.files(dir.rz, pattern = gstr, all.files = TRUE, full.names = TRUE))
-(infs.count <- list.files(dir.count, pattern = gstr, all.files = TRUE, full.names = TRUE))
+(infs.count <- list.files(dir.count, pattern = gstr2, all.files = TRUE, full.names = TRUE))
 
 bname <- unique(sapply(infs.count, function(x) gsub(pattern = "-[0-9]$",replacement = "", x = strsplit(basename(x), split = "\\.")[[1]][[1]])))
 
@@ -114,13 +114,24 @@ lapply(mats.filt, dim)
 
 mat.merge <- do.call(cbind, mats.filt)
 
+
+# Write good cells  -------------------------------------------------------
+
+
 # Write to output ---------------------------------------------------------
 
 # outdir <- "/Users/yeung/data/scchic/count_mat_binfilt_cellfilt_for_LDA_ZFbonemarrow.H3K27me3"
 outdir <- "/Users/yeung/data/scchic/count_mat_binfilt_cellfilt_for_LDA_ZFbonemarrow"
 dir.create(outdir)
 
-saveRDS(mat.merge, file = file.path(outdir, paste0(bname, ".", Sys.Date(), ".rds")))
+good.cells.path <- file.path(outdir, paste0("ZF-H3K27me3.", Sys.Date(), ".csv"))
+sink(file = good.cells.path)
+for (jcell in cells.keep){
+  cat(paste0(jcell, "\n"))
+}
+sink()
+
+# saveRDS(mat.merge, file = file.path(outdir, paste0(bname, ".", Sys.Date(), ".rds")))
 
 
 

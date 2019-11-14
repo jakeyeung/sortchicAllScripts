@@ -15,10 +15,14 @@ library(igraph)
 library(umap)
 
 library(topicmodels)
-
 library(scchicFuncs)
-
 library(ggrepel)
+library(preprocessCore)
+library(data.table)
+
+library(here)
+
+setwd(here())
 
 GetGeneAnnotsHash <- function(inf.annot){
   dat.annot <- data.table::fread(inf.annot, col.names = c("chromo", "start", "end", "bname"))
@@ -77,11 +81,25 @@ PlotPseudobulkZscore <- function(dat.bulk.sub, order.celltype.by.zscore = TRUE, 
 
 jprefix <- "ZFWKM"
 
-jmarks <- c("H3K4me1", "H3K4me3")
+jmarks <- c("H3K4me1", "H3K4me3", "H3K9me3")
 winsizes <- c(50000L, 100000L)
+
+norm.quants <- TRUE
+
+# load tx data ------------------------------------------------------------
+
+# from make_tx_dataset_zebrafish_WKM.R
+inf.WKM <- "/Users/yeung/data/scchic/public_data/Zebrafish_WKM/Baron_et_al_pseudobulk_Zebrafish_WKM.rds"
+dat.bulk <- readRDS(inf.WKM)
+
 
 for (jmark in jmarks){
   for (winsize in winsizes){
+    outpdf <- paste0("/Users/yeung/data/scchic/pdfs/zebrafish/TSS_analysis/ZF_TSS.", jmark, ".winsize_", winsize, ".", Sys.Date(), ".pdf")
+    if (file.exists(outpdf)){
+      print(paste(outpdf, "exists, skipping"))
+      next
+    }
     
     inf.annot <- paste0("/Users/yeung/data/scchic/tables/gene_tss.winsize_", winsize, ".species_drerio.nochr.bed")
     
@@ -149,12 +167,6 @@ for (jmark in jmarks){
     ggplot(dat.umap.long.varmerge, aes(x = cell.var.within.sum.norm, y = umap1.1d)) + geom_point() 
     
     
-    # cells.var.chromo.within.sum <- CalculateVarWithinChromo(dat.impute.log = dat.impute.log, jchromos = jchromos)
-    # cells.var.chromo.across <- CalculateVarAcrossChromo(dat.mat.log = dat.impute.log, jchromos = jchromos)
-    # cells.var.total <- CalculateVarTotal(dat.impute.log)
-    # cells.var.chromo.merged <- MergeVarWithinAcross(cells.var.chromo.within.sum, cells.var.chromo.across, cells.var.total)
-    # 
-    
     print(m.umap.blank)
     
     m.umap.var <- ggplot(dat.umap.long.varmerge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + geom_point() + 
@@ -162,11 +174,6 @@ for (jmark in jmarks){
       scale_color_viridis_c()
     print(m.umap.var)
     
-    # load tx data ------------------------------------------------------------
-    
-    # from make_tx_dataset_zebrafish_WKM.R
-    inf.WKM <- "/Users/yeung/data/scchic/public_data/Zebrafish_WKM/Baron_et_al_pseudobulk_Zebrafish_WKM.rds"
-    dat.bulk <- readRDS(inf.WKM)
     
     # Find celltypes ----------------------------------------------------------
     
@@ -208,20 +215,6 @@ for (jmark in jmarks){
     jsub.terms <- subset(terms.mat.long, topic == jtop & rnk <= keeptop)
     top.genes <- jsub.terms$gene
     
-    # terms.mat.tmp <- terms.mat
-    # colnames(terms.mat.tmp) <- make.names(terms.mat.tmp)
-    # genes.vec <- sapply(colnames(terms.mat), function(x) strsplit(x, ";")[[1]][[2]])
-    # terms.mat.long <- tidyr::gather(data.frame(topic = rownames(terms.mat.tmp), terms.mat.tmp, stringsAsFactors = FALSE), key = "term", value = "weight", -topic) %>%
-    #   rowwise() %>%
-    #   mutate(gene = strsplit(term, split = "\\.")[[1]][[4]]) %>%
-    #   group_by(topic) %>%
-    #   mutate(rnk = rank(-weight))
-    # rm(terms.mat.tmp)
-    
-    # print topic umap
-    
-    # print gene expression across pseudobulk
-    
     m.exprs <- PlotPseudobulkZscore(subset(dat.bulk, gene %in% top.genes))
     m.top <- PlotDecreasingWeights(as.data.frame(jsub.terms), jtitle = paste("Topic:", jtop, "top", keeptop))
     
@@ -231,7 +224,6 @@ for (jmark in jmarks){
     
     keeptop <- 200
     # for all topics
-    outpdf <- paste0("/Users/yeung/data/scchic/pdfs/zebrafish/TSS_analysis/ZF_TSS.", jmark, ".winsize_", winsize, ".pdf")
     pdf(outpdf, useDingbats = FALSE)
     
     print(m.umap.blank)
@@ -253,6 +245,7 @@ for (jmark in jmarks){
     dev.off()
   }
 }
+
 
 
 

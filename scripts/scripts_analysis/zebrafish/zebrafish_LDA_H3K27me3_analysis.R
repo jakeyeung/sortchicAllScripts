@@ -1,7 +1,8 @@
 # Jake Yeung
 # Date of Creation: 2019-11-14
-# File: ~/projects/scchic/scripts/scripts_analysis/zebrafish/zebrafish_LDA_merged_analysis.R
-# 
+# File: ~/projects/scchic/scripts/scripts_analysis/zebrafish/zebrafish_LDA_H3K27me3_analysis.R
+# from # File: ~/projects/scchic/scripts/scripts_analysis/zebrafish/zebrafish_LDA_merged_analysis.R
+# merged analysis
 
 rm(list=ls())
 
@@ -19,12 +20,11 @@ library(scchicFuncs)
 
 # Load dat ----------------------------------------------------------------
 
-# jmark <- "H3K4me1"
-jmark <- "H3K4me3"
-# jmark <- "H3K9me3"
+jmark <- "H3K27me3"
 jbin <- "FALSE"
 
-inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_ZFbonemarrow/lda_outputs.ZF-", jmark, "_pcutoff_0.CountThres0.K-30_35_50.binarize.", jbin, "/lda_out_meanfilt.ZF-", jmark, "_pcutoff_0.CountThres0.K-30_35_50.Robj")
+# inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_ZFbonemarrow/lda_outputs.ZF-", jmark, "_pcutoff_0.CountThres0.K-30_35_50.binarize.", jbin, "/lda_out_meanfilt.ZF-", jmark, "_pcutoff_0.CountThres0.K-30_35_50.Robj")
+inf <- paste0("/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_ZFbonemarrow/lda_outputs.PZ-ChIC-ZFWKM-", jmark, ".2019-11-13.K-30_35_50.binarize.", jbin, "/ldaOut.PZ-ChIC-ZFWKM-", jmark, ".2019-11-13.K-30_35_50.Robj")
 assertthat::assert_that(file.exists(inf))
 
 load(inf, v=T)
