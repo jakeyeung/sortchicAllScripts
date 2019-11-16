@@ -19,7 +19,7 @@ L2Norm <- function(x){
 #                     as the singular values.
 #
 library(irlba)
-jCanonCor <- function(mat1, mat2, k = 20, l2.norm = FALSE) {
+jCanonCor <- function(mat1, mat2, k = 20, l2.norm = FALSE, use.irlba = TRUE) {
   set.seed(seed = 42)
   # if (standardize) {
   #   mat1 <- Standardize(mat = mat1, display_progress = FALSE)
@@ -27,7 +27,11 @@ jCanonCor <- function(mat1, mat2, k = 20, l2.norm = FALSE) {
   # }
   # mat3 <- FastMatMult(m1 = t(x = mat1), m2 = mat2)
   mat3 <- t(mat1) %*% mat2
-  cca.svd <- irlba::irlba(A = mat3, nv = k)
+  if (use.irlba){
+  	cca.svd <- irlba::irlba(A = mat3, nv = k)
+  } else {
+    cca.svd <- svd(x = mat3)
+  }
   if (l2.norm){
     cca.svd$u <- cca.svd$u / sqrt(sum(cca.svd$u ^ 2))
     cca.svd$v <- cca.svd$v / sqrt(sum(cca.svd$v ^ 2))

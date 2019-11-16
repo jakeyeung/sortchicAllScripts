@@ -195,8 +195,6 @@ for (jmark in jmarks){
     
     # Plot Genes Across Topic
     
-    
-    
     # make terms mat once
     terms.mat.long <- data.table::melt(terms.mat)
     colnames(terms.mat.long) <- c("topic", "term", "weight")

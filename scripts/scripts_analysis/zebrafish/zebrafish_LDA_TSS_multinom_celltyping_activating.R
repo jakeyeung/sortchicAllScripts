@@ -27,24 +27,6 @@ library(umap)
 
 source("/Users/yeung/projects/scchicFuncs/R/MultinomFunctions.R")
 
-CollapseRowsByGene <- function(count.mat, as.long = TRUE){
-  # prepare raw data. Rownames of format  chr1:-17665-32335;rpl24;1
-  genes.chic <- sapply(rownames(count.mat), function(x) strsplit(x, ";")[[1]][[2]])
-  # get count.filt, sum across same gene
-  count.mat.tmp <- count.mat
-  rownames(count.mat.tmp) <- genes.chic
-  count.mat.long <- melt(as.matrix(count.mat.tmp), value.name = "count") %>%
-    group_by(Var1, Var2) %>%
-    summarise(count = max(count))
-  if (as.long){
-    return(count.mat.long)
-  } else {
-    jout <- as.data.frame(dcast(count.mat.long, Var1 ~ Var2, value.var = "count"))
-    rownames(jout) <- Var1; jout$Var1 <- NULLA
-    jout <- Matrix(jout, sparse = TRUE)
-    return(jout)
-  }
-}
 
 
 # Constants ---------------------------------------------------------------

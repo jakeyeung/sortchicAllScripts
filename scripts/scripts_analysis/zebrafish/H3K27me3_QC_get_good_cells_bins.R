@@ -118,6 +118,8 @@ mat.merge <- do.call(cbind, mats.filt)
 # Write good cells  -------------------------------------------------------
 
 
+
+
 # Write to output ---------------------------------------------------------
 
 # outdir <- "/Users/yeung/data/scchic/count_mat_binfilt_cellfilt_for_LDA_ZFbonemarrow.H3K27me3"
