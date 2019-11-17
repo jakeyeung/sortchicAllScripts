@@ -155,17 +155,17 @@ print(dim(mats.merged.all))
 
 #  do one with only nonenriched
 # do K36me3
-mats.keep <- !grepl("-B6BM-H3K36me3", infs.count.bnames)
+mats.keep <- grepl("-B6BM-H3K36me3", infs.count.bnames)
 mats.merged.k36me3 <- do.call(cbind, mats.filt[mats.keep])
 print(dim(mats.merged.k36me3))
 
 # do H3K27me3
-mats.keep <- !grepl("-B6BMSC-H3K27me3", infs.count.bnames)
+mats.keep <- grepl("-B6BMSC-H3K27me3", infs.count.bnames)
 mats.merged.k27me3 <- do.call(cbind, mats.filt[mats.keep])
 print(dim(mats.merged.k27me3))
 
 # do H3K27me3
-mats.keep <- !grepl("-B6BMSC-H3K4me3", infs.count.bnames)
+mats.keep <- grepl("-B6BMSC-H3K4me3", infs.count.bnames)
 mats.merged.k4me3 <- do.call(cbind, mats.filt[mats.keep])
 print(dim(mats.merged.k4me3))
 
@@ -183,6 +183,7 @@ lapply(jmarks, function(jmark){
   print(dim(mats.merge))
   count.dat <- list()
   count.dat$counts <- mats.merge
+  print(head(count.dat$counts[1:5, 1:5]))
   save(count.dat, file = file.path(outdir, paste0("PZ-Bl6-BM-StemCells_", jname, "_", Sys.Date(), ".RData")))
 })
 
@@ -196,5 +197,6 @@ lapply(jmarks, function(jmark){
   print(dim(mats.merge))
   count.dat <- list()
   count.dat$counts <- mats.merge
+  print(head(count.dat$counts[1:5, 1:5]))
   save(count.dat, file = file.path(outdir, paste0("PZ-Bl6-BM-StemCells_", jname, "_", Sys.Date(), ".RData")))
 })
