@@ -172,6 +172,60 @@ print(dim(mats.merged.k4me3))
 mats.lst <- c(mats.merged.all, mats.merged.k36me3, mats.merged.k27me3, mats.merged.k4me3)
 names(mats.lst) <- c("matsMergedAll", "matsMerged_H3K36me3_B6BM", "matsMerged_H3K27me3", "matsMerged_H3K4me3")
 
+
+# Get mats merged by unenriched -------------------------------------------
+
+# load raw counts from primetime
+ReadLDAGetCountMat <- function(inf){
+  print(paste("Reading from", inf))
+  load(inf, v=T)  # count.mat
+  # add chr to rownames
+  rownames(count.mat) <- paste("chr", rownames(count.mat), sep = "")
+  return(count.mat)
+}
+
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
+indir <- "/Users/yeung/data/scchic/from_cluster/lda_outputs_bins_B6/ldaAnalysisBins_BinCellFilt2/lda_outputs.meanfilt_999.cellmin_0.cellmax_999999.binarize.FALSE.no_filt"
+infs <- lapply(jmarks, function(jmark, d){
+  return(list.files(d, pattern = paste0("_", jmark, "_.*K-30_40_50.Robj"), full.names = TRUE))
+}, indir)
+# H3K4me3 was redone
+infs$H3K4me3 <- "/Users/yeung/data/scchic/from_cluster/lda_outputs_bins_B6/lda_outputs.meanfilt_999.cellmin_0.cellmax_999999.binarize.TRUE.no_filt.stringent_filter/lda_out_meanfilt.B6_H3K4me3_pcutoff_0.CountThres0.K-25_30_35_50.Robj"
+
+count.mats <- lapply(infs, ReadLDAGetCountMat)
+
+# filter out common rnames
+count.mats <- lapply(count.mats, function(x){
+  # add chr to rownames
+  rnames.i <- which(rownames(x) %in% rnames.common)
+  return(x[rnames.i, ])
+})
+
+# merge with outputs
+
+mats.lst.withnoenrich <- list()
+mats.lst.withnoenrich$H3K4me3 <- cbind(count.mats$H3K4me3, mats.merged.k4me3)
+mats.lst.withnoenrich$H3K27me3 <- cbind(count.mats$H3K27me3, mats.merged.k27me3)
+
+
+
+# Write merged outputs ----------------------------------------------------
+
+# for H3K27me3 and H3K4me3 only 
+jmarks <- c("H3K27me3", "H3K4me3")
+lapply(jmarks, function(jmark){
+  jname <- paste0("matsMergedWithNonenriched_", jmark)
+  print(jname)
+  mats.merge <- mats.lst.withnoenrich[[jmark]]
+  print(dim(mats.merge))
+  count.dat <- list()
+  count.dat$counts <- mats.merge
+  outf <- file.path(outdir, paste0("PZ-Bl6-BM-StemCells_", jname, "_", Sys.Date(), ".RData"))
+  print(paste("Ssaving to", outf))
+  save(count.dat, file = outf)
+})
+
+
 # Write output names ------------------------------------------------------
 
 # stem cells only 
@@ -188,7 +242,6 @@ lapply(jmarks, function(jmark){
 })
 
 # do K36me3
-
 jmarks <- c("H3K36me3")
 lapply(jmarks, function(jmark){
   jname <- paste0("matsMerged_", jmark, "_B6BM")
@@ -200,3 +253,4 @@ lapply(jmarks, function(jmark){
   print(head(count.dat$counts[1:5, 1:5]))
   save(count.dat, file = file.path(outdir, paste0("PZ-Bl6-BM-StemCells_", jname, "_", Sys.Date(), ".RData")))
 })
+

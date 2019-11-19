@@ -31,7 +31,7 @@ assertthat::assert_that(dir.exists(indir))
 
 # outdir <- "/Users/yeung/data/scchic/pdfs/B6_figures/variance_over_trajectory"
 
-winsize <- 50000
+winsize <- 100000
 indir.raw <- paste0("/Users/yeung/data/scchic/from_cluster/count_mats.fromGeneTSS.0_build95_B6.withchr_", winsize, ".cells_from_bin_analysis")
 assertthat::assert_that(dir.exists(indir.raw))
 
@@ -119,12 +119,10 @@ dat.norm.long <- gather(data.frame(gene = rownames(dat.mat), dat.mat, stringsAsF
 count.mats.louv <- lapply(count.mat.tss, function(count.mat) CollapseMatByLouvains(count.mat, dat.umap.long %>% mutate(louvmark = paste(mark, louvain, sep = "_"))))
 
 
-
-
 # set up mats
-jmark <- "H3K9me3"
+# jmark <- "H3K9me3"
 # jmark <- "H3K4me3"
-# jmark <- "H3K27me3"
+jmark <- "H3K27me3"
 X <- count.mats.louv[[jmark]]
 # normalize count size
 ctype.metadata <- data.frame(ctype = colnames(X), mark = c(rep(jmark, ncol(X))))
