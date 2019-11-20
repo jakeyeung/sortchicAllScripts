@@ -24,7 +24,8 @@ rs="scripts/processing/lib/run_LDA_model.R"
 # marks="H3K27me3"
 # marks="H3K36me3 H3K27me3"
 # marks="H3K27me3"
-marks="H3K27me3"
+# marks="H3K27me3"
+marks="H3K4me3"
 
 K=20  # kind of useless parameter
 ncores=1
@@ -55,7 +56,7 @@ for mark in $marks; do
         BNAME=$outdir/$bname
         DBASE=$(dirname "${BNAME}")
         [[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
-        # echo "cd $workdir; /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/R3.6/bin/Rscript $rs $inf $outdir $K $topics $tunemodels $meanmax $cellmin $cellmax $binarize $bname" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -pe threaded $ncores -m beas -M j.yeung@hubrecht.eu
-        cd $workdir; /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/R3.6/bin/Rscript $rs $inf $outdir $K $topics $tunemodels $meanmax $cellmin $cellmax $binarize $bname
+        echo "cd $workdir; /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/R3.6/bin/Rscript $rs $inf $outdir $K $topics $tunemodels $meanmax $cellmin $cellmax $binarize $bname" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -pe threaded $ncores -m beas -M j.yeung@hubrecht.eu
+        # cd $workdir; /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/R3.6/bin/Rscript $rs $inf $outdir $K $topics $tunemodels $meanmax $cellmin $cellmax $binarize $bname
     done
 done
