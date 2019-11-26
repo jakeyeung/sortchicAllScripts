@@ -206,12 +206,6 @@ boxplot(assay(vsd))
 
 vsd <- count.mat
 
-# count.mat <- count.long %>%
-#   dplyr::select(gene, clstr.name, logcount.norm) %>%
-#   tidyr::spread(key = clstr.name, value = logcount.norm) %>%
-#   as.data.frame()
-# rownames(count.mat) <- count.mat$gene
-# count.mat$gene <- NULL
 
 dat.pca <- prcomp(t(count.mat), center = TRUE, scale. = TRUE)
 
