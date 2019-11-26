@@ -40,7 +40,12 @@ if ( args$verbose ) {
     print(args)
 }
 
-load(args$infile)  # count.dat$counts
+if (endsWith(args$infile, ".RData")){
+    load(args$infile)  # count.dat$counts
+} else {
+    count.dat <- list()
+    count.dat$counts <- readRDS(args$infile)
+}
 
 good.cells <- colnames(count.dat$counts)
 
