@@ -41,14 +41,9 @@ inf <- "/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_B6BM_All_allmarks/
 
 inf <- "/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_B6BM_All_allmarks/lda_outputs.PZ-Bl6-BM-All_Unenriched.H3K4me1.2019-11-23.K-50.binarize.TRUE/ldaOut.PZ-Bl6-BM-All_Unenriched.H3K4me1.2019-11-23.K-50.Robj"
 
-
-
 inf <- "/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_B6BM_All_allmarks/lda_outputs.PZ-Bl6-BM-All_UnenrichedXLinNeg.H3K4me1.2019-11-23.K-50.binarize.TRUE/ldaOut.PZ-Bl6-BM-All_UnenrichedXLinNeg.H3K4me1.2019-11-23.K-50.Robj"
 
-
-
 inf <- "/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_B6BM_All_allmarks/lda_outputs.PZ-Bl6-BM-All_UnenrichedXStemCells.H3K4me1.2019-11-23.K-50.binarize.TRUE/ldaOut.PZ-Bl6-BM-All_UnenrichedXStemCells.H3K4me1.2019-11-23.K-50.Robj"
-
 
 inf <- "/Users/yeung/data/scchic/from_cluster/ldaAnalysisBins_B6BM_All/lda_outputs.PZ-Bl6-BM-AllMerged.H3K4me3.2019-11-22.K-50.binarize.FALSE/ldaOut.PZ-Bl6-BM-AllMerged.H3K4me3.2019-11-22.K-50.Robj"
 

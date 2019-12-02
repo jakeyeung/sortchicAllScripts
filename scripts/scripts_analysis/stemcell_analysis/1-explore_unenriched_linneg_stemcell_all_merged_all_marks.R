@@ -127,6 +127,9 @@ print(lapply(mats.merge, dim))
 
 rows.common <- Reduce(intersect, lapply(mats, function(mat) rownames(mat)))
 
+
+
+# remake good bins
 bins.keep.lst <- lapply(jmarks, function(jmark){
   inf.orig <- paste0("/Users/yeung/data/scchic/tables/bamlist_for_merging_build95_B6/dat_umap_long_with_louvain.", jmark, ".RData")
   assertthat::assert_that(file.exists(inf.orig))
@@ -135,10 +138,7 @@ bins.keep.lst <- lapply(jmarks, function(jmark){
   return(out.objs$out.lda@terms)
 })
 
-
-
 bins.keep <- Reduce(intersect, bins.keep.lst)
-
 
 rows.common.filt <- rows.common[which(rows.common %in% bins.keep)]
 
