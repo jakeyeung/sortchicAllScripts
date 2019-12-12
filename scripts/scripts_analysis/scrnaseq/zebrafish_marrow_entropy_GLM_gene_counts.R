@@ -225,3 +225,21 @@ DimPlot(zf, label = TRUE, group.by = "celltype", cols = cbPalette)
 FeaturePlot(object = zf, features = 'entropy') + scale_color_viridis_c() + ggtitle("# Genes with Nonzero Counts")
 
 
+jgenes.all <- rownames(zf@assays$RNA)
+jgenes <- c("cd4-1", "cd8a", "gata3", "ighz", "igl4v8", "lck", "mhc2dab", "mhc2dbb", "pax5", "rag1", "traj15", "trdj2")
+# jgenes <- c("abcg2a", "apoeb", "cxcr4b", "egr1", "ENSDARG00000017320", "fgd5b", "fosb", "gata2a", "gata2b", "gfi1aa", "ikzf1", "kita", "meis1b", "mpl", "myb", "myca", "pbx1b", "runx1", "runx1t1", "sox4a", "tal1", "zfpm1")
+# jgenes <- c("gata1a", "hbaa1", "itga2b", "kit1", "klf17", "lcp1", "lmo2", "lyz", "mpx", "spi1b")
+jgenes.ens <- sapply(jgenes, function(jgene){
+  x <- jgenes.all[which(endsWith(jgenes.all, suffix = jgene))]
+  if (length(x) == 0){
+    return(NULL)
+  } else {
+    return(x)
+  }
+}) %>% 
+  purrr::compact() %>%
+  unlist()
+
+FeaturePlot(zf, features = jgenes.ens)
+
+
