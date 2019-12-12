@@ -60,7 +60,6 @@ for (exponentiate.ref.mat in tf.vec){
       
       # Load data ---------------------------------------------------------------
       
-      
       inf.annot <- paste0("/Users/yeung/data/scchic/tables/gene_tss.winsize_", winsize, ".species_drerio.nochr.bed")
       
       # init

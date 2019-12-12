@@ -232,7 +232,7 @@ bins.correlated.dat <- data.frame(chromo = paste0("chr", sapply(bins.correlated,
                                   start = sapply(bins.correlated, GetStart),
                                   end = sapply(bins.correlated, GetEnd))
 
-outbed <- file.path(outdir, paste0("B6_correlated_bins.bincutoff_", pcutoff, ".", Sys.Date(), ".bed"))
+outbed <- file.path(outdir, paste0("B6_correlated_bins.bincutoff_", pcutoff.bin, ".", Sys.Date(), ".bed"))
 fwrite(bins.correlated.dat, file = outbed, col.names = FALSE, sep = "\t")
 
 for (jmark in jmarks){
