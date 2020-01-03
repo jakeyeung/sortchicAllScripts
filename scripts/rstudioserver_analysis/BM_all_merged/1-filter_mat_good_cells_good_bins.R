@@ -48,9 +48,12 @@ GrepAndWriteMat <- function(mat.tmp, jgrp, jgrp.name, outf){
 
 # Cutoffs -----------------------------------------------------------------
 
-# outdir <- "/Users/yeung/data/scchic/quality_control_PZ_Bl6-BM-Linneg-Stemcells_AllMerged.abscutoff.dedupbug.allmarks"
-outdir <- "/home/jyeung/data/scchic/quality_control_B6.2019-12-04"
-blfile <- "~/data/scchic/databases/blacklist/mm10.blacklist.bed.gz"
+# outdir <- "/home/jyeung/data/scchic/quality_control_B6.2019-12-16"
+outdir <- "/home/jyeung/hpc/scChiC/from_rstudioserver/quality_control_B6.2019-12-16"
+dir.create(outdir)
+assertthat::assert_that(dir.exists(outdir))
+# blfile <- "~/data/scchic/databases/blacklist/mm10.blacklist.bed.gz"
+blfile <- "/home/jyeung/data/from_rstudioserver/scchic/databases/blacklist/mm10.blacklist.bed.gz"
 assertthat::assert_that(file.exists(blfile))
 
 dir.create(outdir)
@@ -62,8 +65,9 @@ pcutoff.bin <- 0.95
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
-indir <- "/home/jyeung/data/from_cluster/scchic/ZellerRawDataB6_mergedAll.retag"
-dir.rz <- file.path(indir, "RZcounts")
+# indir <- "/home/jyeung/data/from_cluster/scchic/ZellerRawDataB6_mergedAll.retag"
+indir <- "/home/jyeung/hpc/scChiC/raw_data/ZellerRawDataB6_redo_2019-12-13.tagged_bams_mergedbymarks"
+dir.rz <- file.path(indir, "LHcounts")
 dir.counts <- file.path(indir, "countTables")
 
 
@@ -258,7 +262,7 @@ for (jmark in jmarks){
 
 
 # write pdf
-pdf(file = file.path(outdir, paste0("qc_plots_B6.", jmark, ".TAcutoff_", TA.cutoff, ".countscutoff_", count.cutoff, ".binfilt_cellfilt.", Sys.Date(), ".pdf")))
+pdf(file = file.path(outdir, paste0("qc_plots_B6_redo.", jmark, ".TAcutoff_", TA.cutoff, ".countscutoff_", count.cutoff, ".binfilt_cellfilt.", Sys.Date(), ".pdf")))
 print(m.all)
 
 # plot each mark separately, then show experiments
@@ -307,6 +311,11 @@ for (jmark in jmarks){
   saveRDS(mat, file = file.path(outdir, paste0("B6BM_AllMerged_", jmark, ".TAcutoff_", TA.cutoff, ".countscutoff_", count.cutoff, ".binfilt_cellfilt.", Sys.Date(), ".rds")))
 }
 
+# # for H3K4me1 it's different?
+# x <- colnames(mats.binfilt.lst$H3K9me3)
+# xx <- unique(sapply(x, ClipLast, jsep = "_"))
+# jgrp.sc <- paste0("^PZ-ChIC-.*BMSC-")
+# grep(jgrp.sc, xx, value = TRUE)
 
 # Write singles -----------------------------------------------------------
 
@@ -316,7 +325,9 @@ jgrp.sc.h3k4me1 <- paste0("^PZ-ChIC-Bl6-BM-stem-cells-H3K4me1-Index")
 
 jgrp.bm <- paste0("^B6-13W1-BM-")
 jgrp.linneg <- paste0("^PZ-Bl6-BM-Linneg-")
-jgrp.sc <- paste0("^PZ-ChIC-B6BMSC-")
+# jgrp.sc <- paste0("^PZ-ChIC-B6BMSC-")
+jgrp.sc <- paste0("^PZ-ChIC-.*BMSC-")  # can be Bl6BMSC or B6BMSC
+
 jgrp.vec <- c(jgrp.bm, jgrp.linneg, jgrp.sc)
 jgrp.names <- c("Unenriched", "Linneg", "StemCells")
 names(jgrp.vec) <- jgrp.names
@@ -346,7 +357,7 @@ for (jgrp.name in c("Unenriched", "Linneg", "StemCells")){
 }
 
 jmark <- "H3K9me3"
-for (jgrp.name in c("Unenriched", "Linneg")){
+for (jgrp.name in c("Unenriched", "Linneg", "StemCells")){
   jgrp <- jgrp.vec[[jgrp.name]]
   outf <- file.path(outdir, paste0("B6BM_", jgrp.name, "_", jmark, ".TAcutoff_", TA.cutoff, ".countscutoff_", count.cutoff, ".binfilt_cellfilt.", Sys.Date(), ".rds"))
   GrepAndWriteMat(mats.binfilt.lst[[jmark]], jgrp, jgrp.name, outf)
@@ -368,8 +379,8 @@ for (jmark in jmarks.tmp){
 }
 
 
-# Unenriched X SC: for H3K4me3 and H3K27me3
-jmarks.tmp <- c( "H3K4me3", "H3K27me3")
+# Unenriched X SC: for H3K4me3 and H3K27me3 and H3K9me3
+jmarks.tmp <- c( "H3K4me3", "H3K27me3", "H3K9me3")
 jgrp.bmXsc <- paste(jgrp.bm, jgrp.sc, sep = "|")
 jgrp.bmXsc.name <- "UnenrichedXStemCells"
 
@@ -392,11 +403,10 @@ for (jmark in jmarks.tmp){
 
 
 # Linneg X SC (H3K4me1 excluded)
-jmarks.tmp <- c("H3K4me3", "H3K27me3")
+jmarks.tmp <- c("H3K4me3", "H3K27me3", "H3K9me3")
 jgrp.linnegXsc <- paste(jgrp.linneg, jgrp.sc, sep = "|")
 jgrp.linnegXsc.name <- "LinnegXStemCells"
 
-# Unenriched, Linneg, Stemcell by itself
 for (jmark in jmarks.tmp){
   mat.tmp <- mats.binfilt.lst[[jmark]]
   outf <- file.path(outdir, paste0("B6BM_", jgrp.linnegXsc.name, "_", jmark, ".TAcutoff_", TA.cutoff, ".countscutoff_", count.cutoff, ".binfilt_cellfilt.", Sys.Date(), ".rds"))
