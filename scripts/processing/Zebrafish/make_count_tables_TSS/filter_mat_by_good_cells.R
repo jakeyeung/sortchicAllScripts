@@ -67,6 +67,7 @@ if (ncol(count.dat$counts) > 0){
   save(count.dat, file = args$outfile)
 } else {
   print("no good cells matched, doing nothing")
+  stop("No good cells matched, exiting")
 }
 
 

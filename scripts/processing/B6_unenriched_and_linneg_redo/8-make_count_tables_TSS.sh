@@ -5,8 +5,8 @@
 # 2019-09-04
 
 
-inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawDataB6/raw_demultiplexed"
-outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawDataB6/countTables_TSS"
+inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawDataB6_mergedAll.retag"
+outdir=$inmain/countTables_TSS
 [[ ! -d $outdir ]] && mkdir $outdir
 
 jdist="50000"
@@ -14,16 +14,14 @@ ref="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/nochr/gene_tss_winsize.
 
 [[ ! -d $outdir ]] && mkdir $outdir
 
-jmem='12G'
-jtime='6:00:00'
+jmem='32G'
+jtime='3:00:00'
 
 mapq=40
-
-for indir in `ls -d $inmain/*BM*`; do
-    bname=$(basename $indir)
-    inbam=$indir/tagged/$bname.bwaMapped.sorted.bam
-    [[ ! -e $inbam ]] && echo "$inbam not found, skipping" && continue
-    outf=$outdir/${bname}.countTable.demuxbugfixed.TSS_${jdist}.csv
+for inbam in `ls -d $inmain/*.bam`; do
+    bname=$(basename $inbam)
+    bname=${bname%.*}
+    outf=$outdir/${bname}.countTable.TSS_${jdist}.csv
     [[ -e $outf ]] && echo "$outf found, continuing" && continue
 
     BNAME=$outdir/${bname}.qsub

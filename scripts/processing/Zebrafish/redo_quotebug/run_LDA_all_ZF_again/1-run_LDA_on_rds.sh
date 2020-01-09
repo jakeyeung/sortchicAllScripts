@@ -13,7 +13,7 @@ rs="/home/hub_oudenaarden/jyeung/projects/scchic-functions/scripts/processing_sc
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 
 ncores=1
-topics="50"
+topics="20"
 topicsName=`echo $topics | sed 's/,/_/g'`
 binarize="FALSE"
 
@@ -25,7 +25,7 @@ indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/from_macbook/count_mat_binfilt_ce
 outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_${prefix}"  # add to existing directory
 [[ ! -d $outmain ]] && echo "$outmain not found, exiting" && exit 1  
 
-for inf in `ls -d $indir/PZ-ZF-All_*.rds`; do
+for inf in `ls -d $indir/PZ-ZF-All_Unenriched.H3K4me1.2019-11-23*.rds`; do
     [[ ! -e $inf ]] && echo "$inf not found, exiting" && exit 1
     bname=$(basename $inf)
     bname=${bname%.*}.K-${topicsName}
