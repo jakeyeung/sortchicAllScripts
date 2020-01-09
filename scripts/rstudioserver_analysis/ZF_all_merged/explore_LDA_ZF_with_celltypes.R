@@ -36,7 +36,8 @@ jsuff <- "AllMerged"
 # outdir <- "/home/jyeung/data/from_rstudioserver/scchic/pdfs/"
 # outdir <- "/home/jyeung/hpc/scChiC/from_rstudioserver/LDA_downstream_ZF"
 # outdir <- "/home/jyeung/hpc/scChiC/from_rstudioserver/LDA_downstream_ZF"
-outdir <- "/home/jyeung/data/from_rstudioserver/scchic/pdfs/LDA_downstream_ZF"
+outdir <- "/home/jyeung/data/from_rstudioserver/scchic/pdfs/LDA_downstream_ZF.2020-01-05"
+dir.create(outdir)
 
 jwin <- 100000L
 
@@ -110,6 +111,8 @@ keepn <- 250
 # keepnvec <- c(50, 200, 250, 500)
 keepnvec <- c(100, 150)
 
+cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+
 # Load and plot  ----------------------------------------------------------
 
 for (keepn in keepnvec){
@@ -139,25 +142,52 @@ for (keepn in keepnvec){
     
     dat.umap.long <- data.frame(cell = rownames(umap.out$layout), umap1 = umap.out$layout[, 1], umap2 = umap.out$layout[, 2], stringsAsFactors = FALSE) %>%
       rowwise() %>%
-      mutate(experi = ClipLast(cell))
+      mutate(experi = ClipLast(cell),
+             plate = ClipLast(cell, jsep = "_"))
     
     m.umap.split <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = experi)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
       facet_wrap(~experi) + ggtitle(jmark)
     
+    dat.umap.long <- DoLouvain(topics.mat = topics.mat, custom.settings.louv = jsettings, dat.umap.long = dat.umap.long)
+    
     dat.impute.log <- log2(t(tm.result$topics %*% tm.result$terms))
     
     dat.var <- CalculateVarAll(dat.impute.log, jchromos)
+    dat.cellsizes <- data.frame(cell = colnames(count.mat), cellsize = log10(colSums(count.mat) / 5), stringsAsFactors = FALSE)
     
     dat.merge <- left_join(dat.umap.long, dat.var)
+    dat.merge <- left_join(dat.merge, dat.cellsizes)
     
     m.var <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + 
       geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
       scale_color_viridis_c(direction = -1) + ggtitle(jmark)
-    
     m.var.split <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + 
       geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
       scale_color_viridis_c(direction = -1) + ggtitle(jmark) + facet_wrap(~experi)
+    m.var.plate <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + 
+      geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+      scale_color_viridis_c(direction = -1) + ggtitle(jmark) + facet_wrap(~plate)
     
+    m.size <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = cellsize)) + 
+      geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+      scale_color_viridis_c(direction = 1) + ggtitle(jmark)
+    m.size.experi <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = cellsize)) + 
+      geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+      scale_color_viridis_c(direction = 1) + ggtitle(jmark) + facet_wrap(~experi)
+    m.size.plate <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = cellsize)) + 
+      geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+      scale_color_viridis_c(direction = 1) + ggtitle(jmark) + facet_wrap(~plate)
+    
+    m.louv <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = louvain)) + 
+      geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+      scale_color_manual(values = cbPalette) + ggtitle(jmark)
+    m.louv.experi <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = louvain)) + 
+      geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+      scale_color_manual(values = cbPalette) + ggtitle(jmark) + facet_wrap(~experi)
+    m.louv.plate <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = louvain)) + 
+      geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+      scale_color_manual(values = cbPalette) + ggtitle(jmark) + facet_wrap(~plate)
+      
     
     # Get entropy for each topics ---------------------------------------------
     
@@ -190,6 +220,13 @@ for (keepn in keepnvec){
     print(m.umap.split)
     print(m.var)
     print(m.var.split)
+    print(m.var.plate)
+    print(m.size)
+    print(m.size.experi)
+    print(m.size.plate)
+    print(m.louv)
+    print(m.louv.experi)
+    print(m.louv.plate)
     
     for (i in seq(nrow(topics.sum))){
       jtop <- topics.sum$topic[[i]]
