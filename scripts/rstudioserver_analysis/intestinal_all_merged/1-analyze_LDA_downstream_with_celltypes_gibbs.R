@@ -27,7 +27,10 @@ library(topicmodels)
 jstart <- Sys.time()
 
 # Load LDA ----------------------------------------------------------------
-ncores <- 20
+ncores <- 10
+
+cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+
 
 jsettings <- umap.defaults
 jsettings$n_neighbors <- 30
@@ -43,7 +46,7 @@ jmethod <- "gibbs"
 inmain <- "/home/jyeung/hpc/intestinal_scchic/LDA_outputs/topicmodels/ldaAnalysisBins_intestines.2019-12-22"
 infs <- list.files(inmain, pattern = ".Robj", recursive = TRUE, all.files = TRUE, full.names = TRUE)
 
-outmain <- paste0("/home/jyeung/hpc/intestinal_scchic/from_rstudioiserver/pdfs/LDA_downstream_gibbs_withLouvain2")
+outmain <- paste0("/home/jyeung/hpc/intestinal_scchic/from_rstudioiserver/pdfs/LDA_downstream_gibbs_withLouvain.2020-01-06")
 dir.create(outmain)
 
 cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf", "#0070ea", "#15ef29", "#e1071e", "#870f86", "#cb255d")
@@ -62,8 +65,29 @@ dat.norm.long <- dat.norm.long %>%
 group_by(gene) %>%
 mutate(zscore = scale(exprs, center = TRUE, scale = TRUE))
 
+infs.filt <- lapply(infs, function(inf){
+  fbase <- gsub("\\", "", ClipLast(basename(inf), jsep = "\\."), fixed = TRUE)
+  dbase <- dirname(inf)
+  jbin <- strsplit(dbase, "\\.")[[1]][length(strsplit(dbase, "\\.")[[1]])]
+  outpdf <- file.path(outmain, paste0(fbase, ".binarize_", jbin, ".pdf"))
+  if (file.exists(outpdf)){
+      return(NA)
+  } else {
+      return(inf)
+  }
+})
+print("Original infs")
+print(infs)
+infs <- infs.filt[which(!is.na(infs.filt))]
+print("Using these infs instead, skiipped ones with existing pdf")
+print(infs)
+
+# reverse order so Sceraped is first
+infs <- rev(infs)
+
 # for (inf in infs){
-parallel::mclapply(infs, function(inf){
+# parallel::mclapply(infs, function(inf){
+for (inf in infs){
 
   fbase <- gsub("\\", "", ClipLast(basename(inf), jsep = "\\."), fixed = TRUE)
   dbase <- dirname(inf)
@@ -93,11 +117,15 @@ parallel::mclapply(infs, function(inf){
            prefix = paste(strsplit(cell, "-")[[1]][1:3], collapse = "-"))
   unique(dat.umap.long$experi)
   
+  dat.umap.long <- DoLouvain(tm.result$topics, custom.settings.louv = jsettings, dat.umap.long = dat.umap.long)
   # add variance
   dat.impute.log <- log2(t(tm.result$topics %*% tm.result$terms))
   jchromos <- paste("chr", c(seq(19), "X", "Y"), sep = "")
   dat.var <- CalculateVarAll(dat.impute.log, jchromos)
+  dat.cellsize <- data.frame(cell = colnames(count.mat), cellsize = log10(colSums(count.mat) / 5), stringsAsFactors = FALSE)
+  
   dat.umap.long <- left_join(dat.umap.long, dat.var)
+  dat.umap.long <- left_join(dat.umap.long, dat.cellsize)
   
   
   # Get bns -----------------------------------------------------------------
@@ -138,24 +166,66 @@ parallel::mclapply(infs, function(inf){
   m.prefix.facet <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = prefix)) + 
     geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     facet_wrap(~prefix)
+  
   m.experi <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = experi)) + 
     geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   m.experi.facet <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = experi)) + 
     geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    facet_wrap(~experi)
+    
+  m.louvain <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + 
+    geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_manual(values = cbPalette)
+  m.louvain.facet <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + 
+    geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_manual(values = cbPalette) + 
+    facet_wrap(~experi)
+  m.louvain.facetprefix <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + 
+    geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_manual(values = cbPalette) + 
     facet_wrap(~prefix)
+
+    
   m.var <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + 
     geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-    scale_color_viridis_c()
+    scale_color_viridis_c(direction = -1)
   m.var.facet <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + 
     geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    facet_wrap(~experi) + 
+    scale_color_viridis_c(direction = -1)
+  m.var.facetprefix <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + 
+    geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     facet_wrap(~prefix) + 
-    scale_color_viridis_c()
+    scale_color_viridis_c(direction = -1)
+  
+  m.size <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = cellsize)) + 
+    geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_viridis_c(direction = 1)
+  m.size.facet <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = cellsize)) + 
+    geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    facet_wrap(~experi) + 
+    scale_color_viridis_c(direction = 1)
+  m.size.facetprefix <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = cellsize)) + 
+    geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    facet_wrap(~prefix) + 
+    scale_color_viridis_c(direction = 1)
+  
+  
+  
   print(m.prefix)
   print(m.prefix.facet)
   print(m.experi)
   print(m.experi.facet)
+  print(m.louvain)
+  print(m.louvain.facet)
+  print(m.louvain.facetprefix)
   print(m.var)
   print(m.var.facet)
+  print(m.var.facetprefix)
+  print(m.size)
+  print(m.size.facet)
+  print(m.size.facetprefix)
+  
   
   for (jtop in topics.sum$topic){
     m.umap <- PlotXYWithColor(dat.merged.topics, xvar = "umap1", yvar = "umap2", cname = jtop)
@@ -200,6 +270,6 @@ parallel::mclapply(infs, function(inf){
   }
   dev.off()
 print(Sys.time() - jstart)
-}, 
-mc.cores = ncores)
-
+# }, 
+# mc.cores = ncores)
+}
