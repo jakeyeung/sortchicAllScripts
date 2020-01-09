@@ -29,7 +29,9 @@ assertthat::assert_that(file.exists(inf))
 load(inf, v=T)
 
 
-inf.raw <- "/home/jyeung/hpc/scChiC/raw_data/ZellerRawDataB6_redo_2019-12-13.tagged_bams_mergedbymarks/countTables_TSS/H3K4me3-BM_Linneg_SC-merged.tagged.countTable.TSS_50000.csv"
+# inf.raw <- "/home/jyeung/hpc/scChiC/raw_data/ZellerRawDataB6_redo_2019-12-13.tagged_bams_mergedbymarks/countTables_TSS/H3K4me3-BM_Linneg_SC-merged.tagged.countTable.TSS_50000.csv"
+inf.raw <- "/home/jyeung/hpc/scChiC/raw_data/ZellerRawDataB6_redo_2019-12-13.tagged_bams_mergedbymarks/countTables_TSS/H3K4me1-BM_SC-merged.tagged.countTable.TSS_50000.csv"
+assertthat::assert_that(file.exists(inf.raw))
 
 count.tss <- ReadMatTSSFormat(inf.raw, as.sparse = TRUE)
 count.tss.long <- CollapseRowsByGene(count.tss, as.long = TRUE)
@@ -75,11 +77,9 @@ print(table(dat.umap.long$experi))
 
 # find Elane??
 
-jgenes <- c("Elane", "F13a1", "Irf8", "Cebpe", "S100a9", "S100a8", "Hlf")
+jgenes <- c("Elane", "F13a1", "Irf8", "Cebpe", "S100a9", "S100a8", "Hlf", "Sox6")
 
 # expression of genes
-count.tss
-
 jsub <- data.table::dcast(data = count.tss.long %>% group_by(cell) %>% mutate(count = count / sum(count)), 
                           formula = cell ~ gene, value.var = "count")
 # as.data.frame(jsub) <- jsub
@@ -88,8 +88,10 @@ jsub <- data.table::dcast(data = count.tss.long %>% group_by(cell) %>% mutate(co
 
 dat.umap.long.genes <- left_join(dat.umap.long, jsub)
 
-PlotXYWithColor(dat.umap.long.genes %>% filter(umap2 > 5), xvar = "umap1", yvar = "umap2", cname = "Elane", remove.axis.info = FALSE)
+# PlotXYWithColor(dat.umap.long.genes %>% filter(umap2 > 5), xvar = "umap1", yvar = "umap2", cname = "Elane", remove.axis.info = FALSE)
 
+PlotXYWithColor(dat.umap.long.genes, xvar = "umap1", yvar = "umap2", cname = "Sox6")
+PlotXYWithColor(dat.umap.long.genes, xvar = "umap1", yvar = "umap2", cname = "Elane")
 PlotXYWithColor(dat.umap.long.genes, xvar = "umap1", yvar = "umap2", cname = "S100a8")
 PlotXYWithColor(dat.umap.long.genes, xvar = "umap1", yvar = "umap2", cname = "Hlf")
 PlotXYWithColor(dat.umap.long.genes, xvar = "umap1", yvar = "umap2", cname = "Irf8")
