@@ -47,8 +47,19 @@ library(GenomicRanges)
 # inf <- "/home/jyeung/data/from_cluster/scchic/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks_mergedtagged_dedupfixed_redo/lda_outputs.B6BM_Unenriched_H3K4me1.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.binarize.FALSE/ldaOut.B6BM_Unenriched_H3K4me1.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.Robj"
 # inf <- "/home/jyeung/data/from_cluster/scchic/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks_mergedtagged_dedupfixed_redo/lda_outputs.B6BM_AllMerged_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.binarize.FALSE/ldaOut.B6BM_AllMerged_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.Robj"
 
+jprefix <- "AllMerged"
+jmark <- "H3K4me3"
+jdate <- "2019-12-05"
 
-inf <- "/home/jyeung/data/from_cluster/scchic/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks_mergedtagged_dedupfixed_redo/lda_outputs.B6BM_Unenriched_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.binarize.FALSE/ldaOut.B6BM_Unenriched_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.Robj"
+"lda_outputs.B6BM_AllMerged_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.binarize.FALSE"
+
+# inf <- "/home/jyeung/data/from_cluster/scchic/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks_mergedtagged_dedupfixed_redo/lda_outputs.B6BM_Unenriched_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.binarize.FALSE/ldaOut.B6BM_Unenriched_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.Robj"
+inf <- paste0("/home/jyeung/data/from_cluster/scchic/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks_mergedtagged_dedupfixed_redo/lda_outputs.B6BM_", jprefix, "_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.", jdate, ".K-30.binarize.FALSE/ldaOut.B6BM_", jprefix, "_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.", jdate, ".K-30.Robj")
+
+# print(inf)
+# print("/home/jyeung/data/from_cluster/scchic/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks_mergedtagged_dedupfixed_redo/lda_outputs.B6BM_AllMerged_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.binarize.FALSE/ldaOut.B6BM_AllMerged_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.Robj")
+assertthat::assert_that(file.exists(inf))
+
 load(inf, v=T)
 
 tm.result <- posterior(out.lda)
@@ -90,17 +101,43 @@ ggplot(dat.merge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) +
 dat.counts <- data.frame(cell = colnames(count.mat), cellsize = colSums(count.mat) / 5)
 dat.merge <- left_join(dat.merge, dat.counts)
 
+# is column-wise sparsiity of matrix an indicator? 
+dat.sparse <- data.frame(cell = colnames(count.mat), frac.zeros = apply(count.mat, 2, function(jcol) nnzero(jcol) / length(jcol)))
+
+dat.merge <- left_join(dat.merge, dat.sparse)
+
 dat.merge <- dat.merge %>%
   rowwise() %>%
-  mutate(experi = ClipLast(cell, jsep = "_"))
+  mutate(experi = ClipLast(cell, jsep = "_"), 
+         prefix = ClipLast(cell, jsep = "-"))
 
 #' There may be a relationship with the number of cuts, but the relationship isnt as obvious as intrachrom var
 ggplot(dat.merge, aes(x = umap1, y = umap2, color = log10(cellsize))) + 
   geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_viridis_c(direction = 1)
 
+ggplot(dat.merge, aes(x = umap1, y = umap2, color = frac.zeros)) + 
+  geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_viridis_c(direction = 1)
+
 #' Relationship between cellsize and intrachrom var is weak, but we see Plate 1 is slightly higher than the others. 
+
+ggplot(dat.merge, aes(x = log10(cellsize), y = frac.zeros, color = experi)) + geom_point()  + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+ggplot(dat.merge, aes(x = frac.zeros, y = cell.var.within.sum.norm, color = experi)) + geom_point()  + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ggplot(dat.merge, aes(x = log10(cellsize), y = cell.var.within.sum.norm, color = experi)) + geom_point()  + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+ggplot(dat.merge, aes(x = frac.zeros, fill = experi)) + geom_density(alpha = 0.25) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~prefix, ncol = 1)
+
+ggplot(dat.merge, aes(x = frac.zeros, fill = experi)) + geom_density(alpha = 0.25) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~prefix, ncol = 1)
+
+ggplot(dat.merge, aes(x = cell.var.within.sum.norm, fill = experi)) + geom_density(alpha = 0.25) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~prefix, ncol = 1)
+
 
 # plate effect?
 m.size <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = log10(cellsize))) + facet_wrap(~experi) + 
