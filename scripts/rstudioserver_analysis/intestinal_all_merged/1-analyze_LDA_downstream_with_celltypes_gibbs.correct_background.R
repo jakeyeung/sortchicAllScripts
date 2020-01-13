@@ -118,6 +118,13 @@ m.louv.after <- ggplot(dat.merge.proj, aes(x = umap1, y = umap2, color = louvain
 JFuncs::multiplot(m.louv.before, m.louv.after)
 
 
+# redo louvain
+m.louv.after.redo <- ggplot(dat.merge.proj, aes(x = umap1, y = umap2, color = louvain_AfterCorrection)) + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_manual(values = cbPalette)
+print(m.louv.after)
+
+
 # Plot genes ?  -----------------------------------------------------------
 
 jgenes <- c("Lgr5", "Alpi", "Lrig1", "Dclk1", "Rfx6", "Sox6", "Ikzf1", "Foxo1", "Gimap6", "Bcl11a")
@@ -161,6 +168,7 @@ ggplot(dat.merge, aes(x = -PC2, y = cell.var.within.sum.norm, color = louvain)) 
 
 print(m.louv.before)
 print(m.louv.after)
+print(m.louv.after.redo)
 
 for (jgene in jgenes.terms){
   print(jgene)
