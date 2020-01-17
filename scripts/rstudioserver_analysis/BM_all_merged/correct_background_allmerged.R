@@ -51,6 +51,11 @@ jprefix <- "AllMerged"
 jmark <- "H3K4me3"
 jdate <- "2019-12-05"
 
+
+outf <- paste0("/home/jyeung/hpc/intestinal_scchic/from_rstudioiserver/rdata/correct_background_robjs.", jmark, ".", jprefix, ".", Sys.Date(), ".RData")
+assertthat::assert_that(!file.exists(outf))
+
+
 "lda_outputs.B6BM_AllMerged_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.binarize.FALSE"
 
 # inf <- "/home/jyeung/data/from_cluster/scchic/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks_mergedtagged_dedupfixed_redo/lda_outputs.B6BM_Unenriched_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.binarize.FALSE/ldaOut.B6BM_Unenriched_H3K4me3.TAcutoff_0.5.countscutoff_1000.binfilt_cellfilt.2019-12-05.K-30.Robj"
@@ -102,7 +107,7 @@ dat.counts <- data.frame(cell = colnames(count.mat), cellsize = colSums(count.ma
 dat.merge <- left_join(dat.merge, dat.counts)
 
 # is column-wise sparsiity of matrix an indicator? 
-dat.sparse <- data.frame(cell = colnames(count.mat), frac.zeros = apply(count.mat, 2, function(jcol) nnzero(jcol) / length(jcol)))
+dat.sparse <- data.frame(cell = colnames(count.mat), frac.zeros = apply(count.mat, 2, function(jcol) 1 - nnzero(jcol) / length(jcol)))
 
 dat.merge <- left_join(dat.merge, dat.sparse)
 
@@ -126,7 +131,14 @@ ggplot(dat.merge, aes(x = log10(cellsize), y = frac.zeros, color = experi)) + ge
 ggplot(dat.merge, aes(x = frac.zeros, y = cell.var.within.sum.norm, color = experi)) + geom_point()  + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ggplot(dat.merge, aes(x = log10(cellsize), y = cell.var.within.sum.norm, color = experi)) + geom_point()  + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-ggplot(dat.merge, aes(x = frac.zeros, fill = experi)) + geom_density(alpha = 0.25) +
+ggplot(dat.merge, aes(x = frac.zeros, y = cell.var.within.sum.norm, color = experi)) + geom_point()  + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~prefix, ncol = 1)
+
+ggplot(dat.merge, aes(x = log10(frac.zeros), fill = experi)) + geom_density(alpha = 0.25) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~prefix, ncol = 1)
+
+ggplot(dat.merge, aes(x = log10(cellsize), fill = experi)) + geom_density(alpha = 0.25) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   facet_wrap(~prefix, ncol = 1)
 
@@ -306,14 +318,14 @@ ggplot(loadings.var %>% filter(rnk < 50), aes(x = rnk, y = log10(loading), label
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 #' As expected, suspicious peaks have large loadings for topics that are also in PC1
-sort(log10(terms.mat.input[, "chr17:35160000-35260000"]), decreasing = TRUE)
+sort(log10(terms.mat.input[, "chr11:69040000-69140000"]), decreasing = TRUE)
 sort(dat.comp$rotation[, 1], decreasing = TRUE)  
 
 # plot a gene onto the umap
 dat.impute <- genes.proj %*% t(dat.proj)
 
 # plot S100a8, granulocytes
-jgenes <- c("Ccl5", "Sox6", "Bach2", "Ccl2", "S100a8")
+jgenes <- c("Ccl5", "Sox6", "Bach2", "Ccl2", "S100a8", "Hlf")
 
 jterms.dat <- subset(annot.out$out2.df.closest, gene %in% jgenes) %>%
   group_by(gene) %>%
@@ -334,6 +346,14 @@ for (jgene in jgenes){
   m <- PlotXYWithColor(dat.withgene, xvar = "umap1", yvar = "umap2", cname = jgene, jtitle = paste("Imputed exprs of", jgene))
   print(m)
 }
+
+# write new objects to output 
+save(tm.result, dat.merge, dat.merge.pca, rot.mat, topics.mat.input, scale.fac, const, dat.umap.proj, file = outf)
+
+# rotation matrix, topic and terms mat before rotation, after rotation, LDA object, metadata 
+
+
+
 
 
 
@@ -356,6 +376,8 @@ for (jgene in jgenes){
 #   geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
 #   scale_color_manual(values = cbPalette)
 # 
+
+
 
 
 

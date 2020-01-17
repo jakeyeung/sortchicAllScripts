@@ -46,7 +46,7 @@ jmethod <- "gibbs"
 inmain <- "/home/jyeung/hpc/intestinal_scchic/LDA_outputs/topicmodels/ldaAnalysisBins_intestines.2019-12-22"
 infs <- list.files(inmain, pattern = ".Robj", recursive = TRUE, all.files = TRUE, full.names = TRUE)
 
-outmain <- paste0("/home/jyeung/hpc/intestinal_scchic/from_rstudioiserver/pdfs/LDA_downstream_gibbs_withLouvain.2020-01-06")
+outmain <- paste0("/home/jyeung/hpc/intestinal_scchic/from_rstudioiserver/pdfs/LDA_downstream_gibbs_withLouvain.", Sys.Date())
 dir.create(outmain)
 
 cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf", "#0070ea", "#15ef29", "#e1071e", "#870f86", "#cb255d")
@@ -209,6 +209,9 @@ for (inf in infs){
     geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     facet_wrap(~prefix) + 
     scale_color_viridis_c(direction = 1)
+  m.size.facetprefix.density <- ggplot(dat.umap.long, aes(x = cellsize, fill = prefix)) + 
+    geom_density() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    facet_wrap(~prefix, ncol = 1)
   
   
   
