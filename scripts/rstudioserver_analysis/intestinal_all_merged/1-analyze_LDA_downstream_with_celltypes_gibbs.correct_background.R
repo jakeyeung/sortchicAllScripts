@@ -22,6 +22,9 @@ library(org.Mm.eg.db)
 library(ChIPseeker)
 library(GenomicRanges)
 
+library(JFuncs)
+library(scchicFuncs)
+
 
 # Load data ---------------------------------------------------------------
 
@@ -127,7 +130,7 @@ print(m.louv.after)
 
 # Plot genes ?  -----------------------------------------------------------
 
-jgenes <- c("Lgr5", "Alpi", "Lrig1", "Dclk1", "Rfx6", "Sox6", "Ikzf1", "Foxo1", "Gimap6", "Bcl11a")
+jgenes <- c("Lgr5", "Alpi", "Lrig1", "Dclk1", "Rfx6", "Sox6", "Ikzf1", "Foxo1", "Gimap6", "Bcl11a", "S100a8", "Ebf1", "Elane")
 
 imput.mat <- topics.mat.proj %*% t(terms.mat.proj)
 
@@ -175,6 +178,7 @@ for (jgene in jgenes.terms){
   m <- PlotXYWithColor(dat.merge.proj.exprs, xvar = "umap1", yvar = "umap2", cname = jgene)
   print(m)
 }
+
 dev.off()
 
 # Check Alpi on original UMAP? 
@@ -219,3 +223,22 @@ PlotXYWithColor(exprs.merge, xvar = "umap1", yvar = "umap2", cname = "exprs")
 
 outf <- file.path("/home/jyeung/hpc/intestinal_scchic/from_rstudioiserver/rdata", "k4me1_LDA_downstream_var_correted.RData")
 save(outf, topics.mat, terms.mat, rot.mat, topics.mat.proj, terms.mat.proj, annots.out, dat.merge, dat.merge.proj, file = outf)
+
+
+# write bad cells to output
+cells.bad.outf <- file.path("/home/jyeung/hpc/intestinal_scchic/from_rstudioiserver/cells_list", "k4me1_bad_cells_maybe_immune.txt")
+cells.good.outf <- file.path("/home/jyeung/hpc/intestinal_scchic/from_rstudioiserver/cells_list", "k4me1_good_cells_removed_immune.txt")
+
+ggplot(dat.merge.proj, aes(x = umap1, y = umap2, color = louvain_AfterCorrection)) + 
+  geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_manual(values = cbPalette)
+
+cells.remove <- subset(dat.merge.proj, umap2 > 5)$cell
+cells.cellskeep <- subset(dat.merge.proj, umap2 < 5)$cell
+
+fwrite(as.data.frame(cells.remove), file = cells.bad.outf, col.names = FALSE)
+fwrite(as.data.frame(cells.cellskeep), file = cells.good.outf, col.names = FALSE)
+
+
+
+
