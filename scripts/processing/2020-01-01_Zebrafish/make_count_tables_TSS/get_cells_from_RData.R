@@ -1,22 +1,19 @@
 # Jake Yeung
-# filter_mat_by_good_cells.R
+# get_cells_from_RData.R
 # 2019-11-08
 # DESCRIPTION
 # 
-#     Filter sparse mat by good cells
+#     Get good cells from .RData
 # 
 # FOR HELP
 # 
-#     Rscript filter_mat_by_good_cells.R --help
+#     Rscript get_cells_from_RData.R --help
 # 
 # AUTHOR:      Jake Yeung (j.yeung@hubrecht.eu)
 # LAB:         Quantitative Biology Lab (https://www.hubrecht.eu/research-groups/van-oudenaarden-group/)
 # CREATED ON:  2019-11-08
 # LAST CHANGE: see git log
 # LICENSE:     MIT License (see: http://opensource.org/licenses/MIT)
-
-library(Matrix)
-library(data.table)
 
 suppressPackageStartupMessages(library("argparse"))
 
@@ -27,11 +24,9 @@ parser <- ArgumentParser()
 # by default ArgumentParser will add an help option 
 
 parser$add_argument('infile', metavar='INFILE',
-                                            help='.rds')
-parser$add_argument('goodcells', metavar='Column of good cells',
-                                            help='.csv')
+                                            help='.RData with count.dat$counts')
 parser$add_argument('outfile', metavar='OUTFILE',
-                                            help='.RData named count.dat$counts filtered')
+                                            help='Good cells text file')
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                         help="Print extra output [default]")
                                         
@@ -45,34 +40,21 @@ if ( args$verbose ) {
     print(args)
 }
 
-# get good cells 
-dat <- data.table::fread(args$goodcells, header=FALSE)  # V1
-
-print(dat)
-cells <- dat$V1
-
-assertthat::assert_that(length(cells) > 0)
-
-print(cells)
-
-count.mat <- readRDS(args$infile)
-
-cols.keep <- which(colnames(count.mat) %in% cells)
-
-print(colnames(count.mat)[cols.keep])
-
-count.dat <- list()
-count.dat$counts <- count.mat[, cols.keep]
-if (ncol(count.dat$counts) > 0){
-  save(count.dat, file = args$outfile)
+if (endsWith(args$infile, ".RData")){
+    load(args$infile)  # count.dat$counts
 } else {
-  print("no good cells matched, doing nothing")
+    count.dat <- list()
+    count.dat$counts <- readRDS(args$infile)
 }
 
+good.cells <- colnames(count.dat$counts)
 
-
-
-
+# write to output
+sink(args$outfile)
+for (gc in good.cells){
+  cat(gc, "\n")
+}
+sink()
 
 
 
