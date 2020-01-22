@@ -34,7 +34,7 @@ tm.result <- posterior(out.lda)
 
 outdir <- "/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs"
 assertthat::assert_that(dir.exists(outdir))
-outf <- file.path(outdir, "fit_GLM_regress_intrachromvar_init_with_LDA.RData")
+outf <- file.path(outdir, "fit_GLM_regress_intrachromvar_init_with_LDA.with_sizefactor.RData")
 assertthat::assert_that(!file.exists(outf))
 
 # Calculate intrachrom var  -----------------------------------------------
@@ -77,6 +77,7 @@ ggplot(dat.var.merge, aes(y = ncuts, x = ncuts.var, color = cell.var.within.sum.
 bins.keep <- 100
 
 Y <- count.mat
+size.factor <- colSums(Y)
 
 assertthat::assert_that(all(rownames(Y) == colnames(tm.result$terms)))
 
@@ -105,6 +106,7 @@ V.init <- t(V.init)  # now its g by k
 assertthat::assert_that(all(rownames(X.mat) == colnames(Y.filt)))
 assertthat::assert_that(all(rownames(U.init) == colnames(Y.filt)))
 assertthat::assert_that(all(rownames(V.init) == rownames(Y.filt)))
+assertthat::assert_that(all(names(size.factor) == colnames(Y.filt)))
 
 # # check inits are sane
 # jsettings <- umap.defaults
@@ -134,7 +136,7 @@ assertthat::assert_that(all(rownames(V.init) == rownames(Y.filt)))
 
 system.time(
   glm.out <- glmpca(Y = Y.filt, L = 30, fam = "mult", ctl = list(maxIters = 250, eps = 1e-4), penalty = 1, verbose = FALSE, 
-                    init = list(factors = U.init, loadings = V.init), X = X.mat, Z = NULL)
+                    init = list(factors = U.init, loadings = V.init), X = X.mat, Z = NULL, sz = size.factor)
 )
 save(glm.out, Y, U.init, V.init, X.mat, out.lda, file = outf)
 print(Sys.time() - jstart)
