@@ -30,16 +30,33 @@ assertthat::assert_that(file.exists(inf))
 
 load(inf, v=T)
 
+ntopics <- out.lda@k
+
 tm.result <- posterior(out.lda)
+
+# use.orig.sz <- TRUE
+use.orig.sz <- TRUE 
+niter <- 1000
+do.log <- FALSE
+svd.on.Yinit <- TRUE
+
+
+
+# svd on Yinit only works if do.log is false
+if (svd.on.Yinit){
+  assertthat::assert_that(!do.log)
+}
 
 outdir <- "/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs"
 assertthat::assert_that(dir.exists(outdir))
-outf <- file.path(outdir, "fit_GLM_regress_intrachromvar_init_with_LDA.with_sizefactor.RData")
+outf <- file.path(outdir, paste0("fit_GLM_regress_intrachromvar_init_with_LDA.UseOrigSZ_", use.orig.sz, 
+                                 ".niter_", niter, ".log_", do.log, ".svdinit_", svd.on.Yinit, ".RData"))
 assertthat::assert_that(!file.exists(outf))
 
 # Calculate intrachrom var  -----------------------------------------------
 
-dat.var.raw <- CalculateVarRaw(as.matrix(count.mat), merge.size = 1000, chromo.exclude.grep = "^chrX|^chrY", jpseudocount = 1, jscale = 10^6, calculate.ncuts = TRUE)
+dat.var.raw <- CalculateVarRaw(as.matrix(count.mat), merge.size = 1000, 
+                               chromo.exclude.grep = "^chrX|^chrY", jpseudocount = 1, jscale = 10^6, calculate.ncuts = TRUE)
 
 # calculate var from LDA
 
@@ -77,7 +94,15 @@ ggplot(dat.var.merge, aes(y = ncuts, x = ncuts.var, color = cell.var.within.sum.
 bins.keep <- 100
 
 Y <- count.mat
-size.factor <- colSums(Y)
+
+if (use.orig.sz){
+  size.factor <- colSums(Y)
+} else {
+  size.factor <- NULL
+}
+
+print("Size factor:")
+print(head(size.factor))
 
 assertthat::assert_that(all(rownames(Y) == colnames(tm.result$terms)))
 
@@ -98,9 +123,33 @@ X.mat <- matrix(data = X.reorder$ncuts.var, ncol = 1, byrow = TRUE, dimnames = l
 
 # factors (U) is c by k
 # loadings (V) is g by k
-U.init <- scale(tm.result$topics, center = TRUE, scale = FALSE)  # c by k
-V.init <- scale(tm.result$terms[, bins.high], center = TRUE, scale = FALSE)  # k by g
-V.init <- t(V.init)  # now its g by k
+if (do.log){
+  topics.mat <- log2(tm.result$topics)
+  terms.mat <- log2(tm.result$terms[, bins.high])
+} else {
+  topics.mat <- tm.result$topics
+  terms.mat <- tm.result$terms[, bins.high]
+}
+
+if (svd.on.Yinit){
+  # GLM loglink function for multinom is log( p / (1 - p) )
+  # V %*% t(U) on init matrix gives an estimate of p
+  # after estimate p / (1 - p), THEN remove mean and finally do SVD to get factors and loadings estimate
+  p <- t(terms.mat) %*% t(topics.mat)
+  logodds <- log(p / (1 - p))
+  # remove mean and SVD
+  logodds.centered <- t(scale(t(logodds), center = TRUE, scale = FALSE))
+  # logodds.centered.check <- sweep(logodds, MARGIN = 1, STATS = rowMeans(logodds), FUN = "-")
+  logodds.pca <- prcomp(t(logodds.centered), center = FALSE, scale. = FALSE, rank. = ntopics)
+  U.init <- logodds.pca$x  # cells by k
+  V.init <- logodds.pca$rotation  # genes by k, no need to transpose
+} else {
+  U.init <- scale(topics.mat, center = TRUE, scale = FALSE)  # c by k
+  V.init <- scale(terms.mat, center = TRUE, scale = FALSE)  # k by g
+  V.init <- t(V.init)  # now its g by k
+}
+
+
 
 
 assertthat::assert_that(all(rownames(X.mat) == colnames(Y.filt)))
@@ -135,12 +184,11 @@ assertthat::assert_that(all(names(size.factor) == colnames(Y.filt)))
 
 
 system.time(
-  glm.out <- glmpca(Y = Y.filt, L = 30, fam = "mult", ctl = list(maxIters = 250, eps = 1e-4), penalty = 1, verbose = FALSE, 
-                    init = list(factors = U.init, loadings = V.init), X = X.mat, Z = NULL, sz = size.factor)
+  glm.out <- glmpca(Y = Y.filt, L = ntopics, fam = "mult", 
+                    ctl = list(maxIters = niter, eps = 1e-4), 
+                    penalty = 1, verbose = TRUE, init = list(factors = U.init, loadings = V.init), X = X.mat, Z = NULL, sz = size.factor)
 )
-save(glm.out, Y, U.init, V.init, X.mat, out.lda, file = outf)
+save(glm.out, Y, U.init, V.init, X.mat, out.lda, dat.var.merge, file = outf)
+
 print(Sys.time() - jstart)
-
-
-
 
