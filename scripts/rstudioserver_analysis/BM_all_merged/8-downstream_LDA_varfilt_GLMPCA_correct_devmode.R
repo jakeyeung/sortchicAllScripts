@@ -21,6 +21,11 @@ library(umap)
 
 library(glmpca)
 
+library(devtools)
+dev_mode(on = TRUE)
+devtools::install_github("willtownes/glmpca")
+library(glmpca)
+
 # jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 jmark <- "H3K4me1"
 topn <- 150
@@ -185,13 +190,6 @@ InitGLMPCAfromLDA <- function(count.mat, tm.result, dat.var.merge, covar.cname =
 
 glm.inits <- InitGLMPCAfromLDA(count.mat, tm.result, dat.merge2, covar.cname = "ncuts.var", bins.keep = 500, do.log = FALSE, svd.on.Yinit = TRUE, use.orig.sz = TRUE)
 
-library(devtools)
-
-dev_mode(on = TRUE)
-
-devtools::install_github("willtownes/glmpca")
-
-library(glmpca)
 
 niter <- 500
 system.time(
