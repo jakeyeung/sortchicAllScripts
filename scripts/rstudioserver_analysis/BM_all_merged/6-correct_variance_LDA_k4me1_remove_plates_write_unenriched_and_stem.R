@@ -33,9 +33,9 @@ jmark <- "H3K4me1"
 jcutoff.ncuts.var <- 0.3
 outdir <- "/home/jyeung/hpc/scChiC/from_rstudioserver/quality_control_postLDA_var_BM.2020-01-31"
 dir.create(outdir)
-outname <- paste0("BM_", jmark, ".varcutoff_", jcutoff.ncuts.var, ".platesRemoved.SmoothBinSize_", mergesize, ".AllMerged.rds")
-outname.unenriched <- paste0("BM_", jmark, ".varcutoff_", jcutoff.ncuts.var, ".platesRemoved.SmoothBinSize_", mergesize, ".Unenriched.rds")
-pdfname <- paste0("BM_", jmark, ".varcutoff_", jcutoff.ncuts.var, ".platesRemoved.SmoothBinSize_", mergesize, ".pdf")
+outname <- paste0("BM_", jmark, ".varcutoff_", jcutoff.ncuts.var, ".platesRemoved.SmoothBinSize_", mergesize, ".", Sys.Date(), ".AllMerged.rds")
+outname.unenriched <- paste0("BM_", jmark, ".varcutoff_", jcutoff.ncuts.var, ".platesRemoved.SmoothBinSize_", mergesize, ".", Sys.Date(),  ".Unenriched.rds")
+pdfname <- paste0("BM_", jmark, ".varcutoff_", jcutoff.ncuts.var, ".platesRemoved.SmoothBinSize_", mergesize, ".", Sys.Date(), ".pdf")
 outf <- file.path(outdir, outname)
 outf.unenriched <- file.path(outdir, outname.unenriched)
 
@@ -47,7 +47,7 @@ bad.plates.grep <- paste("Bl6-BM-Linneg-H3K4me1", "B6-13W1-BM-H3K4me1-4", "B6-13
                          "PZ-ChIC-Bl6-BM-H3K4me1-Index3-12-09-19", 
                          "PZ-ChIC-Bl6-BM-H3K4me1-Index2-12-09-19", sep = "|")
 
-bm.unenriched.plates.grep <- paste("B6-13W1-BM-H3K4me1-1", "B6-13W1-BM-H3K4me1-2", "ChIC-Bl6-BM-H3K4me1-1", sep = "|")
+bm.unenriched.plates.grep <- paste("B6-13W1-BM-H3K4me1-1", "B6-13W1-BM-H3K4me1-2", "PZ-ChIC-Bl6-BM-H3K4me1-Index1-12-09-19", sep = "|")
 
 # Set up  -----------------------------------------------------------------
 
