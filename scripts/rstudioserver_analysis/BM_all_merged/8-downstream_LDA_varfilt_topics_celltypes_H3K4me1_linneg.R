@@ -48,8 +48,11 @@ dat.sum.long <- dat.sum.long %>%
   mutate(zscore = scale(exprs, center = TRUE, scale = TRUE)) %>%
   filter(!is.nan(zscore))
 
-for (jmark in jmarks){
-  outname <- paste0("PZ_", jmark, ".topics_celltypes_Giladi.topn_", topn, ".", Sys.Date(), ".pdf")
+jmark <- "H3K4me1"
+KeepMorePlates <- FALSE
+
+# for (jmark in jmarks){
+  outname <- paste0("PZ_", jmark, ".withLinNeg.KeepMorePlates_", KeepMorePlates, ".topics_celltypes_Giladi.topn_", topn, ".", Sys.Date(), ".pdf")
   outpdf <- file.path("/home/jyeung/hpc/scChiC/from_rstudioserver/pdfs_all/BM_LDA_downstream_topics_celltypes_Giladi", outname)
   print(jmark)
   print("Current time elapsed:")
@@ -57,7 +60,13 @@ for (jmark in jmarks){
    
   # Load data  --------------------------------------------------------------
   
-  inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt_keepPlates/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.Robj")
+  if (!KeepMorePlates){
+    inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt_keepPlates/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.Robj")
+    load(inf, v=T)
+  } else {
+    inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt_keepPlates/lda_outputs.BM_", jmark, ".varcutoff_0.3.keepplates.WithLinneg.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.keepplates.WithLinneg.K-30.Robj")
+    load(inf, v=T)
+  }
   
   load(inf, v=T)
   
@@ -94,6 +103,9 @@ for (jmark in jmarks){
     mutate(plate = ClipLast(as.character(cell), jsep = "_"))
   
   dat.var.merge <- left_join(dat.umap.long, dat.var)
+  
+  m.louv <- ggplot(dat.var.merge, aes(x = umap1, y = umap2, color = louvain)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_manual(values = cbPalette)
+  m.louv.plates <- ggplot(dat.var.merge, aes(x = umap1, y = umap2, color = louvain)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_manual(values = cbPalette) + facet_wrap(~plate)
   
   m.plates <- ggplot(dat.var.merge, aes(x = umap1, y = umap2, color = plate)) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -162,7 +174,7 @@ for (jmark in jmarks){
     print(m.top)
   }
   dev.off()
-}
+# }
 
 
 print(Sys.time() - jstart)

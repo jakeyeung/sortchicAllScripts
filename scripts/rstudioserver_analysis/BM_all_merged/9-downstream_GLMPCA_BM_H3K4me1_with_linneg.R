@@ -21,6 +21,7 @@ library(umap)
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
+
 jmark <- "H3K4me1"
 # for (jmark in jmarks){
   print(jmark)
@@ -33,7 +34,7 @@ binsize <- 50000
 mergesize <- 1000
 bigbinsize <- 50000 * mergesize
 
-KeepMorePlates <- FALSE
+KeepMorePlates <- TRUE
 
 
 if (!KeepMorePlates){
@@ -44,15 +45,17 @@ if (!KeepMorePlates){
 load(outf, v=T)
 
 if (!KeepMorePlates){
+  # inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt_keepPlates/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.Robj")
   inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt_keepPlates/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.Robj")
   load(inf, v=T)
 } else {
-  inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt_keepPlates/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.WithLinneg.K-30.Robj")
+  inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt_keepPlates/lda_outputs.BM_", jmark, ".varcutoff_0.3.keepplates.WithLinneg.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.keepplates.WithLinneg.K-30.Robj")
   load(inf, v=T)
 }
 
 bname <- ClipLast(basename(outf), jsep = ".RData")
-outpdf <- paste0("/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs.downstream/", bname, ".GLMdownstream.pdf")
+# outpdf <- paste0("/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs.downstream/", bname, ".GLMdownstream.pdf")
+outpdf <- paste0("/home/jyeung/hpc/scChiC/from_rstudioserver/GLMPCA_outputs.downstream/", bname, ".KeepMorePlates_", KeepMorePlates, ".GLMdownstream.pdf")
 
 
 tm.result <- posterior(out.lda)
@@ -85,10 +88,15 @@ dat.umap.long <- dat.umap.long %>%
   left_join(., dat.var)
 
 m.louv <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point() + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_manual(values = cbPalette) 
+m.louv.plate <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point() + theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_manual(values = cbPalette) + 
   facet_wrap(~plate)
 
 m.var <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + geom_point() + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_viridis_c(direction = -1) 
+m.var.plate <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + geom_point() + theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_viridis_c(direction = -1) + 
   facet_wrap(~plate)
@@ -96,7 +104,9 @@ m.var <- ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = cell.var.within
 
 pdf(outpdf,useDingbats = FALSE)
 print(m.louv)
+print(m.louv.plate)
 print(m.var)
+print(m.var.plate)
 dev.off()
 
 # Do celltypes 

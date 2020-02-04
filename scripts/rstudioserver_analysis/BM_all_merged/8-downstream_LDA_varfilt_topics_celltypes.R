@@ -27,7 +27,8 @@ library(GenomicRanges)
 library(ggrepel)
 
 
-jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
+# jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
+jmarks <- c("H3K4me3", "H3K4me1", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 topn <- 150
 
 # Load annotations --------------------------------------------------------
@@ -51,8 +52,10 @@ dat.sum.long <- dat.sum.long %>%
   mutate(zscore = scale(exprs, center = TRUE, scale = TRUE)) %>%
   filter(!is.nan(zscore))
 
+# suffix <-
+
 for (jmark in jmarks){
-  outname <- paste0("PZ_", jmark, ".topics_celltypes_Giladi.topn_", topn, ".", Sys.Date(), ".pdf")
+  outname <- paste0("PZ_novarfilt.50kb_bins.", jmark, ".topics_celltypes_Giladi.topn_", topn, ".", Sys.Date(), ".pdf")
   outpdf <- file.path("/home/jyeung/hpc/scChiC/from_rstudioserver/pdfs_all/BM_LDA_downstream_topics_celltypes_Giladi", outname)
   print(jmark)
   print("Current time elapsed:")
@@ -60,7 +63,9 @@ for (jmark in jmarks){
    
   # Load data  --------------------------------------------------------------
   
-  inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.Robj")
+  # inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.Robj")
+  # inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.Robj")
+  inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-12.bsizestepsize_50000_50000.NoSliding/lda_outputs.count_mat.", jmark, ".countcutoff_1000-500-1000-1000.TAcutoff_0.5.K-30.binarize.FALSE/ldaOut.count_mat.", jmark, ".countcutoff_1000-500-1000-1000.TAcutoff_0.5.K-30.Robj")
   
   load(inf, v=T)
   

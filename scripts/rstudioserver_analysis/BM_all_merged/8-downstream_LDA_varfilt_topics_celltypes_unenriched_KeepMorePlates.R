@@ -1,7 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2020-02-01
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/BM_all_merged/8-downstream_LDA_varfilt_GLMPCA.R
-# Load LDA after filtering low var cells. Still do GLMPCA to correct for variance 
+# Date of Creation: 2020-02-04
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/BM_all_merged/8-downstream_LDA_varfilt_topics_celltypes_unenriched_KeepMorePlates.R
+# 
 
 rm(list=ls())
 jstart <- Sys.time()

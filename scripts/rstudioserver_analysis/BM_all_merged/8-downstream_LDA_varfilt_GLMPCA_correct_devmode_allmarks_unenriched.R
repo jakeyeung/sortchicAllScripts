@@ -30,7 +30,6 @@ library(glmpca)
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 # jmark <- "H3K4me1"
-# jmarks <- jmarks[[3]]
 ncores <- length(jmarks)
 
 niter <- 1000
@@ -38,14 +37,16 @@ topn <- 150
 jbins.keep <- 1000
 # calculating var raw
 binsize <- 50000
-mergesize <- 1000
+mergesize <- 500
 bigbinsize <- 50000 * mergesize
+
+jsuffix <- "Unenriched"
+
 # for (jmark in jmarks){
 
 mclapply(jmarks, function(jmark){
-# lapply(jmarks, function(jmark){
   
-  outbase <- paste0("PZ_", jmark, ".KeepMorePlates.GLMPCA_var_correction.", topn, ".", Sys.Date(), ".binskeep_", jbins.keep, ".devmode")
+  outbase <- paste0("PZ_", jmark, ".", jsuffix, ".GLMPCA_var_correction.", topn, ".", Sys.Date(), ".binskeep_", jbins.keep, ".devmode.")
   outname <- paste0(outbase, ".RData")
   outname.pdf <- paste0(outbase, ".pdf")
   # outdir <- "/home/jyeung/hpc/scChiC/from_rstudioserver/GLMPCA_outputs"
@@ -79,9 +80,10 @@ mclapply(jmarks, function(jmark){
   
   # Load data  --------------------------------------------------------------
   
+  inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.", jsuffix, ".K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.", jsuffix, ".K-30.Robj")
+  assertthat::assert_that(file.exists(inf))
+  
   # inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.Robj")
-  # inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.Robj")
-  inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt_keepPlates/lda_outputs.BM_", jmark, ".varcutoff_0.3.KeepAllPlates.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.KeepAllPlates.K-30.Robj")
   
   load(inf, v=T)
   count.mat <- as.matrix(count.mat)
@@ -191,6 +193,5 @@ mclapply(jmarks, function(jmark){
   dev.off()
 
 }, mc.cores = ncores)
-# })
 
 

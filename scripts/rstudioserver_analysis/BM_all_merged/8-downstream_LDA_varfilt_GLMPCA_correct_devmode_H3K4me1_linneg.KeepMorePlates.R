@@ -6,6 +6,7 @@
 rm(list=ls())
 jstart <- Sys.time()
 
+
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -30,11 +31,10 @@ library(glmpca)
 jmark <- "H3K4me1"
 niter <- 500
 topn  <- 150
-jbins.keep <- 500
+jbins.keep <- 1000
 
 # jdate <- "2020-02-02"
-KeepMorePlates <- FALSE
-
+KeepMorePlates <- TRUE
 
 
 # for (jmark in jmarks){
