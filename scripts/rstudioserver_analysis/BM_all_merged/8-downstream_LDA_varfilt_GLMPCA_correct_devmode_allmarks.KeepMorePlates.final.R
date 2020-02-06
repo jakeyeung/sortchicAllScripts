@@ -1,11 +1,13 @@
 # Jake Yeung
-# Date of Creation: 2020-02-01
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/BM_all_merged/8-downstream_LDA_varfilt_GLMPCA.R
-# Load LDA after filtering low var cells. Still do GLMPCA to correct for variance 
+# Date of Creation: 2020-02-06
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/BM_all_merged/8-downstream_LDA_varfilt_GLMPCA_correct_devmode_allmarks.KeepMorePlates.final.R
+# 
 
 
 rm(list=ls())
 jstart <- Sys.time()
+
+
 
 library(parallel)
 
@@ -29,78 +31,86 @@ dev_mode(on = TRUE)
 devtools::install_github("willtownes/glmpca")
 library(glmpca)
 
+# Constants ---------------------------------------------------------------
+
+
+jconds <- c("Unenriched", "AllMerged"); names(jconds) <- jconds
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
-# jmark <- "H3K4me1"
-# jmarks <- jmarks[[3]]
-ncores <- length(jmarks)
+
+jcondsmarks <- as.character(levels(interaction(jconds, jmarks, sep = "_")))
+names(jcondsmarks) <- jcondsmarks
+ncores <- length(jcondsmarks)
+
 
 niter <- 1000
 topn <- 150
-jbins.keep <- 1000
+jbins.keep <- 500
 # calculating var raw
 binsize <- 50000
 mergesize <- 1000
 bigbinsize <- 50000 * mergesize
-# for (jmark in jmarks){
 
-mclapply(jmarks, function(jmark){
-# lapply(jmarks, function(jmark){
+outdir <- "/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs.final"
+dir.create(outdir)
+
+jdate <- "2020-02-06"
+
+jsettings <- umap.defaults
+jsettings$n_neighbors <- 30
+jsettings$min_dist <- 0.1
+jsettings$random_state <- 123
+
+inmain <- "/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-02-04.var_filt.UnenrichedAndAllMerged"
+jdate <- "2020-02-06"
+
+
+# for (jcond in jconds){
   
-  outbase <- paste0("PZ_", jmark, ".KeepMorePlates.GLMPCA_var_correction.", topn, ".", Sys.Date(), ".binskeep_", jbins.keep, ".devmode")
+mclapply(jcondsmarks, function(jcondmark){
+  
+  jcond <- strsplit(jcondmark, "_")[[1]][[1]]
+  jmark <- strsplit(jcondmark, "_")[[1]][[2]]
+  
+  print(paste("Running for:", jcond, jmark))
+  # lapply(jmarks, function(jmark){
+  
+  # Setup output paths ------------------------------------------------------
+
+  outbase <- paste0("PZ_", jmark, ".", jcond, ".KeepMorePlatesFinal.GLMPCA_var_correction.mergebinsize_", mergesize, ".binskeep_", jbins.keep, ".devmode.", jdate)
   outname <- paste0(outbase, ".RData")
   outname.pdf <- paste0(outbase, ".pdf")
-  # outdir <- "/home/jyeung/hpc/scChiC/from_rstudioserver/GLMPCA_outputs"
-  outdir <- "/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs"
   outf <- file.path(outdir, outname)
   outf.pdf <- file.path(outdir, outname.pdf)
   if (file.exists(outf)){
     print(paste("Outf exists, skipping...", outf))
     next
   }
+  
+  # Load data  --------------------------------------------------------------
+  
+  infname <- paste0("lda_outputs.BM_", jmark, "_varfilt_countmat.2020-02-04.", jcond, ".K-30.binarize.FALSE/ldaOut.BM_", jmark, "_varfilt_countmat.2020-02-04.", jcond, ".K-30.Robj")
+  inf <- file.path(inmain, infname)
+  assertthat::assert_that(file.exists(inf))
+  
+  load(inf, v=T)
+  count.mat <- as.matrix(count.mat)
+  tm.result <- posterior(out.lda)
+  colnames(tm.result$topics) <- paste("topic", colnames(tm.result$topics), sep = "_")
+  rownames(tm.result$terms) <- paste("topic", rownames(tm.result$terms), sep = "_")
+  topics.mat <- tm.result$topics
+  
+
+  # start -----------------
   pdf(outf.pdf, useDingbats = FALSE)
-  
-  # Load annotations --------------------------------------------------------
-  
-  
-  # inf.annot <- "/home/jyeung/hpc/scchic/public_data/Giladi_et_al_2018/giladi_pseudobulk_datsum_and_ncells.DESeq_and_QuantNorm.RData"
-  inf.annot <- "/home/jyeung/hpc/scChiC/public_data/Giladi_et_al_2018/giladi_pseudobulk_datsum_and_ncells.DESeq_and_QuantNorm.RData"
-  load(inf.annot, v=T)
-  
-  dat.sum.long <- data.table::melt(dat.sum.norm.quantnorm)
-  colnames(dat.sum.long) <- c("gene", "celltype", "exprs")
-  
-  dat.sum.long <- dat.sum.long %>%
-    group_by(gene) %>%
-    mutate(zscore = scale(exprs, center = TRUE, scale = TRUE)) %>%
-    filter(!is.nan(zscore))
-  
+ 
   print(jmark)
   print("Current time elapsed:")
   print(Sys.time() - jstart)
   
-  # Load data  --------------------------------------------------------------
-  
-  # inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.Robj")
-  # inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt/lda_outputs.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.platesRemoved.SmoothBinSize_1000.AllMerged.K-30.Robj")
-  inf <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-01-31.var_filt_keepPlates/lda_outputs.BM_", jmark, ".varcutoff_0.3.KeepAllPlates.K-30.binarize.FALSE/ldaOut.BM_", jmark, ".varcutoff_0.3.KeepAllPlates.K-30.Robj")
-  
-  load(inf, v=T)
-  count.mat <- as.matrix(count.mat)
-  
-  tm.result <- posterior(out.lda)
-  colnames(tm.result$topics) <- paste("topic", colnames(tm.result$topics), sep = "_")
-  rownames(tm.result$terms) <- paste("topic", rownames(tm.result$terms), sep = "_")
-  
-  
-  topics.mat <- tm.result$topics
   
   
   # Plot it all -------------------------------------------------------------
   
-  jsettings <- umap.defaults
-  jsettings$n_neighbors <- 30
-  jsettings$min_dist <- 0.1
-  jsettings$random_state <- 123
   
   
   umap.out <- umap(topics.mat, config = jsettings)
@@ -156,7 +166,7 @@ mclapply(jmarks, function(jmark){
   
   # Calculate raw varaince and compare with imputed variance  ---------------
   
-
+  
   
   
   dat.var.raw <- CalculateVarRaw(count.mat, merge.size = mergesize, chromo.exclude.grep = "^chrX|^chrY", jpseudocount = 1, jscale = 10^6, calculate.ncuts = TRUE)
@@ -167,6 +177,8 @@ mclapply(jmarks, function(jmark){
     scale_x_log10() + scale_y_log10()
   ggplot(dat.merge2, aes(x = ncuts, y = ncuts.var)) + geom_point() + 
     scale_x_log10() + scale_y_log10()
+  
+  dev.off()
   
   # set up GLMPCA
   
@@ -186,12 +198,9 @@ mclapply(jmarks, function(jmark){
   
   print(Sys.time() - jstart)
   
-  dev_mode(on = FALSE)
-  
-  
-  dev.off()
-
 }, mc.cores = ncores)
 # })
 
+# }
 
+dev_mode(on = FALSE)
