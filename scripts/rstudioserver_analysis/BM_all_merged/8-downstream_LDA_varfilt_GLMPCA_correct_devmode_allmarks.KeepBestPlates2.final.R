@@ -31,8 +31,8 @@ library(glmpca)
 
 # Constants ---------------------------------------------------------------
 
-# jcovar.cname <- "ncuts.var.CenteredAndScaled"
-jcovar.cname <- "cell.var.within.sum.norm.CenteredAndScaled"
+jcovar.cname <- "ncuts.var.CenteredAndScaled"
+# jcovar.cname <- "cell.var.within.sum.norm.CenteredAndScaled"
 
 jconds <- c("Unenriched", "AllMerged"); names(jconds) <- jconds
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
@@ -43,8 +43,7 @@ ncores <- length(jcondsmarks)
 
 
 niter <- 1000
-topn <- 150
-jbins.keep <- 250
+jbins.keep <- 1000
 # calculating var raw
 binsize <- 50000
 mergesize <- 1000
