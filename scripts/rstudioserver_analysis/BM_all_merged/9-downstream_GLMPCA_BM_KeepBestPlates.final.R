@@ -1,6 +1,6 @@
 # Jake Yeung
-# Date of Creation: 2020-02-06
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/BM_all_merged/9-downstream_GLMPCA_BM_KeepMorePlates.final.R
+# Date of Creation: 2020-02-07
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/BM_all_merged/9-downstream_GLMPCA_BM_KeepBestPlates.final.R
 # 
 
 
@@ -28,23 +28,25 @@ names(jcondsmarks) <- jcondsmarks
 
 niter <- 1000
 topn <- 150
-# jbins.keep <- 1000
-jbins.keep <- 500
+jbins.keep <- 1000
+# jbins.keep <- 150
 # calculating var raw
 binsize <- 50000
 mergesize <- 1000
 bigbinsize <- 50000 * mergesize
 
 jdate <- "2020-02-06"
+ldadate <- "2020-02-06"
+jsuffix <- "KeepBestPlates"
   
-outdir <- "/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs.final"  # load GLM outputs
-# pdfdir <- "/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs.downstream.final"
-pdfdir <- "/home/jyeung/hpc/scChiC/from_rstudioserver/glmpca_analyses/GLMPCA_outputs.downstream.final"  # write to pdf dir
+outdir <- "/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs.KeepBestPlates"  # load GLM outputs
+pdfdir <- "/home/jyeung/hpc/scChiC/from_rstudioserver/glmpca_analyses/GLMPCA_outputs.KeepBestPlates.downstream"  # write to pdf dir
 dir.create(pdfdir)
 
-inmain <- "/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-02-04.var_filt.UnenrichedAndAllMerged"
+inmain <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.", ldadate, ".var_filt.UnenrichedAndAllMerged.", jsuffix)
 
-ncores <- length(jcondsmarks)
+
+# ncores <- length(jcondsmarks)
 for (jcondmark in jcondsmarks){
 # parallel::mclapply(jcondsmarks, function(jcondmark){
   
@@ -52,16 +54,20 @@ for (jcondmark in jcondsmarks){
   jmark <- strsplit(jcondmark, "_")[[1]][[2]]
   print(paste("Running for:", jcond, jmark))
   
-  
-  outbase <- paste0("PZ_", jmark, ".", jcond, ".KeepMorePlatesFinal.GLMPCA_var_correction.mergebinsize_", mergesize, ".binskeep_", jbins.keep, ".devmode.", jdate)
+  # for loading GLMPCA output
+  outbase <- paste0("PZ_", jmark, ".", jcond, ".", jsuffix, ".GLMPCA_var_correction.mergebinsize_", mergesize, ".binskeep_", jbins.keep, ".devmode.", jdate)
+  # for writing PDF
   outpdf <- file.path(pdfdir, paste0(outbase, ".pdf"))
+  if (file.exists(outpdf)){
+    next
+  }
   
   outf <- file.path(outdir, paste0(outbase, ".RData"))
   assertthat::assert_that(file.exists(outf))
   
   load(outf, v=T)
   
-  infname <- paste0("lda_outputs.BM_", jmark, "_varfilt_countmat.2020-02-04.", jcond, ".K-30.binarize.FALSE/ldaOut.BM_", jmark, "_varfilt_countmat.2020-02-04.", jcond, ".K-30.Robj")
+  infname <- paste0("lda_outputs.BM_", jmark, "_varfilt_countmat.", ldadate, ".", jcond, ".K-30.binarize.FALSE/ldaOut.BM_", jmark, "_varfilt_countmat.", ldadate, ".", jcond, ".K-30.Robj")
   inf <- file.path(inmain, infname)
   assertthat::assert_that(file.exists(inf))
   
@@ -121,8 +127,8 @@ for (jcondmark in jcondsmarks){
   dev.off()
   
 # }, mc.cores = ncores)
-}
 # for (jcondmark in jcondsmarks){
+}
   
   
 

@@ -44,24 +44,26 @@ ncores <- length(jcondsmarks)
 
 niter <- 1000
 topn <- 150
-jbins.keep <- 250
+jbins.keep <- 1000
 # calculating var raw
 binsize <- 50000
 mergesize <- 1000
 bigbinsize <- 50000 * mergesize
 
-outdir <- "/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs.final"
-dir.create(outdir)
 
 jdate <- "2020-02-06"
+ldadate <- "2020-02-06"
+jsuffix <- "KeepBestPlates"
+
+outdir <- paste0("/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs.", jsuffix)
+dir.create(outdir)
 
 jsettings <- umap.defaults
 jsettings$n_neighbors <- 30
 jsettings$min_dist <- 0.1
 jsettings$random_state <- 123
 
-inmain <- "/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-02-04.var_filt.UnenrichedAndAllMerged"
-jdate <- "2020-02-06"
+inmain <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-02-06.var_filt.UnenrichedAndAllMerged.", jsuffix)
 
 
 # for (jcond in jconds){
@@ -76,7 +78,7 @@ mclapply(jcondsmarks, function(jcondmark){
   
   # Setup output paths ------------------------------------------------------
 
-  outbase <- paste0("PZ_", jmark, ".", jcond, ".KeepMorePlatesFinal.GLMPCA_var_correction.mergebinsize_", mergesize, ".binskeep_", jbins.keep, ".devmode.", jdate)
+  outbase <- paste0("PZ_", jmark, ".", jcond, ".", jsuffix, ".GLMPCA_var_correction.mergebinsize_", mergesize, ".binskeep_", jbins.keep, ".devmode.", jdate)
   outname <- paste0(outbase, ".RData")
   outname.pdf <- paste0(outbase, ".pdf")
   outf <- file.path(outdir, outname)
@@ -88,7 +90,7 @@ mclapply(jcondsmarks, function(jcondmark){
   
   # Load data  --------------------------------------------------------------
   
-  infname <- paste0("lda_outputs.BM_", jmark, "_varfilt_countmat.2020-02-04.", jcond, ".K-30.binarize.FALSE/ldaOut.BM_", jmark, "_varfilt_countmat.2020-02-04.", jcond, ".K-30.Robj")
+  infname <- paste0("lda_outputs.BM_", jmark, "_varfilt_countmat.", ldadate, ".", jcond, ".K-30.binarize.FALSE/ldaOut.BM_", jmark, "_varfilt_countmat.", ldadate, ".", jcond, ".K-30.Robj")
   inf <- file.path(inmain, infname)
   assertthat::assert_that(file.exists(inf))
   
