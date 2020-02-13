@@ -61,8 +61,12 @@ jsettings$min_dist <- 0.1
 jsettings$random_state <- 123
 
 pdfdir <- "/home/jyeung/hpc/scChiC/from_rstudioserver/glmpca_analyses/GLMPCA_outputs.KeepBestPlates2.celltyping"
-pdfname <- paste0("GLMPCA_celltyping.", jmark, ".", jexperi, ".mergesize_", mergesize, ".nbins_", nbins, ".penalty_", jpenalty, ".covar_", jcovar.cname, ".pdf")
+outbase <- paste0("GLMPCA_celltyping.", jmark, ".", jexperi, ".mergesize_", mergesize, ".nbins_", nbins, ".penalty_", jpenalty, ".covar_", jcovar.cname)
+pdfname <- paste0(outbase, ".pdf")
+outname <- paste0(outbase, ".RData")
 pdfout <- file.path(pdfdir, pdfname)
+outf <- file.path(pdfdir, outname)
+
 
 if (write.plots){
   pdf(pdfout, useDingbats = FALSE)
@@ -180,8 +184,26 @@ multiplot(m.celltype.lda, m.celltype.glm, cols = 2)
 
 print(m.celltype.glm.fillNAs)
 
+
+# show across conditinos 
+dat.umap.glm.fillNAs <- dat.umap.glm.fillNAs %>%
+  rowwise() %>%
+  mutate(plate = ClipLast(cell, jsep = "_"))
+
+m.celltype.glm.fillNAs.plates <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2, color = cluster)) + 
+  geom_point() + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+  scale_color_manual(values = cbPalette, na.value = "grey85") + 
+  ggtitle(paste('GLM:', jmark, jexperi, "NAs imputed"))  + facet_wrap(~plate)
+
+print(m.celltype.glm.fillNAs.plates)
+
 if (write.plots){
   dev.off()
 }
+
+# write objects to .RData
+save(dat.umap.glm.fillNAs, dat.umap.glm, dat.umap.lda, mm.celltype.lst, file = outf)
+
 
 

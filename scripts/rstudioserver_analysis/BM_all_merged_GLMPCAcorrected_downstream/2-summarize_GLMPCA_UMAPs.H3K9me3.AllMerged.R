@@ -34,15 +34,13 @@ write.plots <- TRUE
 
 cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#ff9f7d", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#eb9d01", "#7fbedf", "#009E73")
 
-jthres.frac.cells <- 0.9  # threshold for imputing NAs to celltype 
+jfail.if.nfrac <- 0.5
+jquantile.if.fail <- 0.85
+jthres.frac.cells <- 0.7  # threshold for imputing NAs to celltype 
 # (e.g. NA associarted to louvain cluster that are 90% of one celltype)
 
-# topic14 is not convergent :( 
-# jtopics <- paste("topic", c(11, 18, 10, 4, 29, 8, 14, 23, 27, 5, 16, 7, 22), sep = "")
-# names(jtopics) <- c("ILC-RoraPlus", "ILC-PrkchPlus", "Bcells-Cd83", "Dendritic", "Bcells-Cd47", "Basophils", "Unknown-Igf1r", "Neutrophils", "Eryth", "HSCs-Ephb2", "pDendritic", "HSCs-Hlf", "HSCs-Anxa2")
-
-jtopics <- paste("topic", c(11, 18, 10, 4, 29, 8, 23, 27, 5, 16, 7, 22), sep = "")
-names(jtopics) <- c("ILC-RoraPlus", "ILC-PrkchPlus", "Bcells-Cd83", "Dendritic", "Bcells-Cd47", "Basophils", "Neutrophils", "Eryth", "HSCs-Ephb2", "pDendritic", "HSCs-Hlf", "HSCs-Anxa2")
+jtopics <- paste("topic", c(10, 27, 21, 22, 9, 11), sep = "")
+names(jtopics) <- c("ErythLinneg", "LinnegIsand", "Bcells", "HSCs", "Neutrophils", "LinnegCore")
 
 names(jtopics) <- paste(names(jtopics), jtopics, sep = "_")
 names.final <- names(jtopics)
@@ -52,7 +50,7 @@ names.final <- names(jtopics)
 jnames.hash <- hash::hash(names(jtopics), names.final)  # allows clusters to be merged afterwards by having the same final name
 
 
-jmark <- "H3K4me1"
+jmark <- "H3K9me3"
 jexperi <- "AllMerged"
 
 mergesize <- "1000"
@@ -129,7 +127,7 @@ multiplot(m.lda, m.glm, m.glm.new.louvain, cols = 3)
 
 # Plot celltypes  ---------------------------------------------------------
 
-mm.celltype.lst <- FitMixtureModelLabelCells(tm.result$topics, jtopics, jthres = 0.5, show.plots = TRUE, dat.umap.long = dat.umap.lda)
+mm.celltype.lst <- FitMixtureModelLabelCells(tm.result$topics, jtopics, jthres = 0.5, show.plots = TRUE, dat.umap.long = dat.umap.lda, quantile.if.fail = jquantile.if.fail, fail.if.nfrac = jfail.if.nfrac)
 
 # plot output
 dat.celltypes <- TidyMixtureModelOutputs(mm.celltype.lst, dedup = TRUE) %>%
@@ -151,12 +149,12 @@ m.celltype.lda <- ggplot(dat.umap.lda, aes(x = umap1, y = umap2, color = cluster
 m.celltype.glm <- ggplot(dat.umap.glm, aes(x = umap1, y = umap2, color = cluster)) + geom_point() + 
   scale_color_manual(values = cbPalette, na.value = "grey85") + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  ggtitle(paste("LDA:", jmark, jexperi))
+  ggtitle(paste('LDA:', jmark, jexperi))
 
 m.louvain.glm <- ggplot(dat.umap.glm, aes(x = umap1, y = umap2, color = louvain.glm)) + geom_point() + 
   scale_color_manual(values = cbPalette, na.value = "grey85") + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  ggtitle(paste("GLM:", jmark, jexperi))
+  ggtitle(paste('GLM:', jmark, jexperi))
 
 # fill in NAs based on louvain
 
@@ -171,8 +169,15 @@ check.nas.best <- check.nas %>%
   group_by(louvain.glm) %>%
   filter(nfrac == max(nfrac)) %>%
   ungroup()
+
+print(check.nas.best)
+
 check.nas.filt <- check.nas.best %>%
   filter(nfrac > jthres.frac.cells)
+
+if (nrow(check.nas.filt) == 0){
+  print("No NA clusters pass threshold... consider lowering the nfrac or removing this chunk of code")
+}
 
 topic2clstr <- hash::hash(as.character(check.nas.filt$louvain.glm), check.nas.filt$cluster)
   
@@ -185,12 +190,11 @@ m.celltype.glm.fillNAs <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2,
   geom_point() + theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
   scale_color_manual(values = cbPalette, na.value = "grey85") + 
-  ggtitle(paste("GLM:", jmark, jexperi, "NAs imputed"))
+  ggtitle(paste('GLM:', jmark, jexperi, "NAs imputed"))
 
 print(m.celltype.lda)
 print(m.celltype.glm)
 multiplot(m.celltype.lda, m.celltype.glm, cols = 2)
-
 print(m.celltype.glm.fillNAs)
 
 # show across conditinos 
