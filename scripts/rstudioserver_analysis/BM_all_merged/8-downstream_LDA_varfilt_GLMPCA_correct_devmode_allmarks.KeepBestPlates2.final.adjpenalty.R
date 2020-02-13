@@ -31,7 +31,9 @@ library(glmpca)
 
 # Constants ---------------------------------------------------------------
 
-jcovar.cname <- "ncuts.var.CenteredAndScaled"
+# jcovar.cname <- "ncuts.var.CenteredAndScaled"
+# jcovar.cname <- "ncuts.var.CenteredAndScaled"
+jcovar.cname <- "ncuts.var.log2.CenteredAndScaled"
 # jcovar.cname <- "cell.var.within.sum.norm.CenteredAndScaled"
 
 jconds <- c("Unenriched", "AllMerged"); names(jconds) <- jconds
@@ -42,7 +44,7 @@ names(jcondsmarks) <- jcondsmarks
 ncores <- length(jcondsmarks)
 
 
-niter <- 1000
+niter <- 250
 jbins.keep <- 250
 # calculating var raw
 binsize <- 50000
@@ -176,15 +178,24 @@ mclapply(jcondsmarks, function(jcondmark){
   
   dat.var.raw <- CalculateVarRaw(count.mat, merge.size = mergesize, chromo.exclude.grep = "^chrX|^chrY", jpseudocount = 1, jscale = 10^6, calculate.ncuts = TRUE)
   # center and scale ncuts.var
+  dat.var.raw$ncuts.var.log2 <- log2(dat.var.raw$ncuts.var)
   dat.var.raw$ncuts.var.CenteredAndScaled <- (dat.var.raw$ncuts.var - mean(dat.var.raw$ncuts.var)) / sd(dat.var.raw$ncuts.var)
+  dat.var.raw$ncuts.var.log2.CenteredAndScaled <- (dat.var.raw$ncuts.var.log2 - mean(dat.var.raw$ncuts.var.log2)) / sd(dat.var.raw$ncuts.var.log2)
   
   dat.merge2 <- left_join(dat.var.merge, dat.var.raw)
   dat.merge2$cell.var.within.sum.norm.CenteredAndScaled <- (dat.merge2$cell.var.within.sum.norm - mean(dat.merge2$cell.var.within.sum.norm)) / sd(dat.merge2$cell.var.within.sum.norm)
   
-  ggplot(dat.merge2, aes(x = ncuts.var, y = cell.var.within.sum.norm)) + geom_point() + 
+  
+  m1 <- ggplot(dat.merge2, aes(x = ncuts.var, y = cell.var.within.sum.norm)) + geom_point() + 
     scale_x_log10() + scale_y_log10()
-  ggplot(dat.merge2, aes(x = ncuts, y = ncuts.var)) + geom_point() + 
+  m2 <- ggplot(dat.merge2, aes(x = ncuts, y = ncuts.var)) + geom_point() + 
     scale_x_log10() + scale_y_log10()
+  m3 <- ggplot(dat.merge2, aes_string(x = jcovar.cname, y = "cell.var.within.sum.norm")) + geom_point() + 
+  scale_y_log10()
+  
+  print(m1)
+  print(m2)
+  print(m3)
   
   dev.off()
   

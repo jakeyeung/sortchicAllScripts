@@ -22,6 +22,8 @@ library(hash)
 library(igraph)
 library(umap)
 
+library(DescTools)
+
 library(glmpca)
 
 # library(devtools)
@@ -31,8 +33,11 @@ library(glmpca)
 
 # Constants ---------------------------------------------------------------
 
-jcovar.cname <- "ncuts.var.CenteredAndScaled"
+# jcovar.cname <- "ncuts.var.CenteredAndScaled"
+# jcovar.cname <- "ncuts.var.CenteredAndScaled"
+jcovar.cname <- "ncuts.var.log2.CenteredAndScaled"
 # jcovar.cname <- "cell.var.within.sum.norm.CenteredAndScaled"
+winsorize <- TRUE
 
 jconds <- c("Unenriched", "AllMerged"); names(jconds) <- jconds
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
@@ -42,7 +47,7 @@ names(jcondsmarks) <- jcondsmarks
 ncores <- length(jcondsmarks)
 
 
-niter <- 1000
+niter <- 250
 jbins.keep <- 250
 # calculating var raw
 binsize <- 50000
@@ -69,6 +74,7 @@ inmain <- paste0("/home/jyeung/hpc/scChiC/raw_demultiplexed/LDA_outputs_all/ldaA
 assertthat::assert_that(dir.exists(inmain))
 
 
+# jcondmark <- "Unenriched_H3K27me3"
 # for (jcond in jconds){
   
 mclapply(jcondsmarks, function(jcondmark){
@@ -81,7 +87,7 @@ mclapply(jcondsmarks, function(jcondmark){
   
   # Setup output paths ------------------------------------------------------
 
-  outbase <- paste0("PZ_", jmark, ".", jcond, ".", jsuffix, ".GLMPCA_var_correction.mergebinsize_", mergesize, ".binskeep_", jbins.keep, ".covar_", jcovar.cname, ".penalty_", jpenalty, ".", jdate)
+  # outbase <- paste0("PZ_", jmark, ".", jcond, ".", jsuffix, ".GLMPCA_var_correction.mergebinsize_", mergesize, ".binskeep_", jbins.keep, ".covar_", jcovar.cname, ".penalty_", jpenalty, ".winsorize_", winsorize, ".", jdate)
   outname <- paste0(outbase, ".RData")
   outname.pdf <- paste0(outbase, ".pdf")
   outf <- file.path(outdir, outname)
@@ -106,7 +112,7 @@ mclapply(jcondsmarks, function(jcondmark){
   
 
   # start -----------------
-  pdf(outf.pdf, useDingbats = FALSE)
+  # pdf(outf.pdf, useDingbats = FALSE)
  
   print(jmark)
   print("Current time elapsed:")
@@ -176,17 +182,32 @@ mclapply(jcondsmarks, function(jcondmark){
   
   dat.var.raw <- CalculateVarRaw(count.mat, merge.size = mergesize, chromo.exclude.grep = "^chrX|^chrY", jpseudocount = 1, jscale = 10^6, calculate.ncuts = TRUE)
   # center and scale ncuts.var
+  dat.var.raw$ncuts.var.log2 <- log2(dat.var.raw$ncuts.var)
   dat.var.raw$ncuts.var.CenteredAndScaled <- (dat.var.raw$ncuts.var - mean(dat.var.raw$ncuts.var)) / sd(dat.var.raw$ncuts.var)
+  dat.var.raw$ncuts.var.log2.CenteredAndScaled <- (dat.var.raw$ncuts.var.log2 - mean(dat.var.raw$ncuts.var.log2)) / sd(dat.var.raw$ncuts.var.log2)
   
   dat.merge2 <- left_join(dat.var.merge, dat.var.raw)
   dat.merge2$cell.var.within.sum.norm.CenteredAndScaled <- (dat.merge2$cell.var.within.sum.norm - mean(dat.merge2$cell.var.within.sum.norm)) / sd(dat.merge2$cell.var.within.sum.norm)
   
-  ggplot(dat.merge2, aes(x = ncuts.var, y = cell.var.within.sum.norm)) + geom_point() + 
-    scale_x_log10() + scale_y_log10()
-  ggplot(dat.merge2, aes(x = ncuts, y = ncuts.var)) + geom_point() + 
-    scale_x_log10() + scale_y_log10()
+  # winsorize?
+  if (winsorize){
+    dat.merge2[[jcovar.cname]] <- DescTools::Winsorize(dat.merge2[[jcovar.cname]], probs = c(0.01, 0.99))
+  }
   
-  dev.off()
+  m1 <- ggplot(dat.merge2, aes(x = ncuts.var, y = cell.var.within.sum.norm)) + geom_point() + 
+    scale_x_log10() + scale_y_log10()
+  m1.lin <- ggplot(dat.merge2, aes(x = ncuts.var, y = cell.var.within.sum.norm)) + geom_point()
+  m2 <- ggplot(dat.merge2, aes(x = ncuts, y = ncuts.var)) + geom_point() + 
+    scale_x_log10() + scale_y_log10()
+  m3 <- ggplot(dat.merge2, aes_string(x = jcovar.cname, y = "cell.var.within.sum.norm")) + geom_point() + 
+  scale_y_log10()
+  
+  print(m1)
+  printt(m1.lin)
+  print(m2)
+  print(m3)
+  
+  # dev.off()
   
   # set up GLMPCA
   
