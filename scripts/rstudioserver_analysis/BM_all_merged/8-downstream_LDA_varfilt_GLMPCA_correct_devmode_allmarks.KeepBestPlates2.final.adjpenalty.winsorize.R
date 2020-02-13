@@ -48,12 +48,12 @@ ncores <- length(jcondsmarks)
 
 
 niter <- 250
-jbins.keep <- 1000
+jbins.keep <- 500
 # calculating var raw
 binsize <- 50000
 mergesize <- 100
 bigbinsize <- 50000 * mergesize
-jpenalty <- 1
+jpenalty <- 1.5
 
 
 jdate <- "2020-02-11"
