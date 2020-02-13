@@ -133,19 +133,19 @@ dat.umap.glm <- left_join(dat.umap.glm, dat.celltypes)
 m.celltype.lda <- ggplot(dat.umap.lda, aes(x = umap1, y = umap2, color = cluster)) + geom_point() + 
   scale_color_manual(values = cbPalette, na.value = "grey85") + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")  + 
-  ggtitle(paste(jmark, jexperi))
+  ggtitle(paste("LDA:", jmark, jexperi))
 
 # Plot labels in GLM corrected dlouvain  ----------------------------------
 
 m.celltype.glm <- ggplot(dat.umap.glm, aes(x = umap1, y = umap2, color = cluster)) + geom_point() + 
   scale_color_manual(values = cbPalette, na.value = "grey85") + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  ggtitle(paste(jmark, jexperi))
+  ggtitle(paste("GLM:", jmark, jexperi))
 
 m.louvain.glm <- ggplot(dat.umap.glm, aes(x = umap1, y = umap2, color = louvain.glm)) + geom_point() + 
   scale_color_manual(values = cbPalette, na.value = "grey85") + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  ggtitle(paste(jmark, jexperi))
+  ggtitle(paste("GLM:", jmark, jexperi))
 
 # fill in NAs based on louvain
 
@@ -172,8 +172,11 @@ dat.umap.glm.fillNAs <- dat.umap.glm %>%
 m.celltype.glm.fillNAs <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2, color = cluster)) + 
   geom_point() + theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-  scale_color_manual(values = cbPalette, na.value = "grey85") + ggtitle(paste(jmark, jexperi, "NAs imputed"))
+  scale_color_manual(values = cbPalette, na.value = "grey85") + 
+  ggtitle(paste("GLM:", jmark, jexperi, "NAs imputed"))
 
+print(m.celltype.lda)
+print(m.celltype.glml)
 multiplot(m.celltype.lda, m.celltype.glm, cols = 2)
 
 print(m.celltype.glm.fillNAs)
