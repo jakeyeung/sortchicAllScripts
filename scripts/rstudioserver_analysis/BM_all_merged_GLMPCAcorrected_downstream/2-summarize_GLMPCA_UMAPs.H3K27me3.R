@@ -176,7 +176,7 @@ m.celltype.glm.fillNAs <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2,
   ggtitle(paste("GLM:", jmark, jexperi, "NAs imputed"))
 
 print(m.celltype.lda)
-print(m.celltype.glml)
+print(m.celltype.glm)
 multiplot(m.celltype.lda, m.celltype.glm, cols = 2)
 
 print(m.celltype.glm.fillNAs)
