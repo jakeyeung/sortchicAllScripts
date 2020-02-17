@@ -7,8 +7,8 @@
 
 . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate py2
 
-# jmark="H3K27me3"
-jmark="H3K4me3"
+jmark="H3K27me3"
+# jmark="H3K4me1"
 
 prefix="cluster"
 suffix="BM-AllMerged"
@@ -16,7 +16,9 @@ suffix2="Peaks"
 minlength=1000
 scratchmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_${prefix}_${suffix}_${suffix2}_${minlength}/${jmark}"
 
-[[ -d $scratchmain ]] && echo "$scratchmain found, exiting" && exit 1
+# comment uot this if scratchmain already exists and you want to rerun because script failed halfway
+# getfasta, split, and running motevo will be skipped if outptput dirs are found
+[[ -d $scratchmain ]] && echo "$scratchmain found, exiting" && exit 1 
 [[ ! -d $scratchmain ]] && mkdir -p $scratchmain
 
 ## BEGIN GET FASTA ## 
@@ -44,24 +46,31 @@ fastaftmp=$fastadirtmp/$windowsnoext.fa
 [[ ! -e $fastaftmp ]] && echo "$fastaftmp not found, exiting" && exit 1
 
 fastasplitdirtmp="$scratchmain/fastasplit"
-[[ ! -d $fastasplitdirtmp ]] && mkdir $fastasplitdirtmp
-[[ ! -d $fastasplitdirtmp ]] && echo "$fastasplitdirtmp not found, exiting" && exit 1
 
-# use same number as in dhs_merged_tissue
-# n=60000 # works for H3K4me1 and H3K4me3
-n=10000  # must be EVEN number because fasta
-rem=$(( $n % 2 ))
-if [ $rem -eq 0 ]
+if [ ! -d $fastasplitdirtmp ]
 then
-  echo "Even number check: $n is OK!"
+    [[ ! -d $fastasplitdirtmp ]] && mkdir $fastasplitdirtmp
+    [[ ! -d $fastasplitdirtmp ]] && echo "$fastasplitdirtmp not found, exiting" && exit 1
+
+    # use same number as in dhs_merged_tissue
+    # n=60000 # works for H3K4me1 and H3K4me3
+    n=10000  # must be EVEN number because fasta
+    rem=$(( $n % 2 ))
+    if [ $rem -eq 0 ]
+    then
+      echo "Even number check: $n is OK!"
+    else
+      echo "Even number check: $n is NOT OK... exiting!"
+      exit 1
+    fi
+
+    # make into motevo format also
+    fastabase=$(basename $fastaftmp)
+    sed 's/>/>>mm10_/' $fastaftmp | split --lines=$n - $fastasplitdirtmp/$fastabase.
 else
-  echo "Even number check: $n is NOT OK... exiting!"
-  exit 1
+	echo "fastasplitdirtmp $fastasplitdirtmp exists, skipping the split"
 fi
 
-# make into motevo format also
-fastabase=$(basename $fastaftmp)
-sed 's/>/>>mm10_/' $fastaftmp | split --lines=$n - $fastasplitdirtmp/$fastabase.
 
 ## END SPLIT BEDS ##
 
@@ -92,7 +101,7 @@ do
         motevodirtmpsplitchunk=$motevodirtmpsplit/$chunk
         paramsdir=$motevodirtmpsplitchunk/$paramdirname   
 
-        # [[ -d $paramsdir ]] && echo "$paramsdir found, continuing" && continue
+        [[ -d $paramsdir ]] && echo "$paramsdir found, continuing" && continue
 
         [[ -d $motevodirtmpsplitchunk ]] && echo "chunk: $chunk found Skipping" && continue
         [[ ! -d $motevodirtmpsplitchunk ]] && mkdir $motevodirtmpsplitchunk
