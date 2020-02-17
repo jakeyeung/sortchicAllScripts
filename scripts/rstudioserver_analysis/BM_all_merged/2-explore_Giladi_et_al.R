@@ -80,6 +80,9 @@ rownames(meta) <- meta$well
 
 cells <- meta$well
 
+# integrate tier3 annotation into thiis
+
+
 dats.filt <- dats[, ..cells]
 
 dats.filt <- as.matrix(dats.filt)
@@ -151,7 +154,37 @@ pbmc <- AddMetaData(object = pbmc, metadata = jmeta, col.name = "entropy")
 
 FeaturePlot(pbmc, features = 'entropy') + scale_color_viridis_c(direction = 1)
 
+# add real metadata???
+
+dat.meta.celltypes <- as.data.frame(dat.meta)
+
+rownames(dat.meta.celltypes) <- dat.meta.celltypes$V1
 
 
+# Filter out level 3 annotations ------------------------------------------
 
+dat.sub <- pbmc@assays$RNA@counts
 
+cells.keep <- which(colnames(dat.sub) %in% dat.meta.celltypes$V1)
+dat.sub.filt <- dat.sub[, cells.keep]
+
+clstrs <- unique(dat.meta.celltypes$clust)
+print(length(clstrs))
+
+# get cells by marker
+markers <- unique(dat.meta.celltypes$marker)
+names(markers) <- markers
+
+summed.exprs.vec.lst <- lapply(markers, function(jmarker){
+  print(jmarker)
+  wells <- subset(dat.meta.celltypes, marker == jmarker)$V1
+  cols.i <- which(colnames(dat.sub.filt) %in% wells)
+  return(list(sum.vec = rowSums(dat.sub.filt[, cols.i]), ncells = length(cols.i)))
+})
+
+summed.exprs.vec <- lapply(summed.exprs.vec.lst, function(x) x$sum.vec)
+ncells.vec <- lapply(summed.exprs.vec.lst, function(x) x$ncells)
+print(ncells.vec)
+
+dat.sum <- as.data.frame(summed.exprs.vec)
+save(dat.sum, ncells.vec, file = "/home/jyeung/hpc/scChiC/public_data/Giladi_et_al_2018/giladi_pseudobulk_datsum_and_ncells.RData")

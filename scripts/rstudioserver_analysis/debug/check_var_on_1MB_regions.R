@@ -48,6 +48,7 @@ multinomdev <- function(x, p){
 multinomdevdiff <- function(xvec, pnull = NULL, softmax.out = TRUE, remove.zeros = TRUE){
   if (is.null(pnull)){
     pnull <- rep(1 / length(xvec), length(xvec))
+    # pnull <- rep(sum(xvec) / length(xvec), length(xvec))
   }
   if (remove.zeros){
     xvec <- xvec[which(xvec > 0)] 
@@ -115,7 +116,8 @@ head(out.lst[[jmark]]$dat.meta)
 
 # get deviance for each cell
 system.time(
-  dev.diff.lst <- apply(mat.filt, 2, multinomdevdiff, pnull = rep(1 / nrow(mat.filt), nrow(mat.filt)), softmax.out = FALSE, remove.zeros = TRUE)
+  # dev.diff.lst <- apply(mat.filt, 2, multinomdevdiff, pnull = rep(1 / nrow(mat.filt), nrow(mat.filt)), softmax.out = FALSE, remove.zeros = TRUE)
+  dev.diff.lst <- apply(mat.filt, 2, multinomdevdiff, pnull = NULL, softmax.out = FALSE, remove.zeros = TRUE)
 )
 # system.time(
 #   dev.diff.lst2 <- apply(mat.filt, 2, multinomdevdiff, pnull = rep(1 / nrow(mat.filt), nrow(mat.filt)), softmax.out = FALSE, remove.zeros = FALSE)
@@ -151,13 +153,25 @@ dev.diff.dat <- data.frame(cell = names(dev.diff.lst),
 #   left_join(., out.lst[[jmark]]$dat.meta) %>%
 #   left_join(., dat.ncuts)
 
+ggplot(dev.diff.dat, aes(y = devnull - devsat, x = 1 / sparsity, color = cell.var.within.sum.norm)) + geom_point() + 
+  scale_color_viridis_c(direction = -1) 
+
+ggplot(dev.diff.dat, aes(y = devnull - devsat, x = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
+  scale_color_viridis_c(direction = -1) 
+
+ggplot(dev.diff.dat, aes(y = pchisq(q = devnull - devsat, df = 100000, log.p = TRUE), x = 1 / sparsity, color = cell.var.within.sum.norm)) + geom_point() + 
+  scale_color_viridis_c(direction = -1) 
+
+ggplot(dev.diff.dat, aes(y = pchisq(q = devnull - devsat, df = 100000, log.p = TRUE), x = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
+  scale_color_viridis_c(direction = -1) 
+
 ggplot(dev.diff.dat, aes(y = devnull - devsat, x = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
   scale_color_viridis_c(direction = -1) 
 
 ggplot(dev.diff.dat, aes(y = devnull.uneven - devsat, x = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
   scale_color_viridis_c(direction = -1) 
 
-ggplot(dev.diff.dat, aes(y = devnull.uneven, x = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
+ggplot(dev.diff.dat, aes(y = devnull, x = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
   scale_color_viridis_c(direction = -1) 
 
 ggplot(dev.diff.dat, aes(y = devnull.uneven, x = devnull, color = cell.var.within.sum.norm)) + geom_point() + 
@@ -179,7 +193,6 @@ ggplot(dev.diff.dat, aes(y = devnull.uneven - devnull, x = sparsity, color = cel
   scale_color_viridis_c(direction = -1) 
   # + scale_x_log10() + scale_y_log10()
 
-
 ggplot(dev.diff.dat, aes(y = devnull.uneven, x = devsat, color = cell.var.within.sum.norm)) + geom_point() + 
   scale_color_viridis_c(direction = -1)  + scale_x_log10()
 
@@ -198,7 +211,7 @@ ggplot(dev.diff.dat, aes(y = devnull.uneven - devsat, x = cell.var.within.sum.no
   # scale_x_log10() + scale_y_log10() + 
   scale_color_viridis_c(direction = -1) 
 
-ggplot(dev.diff.dat, aes(y = devdiff, x = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
+ggplot(dev.diff.dat, aes(y = devdiff, x = devdiff.uneven, color = cell.var.within.sum.norm)) + geom_point() + 
   scale_x_log10() + scale_y_log10() + 
   scale_color_viridis_c(direction = -1) 
 
@@ -211,8 +224,7 @@ ggplot(dev.diff.dat, aes(x = devdiff, y = cell.var.within.sum.norm, color = log1
   xlab("Deviance\n(saturated multinom model vs null multinom model)")
 
 ggplot(dev.diff.dat, aes(y = devdiff.uneven, x = log10(ncuts), color = cell.var.within.sum.norm)) + geom_point() + 
-  scale_color_viridis_c(direction = -1) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  +
-  xlab("Deviance\n(saturated multinom model vs null multinom model)")
+  scale_color_viridis_c(direction = -1) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 ggplot(dev.diff.dat, aes(x = devdiff, y = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
   scale_color_viridis_c(direction = -1) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  +
@@ -221,8 +233,11 @@ ggplot(dev.diff.dat, aes(x = devdiff, y = ncuts, color = cell.var.within.sum.nor
 
 ggplot(dev.diff.dat, aes(x = devdiff.uneven, y = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
   scale_color_viridis_c(direction = -1) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  +
-  xlab("Deviance\n(saturated multinom model vs null multinom model)") + 
-  scale_y_log10()
+  xlab("Deviance\n(saturated multinom model vs null multinom model)")
+
+ggplot(dev.diff.dat, aes(x = devdiff.uneven, y = sparsity, color = cell.var.within.sum.norm)) + geom_point() + 
+  scale_color_viridis_c(direction = -1) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  +
+  xlab("Deviance\n(saturated multinom model vs null multinom model)")
 
 ggplot(dev.diff.dat, aes(y = sparsity, x = ncuts, color = cell.var.within.sum.norm)) + geom_point() + 
   scale_x_log10() + scale_y_log10() +
@@ -234,16 +249,69 @@ ggplot(dev.diff.dat, aes(x = sparsity, y = cell.var.within.sum.norm, color = cel
 
 
 # why is counts/sparsity unaffected??
-jcell1.dat <- (subset(dev.diff.dat, sparsity > 0.5 & sparsity < 0.55) %>% arrange(cell.var.within.sum.norm))[1, ]
-jcell2.dat <- (subset(dev.diff.dat, sparsity > 0.2 & sparsity < 0.25) %>% arrange(cell.var.within.sum.norm))[1, ]
-
+jcell1.dat <- (subset(dev.diff.dat, devdiff > 10000 & devdiff < 11000) %>% arrange(cell.var.within.sum.norm))[1, ]
+jcell2.dat <- (subset(dev.diff.dat, devdiff > 10000 & devdiff < 11000) %>% arrange(desc(cell.var.within.sum.norm)))[1, ]
 
 xvec1 <- mat.filt[, jcell1.dat$cell]
 xvec2 <- mat.filt[, jcell2.dat$cell]
 xvec1.res <- dev.res[, jcell1.dat$cell]
 xvec2.res <- dev.res[, jcell2.dat$cell]
 
+pnull <- rep(1 / length(xvec1), length(xvec1))
+
+llvec1.sat <- xlogp(xvec1, xvec1 / sum(xvec1))
+llvec2.sat <- xlogp(xvec2, xvec2 / sum(xvec2))
+
+dev.sat1 <- -2 * sum(llvec1.sat)
+dev.sat2 <- -2 * sum(llvec2.sat)
+
+llvec1 <- xlogp(xvec1, pnull)
+llvec2 <- xlogp(xvec2, pnull)
+
+dev.null1 <- -2 * sum(llvec1)
+dev.null2 <- -2 * sum(llvec2)
+
+sum(xvec1 * log(pnull))
+sum(xvec2 * log(pnull))
+-2 * sum( xvec1[which(xvec1 > 0)] * log(pnull) )
+-2 * sum( xvec2[which(xvec2 > 0)] * log(pnull) )
+
+# can I get this by multipying by sparsity?
+
+llvec1.norm <- llvec1 * length(xvec1) / length(which(xvec1 > 0))
+llvec2.norm <- llvec2 * length(xvec2) / length(which(xvec2 > 0))
+
+plot(llvec1.norm)
+plot(llvec2.norm)
+
+(dev.check1 <- -2 * sum(llvec1.norm))
+(dev.check2 <- -2 * sum(llvec2.norm))
+
+dev.check1 - dev.null1
+dev.check2 - dev.null2
+
+dev.check1 - dev.sat1
+dev.check2 - dev.sat2
+
+(dev.null1 - dev.sat1 * length(xvec1) / nnzero(xvec1)) 
+(dev.null2 - dev.sat2 * length(xvec2) / nnzero(xvec2))
+
+pchisq(dev.null1 - dev.sat1, df = 5*length(xvec1), log.p = TRUE)
+pchisq(dev.null2 - dev.sat2, df = 5*length(xvec1), log.p = TRUE)
+
+# simulate a theoretical model as a function of counts
+
+N <- 100000
+nbins <- length(xvec1)
+
+
+
+multinomial_deviance(xvec1[which(xvec1 > 0)], p = pnull)
+multinomial_deviance(xvec2[which(xvec2 > 0)], p = pnull)
+
+# llvec1.filtx <- xlogp(xvec1[which(xvec1 > 0)], pnull[which(xvec1 > 0)])
 par(mfrow=c(2,2), mar=c(5.1, 4.1, 4.1, 2.1), mgp=c(3, 1, 0), las=0)
+
 plot(xvec1, main = paste("Cell 1:", round(jcell1.dat$devdiff), 
                              signif(jcell1.dat$cell.var.within.sum.norm, digits = 2), 
                              signif(jcell1.dat$ncuts, digits = 2)), 
