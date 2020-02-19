@@ -94,8 +94,8 @@ cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # jmark <- "H3K4me1"
 # jmark <- "H3K4me1"
 jmark <- "H3K9me3"
-jexperi <- "Unenriched"
-# jexperi <- "AllMerged"
+# jexperi <- "Unenriched"
+jexperi <- "AllMerged"
 
 nbins <- "250"
 # jcovar.cname <- "ncuts.var"; inf.glm <- paste0("/home/jyeung/hpc/scChiC/from_rstudioserver/glmpca_analyses/GLMPCA_outputs.KeepBestPlates2/PZ_", jmark, ".", jexperi, ".KeepBestPlates2.GLMPCA_var_correction.mergebinsize_1000.binskeep_", nbins, ".devmode.2020-02-11.RData")
@@ -179,6 +179,10 @@ m.glm.new.louvain <- ggplot(dat.umap.glm, aes(x = umap1, y = umap2, color = louv
 
 multiplot(m.lda, m.glm, m.glm.new.louvain, cols = 3)
 
+m.lda.merged <- ggplot(dat.umap.lda %>% mutate(cond = GetCondFromSamp(cell, mark = jmark)), aes(x = umap1, y = umap2, color = louvain)) + geom_point() + 
+  theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none") + 
+  scale_color_manual(values = cbPalette) + ggtitle("From LDA")  + facet_wrap(~cond)
 # 
 # 
 # # Plot celltypes  ---------------------------------------------------------
