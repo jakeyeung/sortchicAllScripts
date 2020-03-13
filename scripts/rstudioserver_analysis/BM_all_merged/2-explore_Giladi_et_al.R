@@ -63,7 +63,6 @@ ggplot(dat.meta, aes(x = x, y = y, color = marker)) + geom_point() + theme_bw() 
 # Load data ---------------------------------------------------------------
 
 
-
 indir <- "~/data/from_cluster/public_data/Giladi_et_al_2018"
 inf.meta <- file.path(indir, "GSE92575_metadata.txt")
 infs <- list.files(path = indir, pattern = "*.txt.gz", full.names = TRUE)
@@ -81,8 +80,6 @@ rownames(meta) <- meta$well
 cells <- meta$well
 
 # integrate tier3 annotation into thiis
-
-
 dats.filt <- dats[, ..cells]
 
 dats.filt <- as.matrix(dats.filt)
@@ -90,9 +87,8 @@ rownames(dats.filt) <- genes
 
 # split into tiers and then calculate entropy?
 
+
 library(Seurat)
-
-
 pbmc <- CreateSeuratObject(counts = dats.filt, project = "pbmc3k", min.cells = 3, min.features = 200, meta.data = meta)
 pbmc <- NormalizeData(pbmc, normalization.method = "LogNormalize", scale.factor = 10000)
 
@@ -187,4 +183,4 @@ ncells.vec <- lapply(summed.exprs.vec.lst, function(x) x$ncells)
 print(ncells.vec)
 
 dat.sum <- as.data.frame(summed.exprs.vec)
-save(dat.sum, ncells.vec, file = "/home/jyeung/hpc/scChiC/public_data/Giladi_et_al_2018/giladi_pseudobulk_datsum_and_ncells.RData")
+save(dat.sum, ncells.vec, file = "/home/jyeung/hpc/scChiC/public_data/Giladi_et_al_2018/giladi_pseudobulk_datsum_and_ncells.WithBatch.RData")
