@@ -41,8 +41,12 @@ jthres.frac.cells <- 0.9  # threshold for imputing NAs to celltype
 # jtopics <- paste("topic", c(11, 18, 10, 4, 29, 8, 14, 23, 27, 5, 16, 7, 22), sep = "")
 # names(jtopics) <- c("ILC-RoraPlus", "ILC-PrkchPlus", "Bcells-Cd83", "Dendritic", "Bcells-Cd47", "Basophils", "Unknown-Igf1r", "Neutrophils", "Eryth", "HSCs-Ephb2", "pDendritic", "HSCs-Hlf", "HSCs-Anxa2")
 
+jfrac <- 0.35
 jtopics <- paste("topic", c(11, 18, 10, 4, 29, 8, 23, 27, 5, 16, 7, 22), sep = "")
 names(jtopics) <- c("ILC-RoraPlus", "ILC-PrkchPlus", "Bcells-Cd83", "Dendritic", "Bcells-Cd47", "Basophils", "Neutrophils", "Eryth", "HSCs-Ephb2", "pDendritic", "HSCs-Hlf", "HSCs-Anxa2")
+
+# jtopics <- paste("topic", c(11, 18, 10, 4, 29, 8, 23, 27, 7), sep = "")
+# names(jtopics) <- c("ILC-RoraPlus", "ILC-PrkchPlus", "Bcells-Cd83", "Dendritic", "Bcells-Cd47", "Basophils", "Neutrophils", "Eryth", "HSCs-Hlf")
 
 names(jtopics) <- paste(names(jtopics), jtopics, sep = "_")
 names.final <- names(jtopics)
@@ -129,7 +133,7 @@ multiplot(m.lda, m.glm, m.glm.new.louvain, cols = 3)
 
 # Plot celltypes  ---------------------------------------------------------
 
-mm.celltype.lst <- FitMixtureModelLabelCells(tm.result$topics, jtopics, jthres = 0.5, show.plots = TRUE, dat.umap.long = dat.umap.lda)
+mm.celltype.lst <- FitMixtureModelLabelCells(tm.result$topics, jtopics, jthres = 0.5, show.plots = TRUE, dat.umap.long = dat.umap.lda, fail.if.nfrac = jfrac)
 
 # plot output
 dat.celltypes <- TidyMixtureModelOutputs(mm.celltype.lst, dedup = TRUE) %>%
@@ -196,7 +200,9 @@ print(m.celltype.glm.fillNAs)
 # show across conditinos 
 dat.umap.glm.fillNAs <- dat.umap.glm.fillNAs %>%
   rowwise() %>%
-  mutate(plate = ClipLast(cell, jsep = "-"))
+  mutate(plate = ClipLast(cell, jsep = "-"),
+         cond = GetCondFromSamp(cell, mark = jmark))
+dat.umap.glm.fillNAs$cond <- factor(dat.umap.glm.fillNAs$cond, levels = c("Unenriched", "Linneg", "StemCell"))
 
 m.celltype.glm.fillNAs.plates <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2, color = cluster)) + 
   geom_point() + theme_bw() + 
@@ -204,7 +210,21 @@ m.celltype.glm.fillNAs.plates <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y =
   scale_color_manual(values = cbPalette, na.value = "grey85") + 
   ggtitle(paste('GLM:', jmark, jexperi, "NAs imputed"))  + facet_wrap(~plate)
 
+m.celltype.glm.fillNAs.conds <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2, color = cluster)) + 
+  geom_point() + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+  scale_color_manual(values = cbPalette, na.value = "grey85") + 
+  ggtitle(paste('GLM:', jmark, jexperi, "NAs imputed"))  + facet_wrap(~cond)
+
 print(m.celltype.glm.fillNAs.plates)
+print(m.celltype.glm.fillNAs.conds)
+
+m.celltype.glm.fillNAs.conds.nocluster <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2, color = cond)) + 
+  geom_point(alpha = 0.4) + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+  scale_color_manual(values = cbPalette, na.value = "grey85") +
+  ggtitle(paste('GLM:', jmark, jexperi, "NAs imputed")) 
+print(m.celltype.glm.fillNAs.conds.nocluster)
 
 if (write.plots){
   dev.off()

@@ -202,10 +202,15 @@ print(m.celltype.glm)
 multiplot(m.celltype.lda, m.celltype.glm, cols = 2)
 print(m.celltype.glm.fillNAs)
 
+
+
+
 # show across conditinos 
 dat.umap.glm.fillNAs <- dat.umap.glm.fillNAs %>%
   rowwise() %>%
-  mutate(plate = ClipLast(cell, jsep = "-"))
+  mutate(plate = ClipLast(cell, jsep = "-"),
+         cond = GetCondFromSamp(cell, mark = jmark))
+dat.umap.glm.fillNAs$cond <- factor(dat.umap.glm.fillNAs$cond, levels = c("Unenriched", "Linneg", "StemCell"))
 
 m.celltype.glm.fillNAs.plates <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2, color = cluster)) + 
   geom_point() + theme_bw() + 
@@ -213,7 +218,23 @@ m.celltype.glm.fillNAs.plates <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y =
   scale_color_manual(values = cbPalette, na.value = "grey85") + 
   ggtitle(paste('GLM:', jmark, jexperi, "NAs imputed"))  + facet_wrap(~plate)
 
+m.celltype.glm.fillNAs.conds <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2, color = cluster)) + 
+  geom_point() + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+  scale_color_manual(values = cbPalette, na.value = "grey85") + 
+  ggtitle(paste('GLM:', jmark, jexperi, "NAs imputed"))  + facet_wrap(~cond)
+
 print(m.celltype.glm.fillNAs.plates)
+print(m.celltype.glm.fillNAs.conds)
+
+m.celltype.glm.fillNAs.conds.nocluster <- ggplot(dat.umap.glm.fillNAs, aes(x = umap1, y = umap2, color = cond)) + 
+  geom_point(alpha = 0.4) + theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+  scale_color_manual(values = cbPalette, na.value = "grey85") +
+  ggtitle(paste('GLM:', jmark, jexperi, "NAs imputed")) 
+print(m.celltype.glm.fillNAs.conds.nocluster)
+
+
 
 if (write.plots){
   dev.off()
