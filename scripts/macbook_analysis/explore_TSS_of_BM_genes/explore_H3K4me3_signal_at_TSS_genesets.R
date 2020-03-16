@@ -149,13 +149,13 @@ for (jsamp in samp.remove){
   mats.lst.clean[[jsamp]] <- NULL
 }
 
-# merge Eryths
-# https://stackoverflow.com/questions/26018216/calculating-mean-of-multiple-matrices-in-r
-pseudos.merge <- c("H3K4me3-BM_AllMerged.Eryth-Gfi1b_topic7.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Cdk6_topic9.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Sox6_topic16.sorted.100")
-pseudos.merge.newname <- "Eryth"
-mats.lst.clean[[pseudos.merge.newname]] <- purrr::reduce(mats.lst.clean[pseudos.merge], .f = "+") / length(pseudos.merge)
+# # merge Eryths
+# # https://stackoverflow.com/questions/26018216/calculating-mean-of-multiple-matrices-in-r
+# pseudos.merge <- c("H3K4me3-BM_AllMerged.Eryth-Gfi1b_topic7.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Cdk6_topic9.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Sox6_topic16.sorted.100")
+# pseudos.merge.newname <- "Eryth"
+# mats.lst.clean[[pseudos.merge.newname]] <- purrr::reduce(mats.lst.clean[pseudos.merge], .f = "+") / length(pseudos.merge)
 
-# merge HScs
+# merge HSs
 
 gene.exprs <- lapply(mats.lst.clean, function(jmat){
   rowMeans(jmat)
