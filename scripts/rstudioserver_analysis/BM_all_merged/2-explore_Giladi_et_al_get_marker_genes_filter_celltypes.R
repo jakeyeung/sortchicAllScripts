@@ -1,7 +1,7 @@
 # Jake Yeung
 # Date of Creation: 2019-12-05
 # File: ~/projects/scchic/scripts/rstudioserver_analysis/BM_all_merged/2-explore_Giladi_et_al.R
-# Explore the scRNAseq dataset 
+# Explore the scRNAseq dataset : filter celltypes manually
 
 rm(list=ls())
 
@@ -25,7 +25,7 @@ CalculateEntropy <- function(p, normalize.p = FALSE){
 
 
 
-
+  
 # Functions ---------------------------------------------------------------
 
 
@@ -40,6 +40,11 @@ ReadGiladi <- function(inf, remove.first.col = TRUE){
 
 
 # Load marker genes  ------------------------------------------------------
+
+outrds <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/Giladi_et_al_2018/diff_exprs_Giladi_seurat.celltypes_filt.rds"
+outpdf <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/Giladi_et_al_2018/diff_exprs_Giladi_seurat.celltypes_filt.pdf"
+
+pdf(outpdf, useDingbats = FALSE)
 
 inf.markers <- "/home/jyeung/data/from_cluster/public_data/Giladi_et_al_2018/41556_2018_121_MOESM4_ESM.markergenes.xlsx"
 assertthat::assert_that(file.exists(inf.markers))
@@ -56,12 +61,15 @@ assertthat::assert_that(file.exists(inf.meta))
 
 dat.meta <- fread(inf.meta)
 
+# filter markers
+markers.keep <- c("Car1", "core", "Siglech", "Prg2", "Ccl5", "Prss34", "Cd74", "Fcrla", "Ltf")
+dat.meta <- subset(dat.meta, marker %in% markers.keep)
+
 cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
 ggplot(dat.meta, aes(x = x, y = y, color = marker)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 
 # Load data ---------------------------------------------------------------
-
 
 indir <- "~/data/from_cluster/public_data/Giladi_et_al_2018"
 inf.meta <- file.path(indir, "GSE92575_metadata.txt")
@@ -77,7 +85,9 @@ dats <- lapply(infs, ReadGiladi, remove.first.col = TRUE) %>%
 meta <- as.data.frame(fread(inf.meta, skip = 14))
 rownames(meta) <- meta$well
 
-cells <- meta$well
+
+# cells <- meta$well
+cells <- dat.meta$V1
 
 # integrate tier3 annotation into thiis
 dats.filt <- dats[, ..cells]
@@ -136,51 +146,37 @@ FeaturePlot(pbmc, features = jgenes, order = TRUE)
 # plot entropy in single cells
 
 
-# x <- pbmc@assays$RNA@scale.data[, 1]
-
-# CalculateEntropy(2^x, normalize.p = TRUE)
-
-# S.vec <- apply(pbmc@assays$RNA@data, 2, function(jcell) CalculateEntropy(2^jcell, normalize.p = TRUE))
-# S.vec <- apply(pbmc@assays$RNA@data, 2, function(jcell) CalculateEntropy(jcell, normalize.p = TRUE))
 S.vec <- apply(pbmc@assays$RNA@counts, 2, function(jcell) CalculateEntropy(jcell, normalize.p = TRUE))
 jmeta <- data.frame(S = S.vec)
 rownames(jmeta) <- names(S.vec)
-
 pbmc <- AddMetaData(object = pbmc, metadata = jmeta, col.name = "entropy")
 
 FeaturePlot(pbmc, features = 'entropy') + scale_color_viridis_c(direction = 1)
 
 # add real metadata???
-
 dat.meta.celltypes <- as.data.frame(dat.meta)
-
 rownames(dat.meta.celltypes) <- dat.meta.celltypes$V1
 
+pbmc <- AddMetaData(object = pbmc, metadata = dat.meta.celltypes)
 
-# Filter out level 3 annotations ------------------------------------------
+Seurat::DimPlot(pbmc, group.by = "marker")
 
-dat.sub <- pbmc@assays$RNA@counts
+dev.off()
 
-cells.keep <- which(colnames(dat.sub) %in% dat.meta.celltypes$V1)
-dat.sub.filt <- dat.sub[, cells.keep]
+# Get markers -------------------------------------------------------------
 
-clstrs <- unique(dat.meta.celltypes$clust)
-print(length(clstrs))
+Idents(pbmc) <- pbmc$marker
+# de.output <- FindMarkers(pbmc, ident.1 = "Car1")
 
-# get cells by marker
-markers <- unique(dat.meta.celltypes$marker)
-names(markers) <- markers
+jmarkers <- unique(dat.meta.celltypes$marker)
+names(jmarkers) <- jmarkers
 
-summed.exprs.vec.lst <- lapply(markers, function(jmarker){
-  print(jmarker)
-  wells <- subset(dat.meta.celltypes, marker == jmarker)$V1
-  cols.i <- which(colnames(dat.sub.filt) %in% wells)
-  return(list(sum.vec = rowSums(dat.sub.filt[, cols.i]), ncells = length(cols.i)))
-})
+# de.output.lst <- lapply(jmarkers, function(jmarker){
+#   print(paste("Calculating diff exprs genes for:", jmarker))
+#   de.output <- FindMarkers(pbmc, ident.1 = jmarker)
+# })
 
-summed.exprs.vec <- lapply(summed.exprs.vec.lst, function(x) x$sum.vec)
-ncells.vec <- lapply(summed.exprs.vec.lst, function(x) x$ncells)
-print(ncells.vec)
+de.output.lst <- FindAllMarkers(pbmc, only.pos = FALSE)
 
-dat.sum <- as.data.frame(summed.exprs.vec)
-save(dat.sum, ncells.vec, file = "/home/jyeung/hpc/scChiC/public_data/Giladi_et_al_2018/giladi_pseudobulk_datsum_and_ncells.WithBatch.RData")
+
+saveRDS(de.output.lst, file = outrds)
