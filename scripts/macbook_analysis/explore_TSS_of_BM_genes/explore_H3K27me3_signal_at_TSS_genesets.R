@@ -40,7 +40,19 @@ markers.lst <- MarkerToCelltype()
 
 reticulate::source_python("/Users/yeung/projects/scchic/scripts/python_functions/parse_dictionary_text.py")
 
+jmark <- "H3K27me3"
 
+# Preamble ----------------------------------------------------------------
+
+
+jclusts <- c("Ltf", "Fcrla", "Ccl5", "Prss34", "Cd74", "Siglech", "Car1", "core")
+names(jclusts) <- jclusts
+cnames.rearranged <- c("Neutrophils", "Bcells", "InnateLymph", "LinnegIsland", "LinnegIsland2", "LinnegCore", "LinnegCore2", "Eryth.Sox6.", "Eryth.Gfi1.", "Eryth.Slc7a6.", "HSCs.Tead1.")
+# cnames.rearranged <- c("Neutrophils", "Bcells")
+cnames.rearranged.full <- cnames.rearranged
+cbPalette.all <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+cbPalette <- cbPalette.all[1:length(jclusts)]
+names(cbPalette) <- jclusts
 
 
 # Load annots -------------------------------------------------------------
@@ -48,7 +60,6 @@ reticulate::source_python("/Users/yeung/projects/scchic/scripts/python_functions
 inf.annot <- "/Users/yeung/data/scchic/public_data/Giladi_et_al_2018/diff_exprs_Giladi_seurat.celltypes_filt.rds"
 
 dat.annots <- readRDS(inf.annot)
-jmark <- "H3K4me3"
 jdir <- "greaterthan"
 if (jdir == "greaterthan"){
   logfcmin <- 0.5
@@ -67,6 +78,9 @@ outpdf <- paste0("/Users/yeung/data/scchic/pdfs/marker_genes_Giladi_TSS_signal/h
 
 inf.annot <- paste0("/Users/yeung/data/scchic/from_rstudio/pdfs_all/glmpca_analyses/GLMPCA_outputs.KeepBestPlates2.celltyping/GLMPCA_celltyping.", jmark, ".AllMerged.mergesize_1000.nbins_1000.penalty_1.covar_ncuts.var.log2.CenteredAndScaled.RData")
 load(inf.annot, v=T)
+print(unique(dat.umap.glm.fillNAs$cluster))
+
+
 
 # Load bed ----------------------------------------------------------------
 
@@ -138,6 +152,14 @@ for (jsamp in samp.remove){
   mats.lst.clean[[jsamp]] <- NULL
 }
 
+# # merge Eryths
+# # https://stackoverflow.com/questions/26018216/calculating-mean-of-multiple-matrices-in-r
+# pseudos.merge <- c("H3K4me3-BM_AllMerged.Eryth-Gfi1b_topic7.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Cdk6_topic9.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Sox6_topic16.sorted.100")
+# pseudos.merge.newname <- "Eryth"
+# mats.lst.clean[[pseudos.merge.newname]] <- purrr::reduce(mats.lst.clean[pseudos.merge], .f = "+") / length(pseudos.merge)
+
+# merge HSs
+
 gene.exprs <- lapply(mats.lst.clean, function(jmat){
   rowMeans(jmat)
 })
@@ -148,7 +170,11 @@ cpm.mat <- do.call(cbind, gene.exprs)
 colnames(cpm.mat) <- gsub(".sorted.100$", "", colnames(cpm.mat))
 colnames(cpm.mat) <- gsub(".BM_AllMerged", "", colnames(cpm.mat))
 colnames(cpm.mat) <- gsub(paste0("^", jmark, "."), "", colnames(cpm.mat))
-colnames(cpm.mat) <- sapply(colnames(cpm.mat), function(x) strsplit(x, "_")[[1]][[1]])
+colnames(cpm.mat) <- make.names(sapply(colnames(cpm.mat), function(x) strsplit(x, "_")[[1]][[1]]))
+
+
+
+
 
 rownames(cpm.mat) <- coords$coord
 
@@ -160,17 +186,8 @@ cpm.mat.long <- tidyr::gather(cpm.mat.long, key = "pseudobulk", value = "cpm", -
 
 # get diff exprs genes ----------------------------------------------------
 
-
-jclust <- "Fcrla"
-jclust <- "Ltf"
-jclusts <- as.character(unique(dat.annots$cluster))
-names(jclusts) <- jclusts
-
-# jclusts.keep <- c("Car1", "core", "Siglech", "Ccl5", "Cd74", "Fcrla", "Ltf")
-# jclusts.keep <- c("Car1", "core", "Ccl5", "Fcrla", "Cd74", "Ltf", "Siglech")
-# jclusts <- jclusts[which(jclusts %in% jclusts.keep)]
-jclusts <- c("Ltf", "Fcrla", "Ccl5", "Prss34", "Cd74", "Siglech", "Car1", "core")
-names(jclusts) <- jclusts
+# jclusts <- as.character(unique(dat.annots$cluster))
+# names(jclusts) <- jclusts
 
 ctype.genes <- lapply(jclusts, function(jclust){
   if (jdir == "greaterthan"){
@@ -207,9 +224,7 @@ for (jclust in jclusts){
   cpm.mat.filt.ordered <- cpm.mat.filt[jgenes, ]
   heatmap3::heatmap3(cpm.mat.filt.ordered, Rowv = NA, Colv = NA, 
                     main = paste("Clust;", jclust, "(", markers.lst[[jclust]], "). Ngenes:", length(jgenes)), revC = TRUE, labRow = FALSE, 
-                    # col = colorRampPalette(c("Yellow", "Green", "Blue"))(1024))
-                    # col = colorRampPalette(brewer.pal(9, "YlGnBu"))(1024))
-                    col = colorRampPalette(viridis(12))(1024))
+                    col = colorRampPalette(viridis(12, direction = -1))(1024))
 }
 
 # do all genes together?
@@ -225,25 +240,20 @@ cpm.mat.filt.ordered <- cpm.mat.filt[jgenes, ]
 # order based on entropy? 
 
 # manually arrange celltypes
-cnames.rearranged <- c("Neutrophils", "Bcells", "InnateLymph", "Basophils", "Dendritic", "pDendritic", "Eryth.Sox6", "Eryth.Cdk6", "Eryth.Gfi1b","HSCs.Lrp5", "HSCs.Hlf", "HSCs.Msi2")
-# cnames.rearranged.full <- paste(jmark, cnames.rearranged, sep = ".")
-cnames.rearranged.full <- cnames.rearranged
 
-cbPalette.all <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
-cbPalette <- cbPalette.all[1:length(jclusts)]
-names(cbPalette) <- jclusts
 
 gene.colors <- lapply(jclusts, function(jclust){
   return(rep(cbPalette[[jclust]], length(ctype.genes[[jclust]])))
 }) %>%
   unlist()
 
+print(colnames(cpm.mat.filt.ordered))
 
 heatmap3::heatmap3(cpm.mat.filt.ordered[, cnames.rearranged.full], 
                    Rowv = NA, Colv = NA, margins = c(5, 1),
                   main = paste("\n\n\n", jmark, 'signal at TSS of\ncelltype specific BM genes'), 
                   revC = TRUE, labRow = FALSE, 
-                  col = colorRampPalette(viridis(12))(1024), 
+                  col = colorRampPalette(viridis(12, direction = -1))(1024), 
                   RowSideColors = gene.colors, RowSideLabs = "")
 
 

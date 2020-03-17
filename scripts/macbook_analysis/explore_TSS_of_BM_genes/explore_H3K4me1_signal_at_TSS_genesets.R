@@ -1,6 +1,6 @@
 # Jake Yeung
-# Date of Creation: 2020-03-12
-# File: ~/projects/scchic/scripts/macbook_analysis/explore_TSS_of_BM_genes/explore_H3K4me3_signal_at_TSS.R
+# Date of Creation: 2020-03-16
+# File: ~/projects/scchic/scripts/macbook_analysis/explore_TSS_of_BM_genes/explore_H3K4me1_signal_at_TSS_genesets.R
 # 
 
 rm(list=ls())
@@ -40,21 +40,19 @@ markers.lst <- MarkerToCelltype()
 
 reticulate::source_python("/Users/yeung/projects/scchic/scripts/python_functions/parse_dictionary_text.py")
 
+jmark <- "H3K4me1"
 
 # Preamble ----------------------------------------------------------------
 
-pseudos.merge.lst <- list("Eryth" = c("H3K4me3-BM_AllMerged.Eryth-Gfi1b_topic7.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Cdk6_topic9.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Sox6_topic16.sorted.100"),
-                          "HSCs"  = c("H3K4me3-BM_AllMerged.HSCs-Hlf_topic26.sorted.100", "H3K4me3-BM_AllMerged.HSCs-Lrp5_topic14.sorted.100"))
-
 jclusts <- c("Ltf", "Fcrla", "Ccl5", "Prss34", "Cd74", "Siglech", "Car1", "core")
 names(jclusts) <- jclusts
-# cnames.rearranged <- c("Neutrophils", "Bcells", "InnateLymph", "Basophils", "Dendritic", "pDendritic", "Eryth.Sox6", "Eryth.Cdk6", "Eryth.Gfi1b","HSCs.Lrp5", "HSCs.Hlf", "HSCs.Msi2")
-cnames.rearranged <- c("Neutrophils", "Bcells", "InnateLymph", "Basophils", "Dendritic", "pDendritic", "Eryth", "HSCs", "HSCs.Msi2")
-cnames.rearranged.full <- c("Neutrophils", "Bcells", "InnateLymph", "Basophils", "Dendritic", "pDendritic", "Eryth", "HSCs", "HSCs.Msi2")
+# cnames.rearranged <- c("Neutrophils", "Bcells", "InnateLymph", "LinnegIsland", "LinnegIsland2", "LinnegCore", "LinnegCore2", "Eryth.Sox6.", "Eryth.Gfi1.", "Eryth.Slc7a6.", "HSCs.Tead1.")
+cnames.rearranged <- c("Neutrophils", "Bcells.Cd47", "Bcells.Cd83", "ILC.RoraPlus", "ILC.PrkchPlus", "Basophils", "Dendritic", "pDendritic", "Eryth", "HSCs.Anxa2", "HSCs.Ephb2", "HSCs.Hlf")
+# cnames.rearranged <- c("Neutrophils", "Bcells")
+cnames.rearranged.full <- cnames.rearranged
 cbPalette.all <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
 cbPalette <- cbPalette.all[1:length(jclusts)]
 names(cbPalette) <- jclusts
-
 
 
 # Load annots -------------------------------------------------------------
@@ -62,7 +60,6 @@ names(cbPalette) <- jclusts
 inf.annot <- "/Users/yeung/data/scchic/public_data/Giladi_et_al_2018/diff_exprs_Giladi_seurat.celltypes_filt.rds"
 
 dat.annots <- readRDS(inf.annot)
-jmark <- "H3K4me3"
 jdir <- "greaterthan"
 if (jdir == "greaterthan"){
   logfcmin <- 0.5
@@ -75,22 +72,15 @@ pvalmax <- 0.01
 
 # Set output --------------------------------------------------------------
 
-outpdf <- paste0("/Users/yeung/data/scchic/pdfs/marker_genes_Giladi_TSS_signal/heatmap_and_umap_", jmark, "_GiladiMarkerGenes.", jdir, ".pvallmax_", pvalmax, ".logfcmin_", logfcmin, ".mergeclusts.pdf")
+outpdf <- paste0("/Users/yeung/data/scchic/pdfs/marker_genes_Giladi_TSS_signal/heatmap_and_umap_", jmark, "_GiladiMarkerGenes.", jdir, ".pvallmax_", pvalmax, ".logfcmin_", logfcmin, ".pdf")
 
 # LLoad UMAPs -------------------------------------------------------------
 
 inf.annot <- paste0("/Users/yeung/data/scchic/from_rstudio/pdfs_all/glmpca_analyses/GLMPCA_outputs.KeepBestPlates2.celltyping/GLMPCA_celltyping.", jmark, ".AllMerged.mergesize_1000.nbins_1000.penalty_1.covar_ncuts.var.log2.CenteredAndScaled.RData")
 load(inf.annot, v=T)
+print(unique(dat.umap.glm.fillNAs$cluster))
 
-# plot UMAP with same colors as heatmap
-dat.umap.glm.fillNAs.mod <- dat.umap.glm.fillNAs %>%
-  rowwise() %>%
-  mutate(cluster = make.names(strsplit(cluster, split = "_")[[1]][[1]])) %>%
-  ungroup() %>%
-  mutate(cluster = ifelse(grepl("^Eryth", cluster), "Eryth", cluster), 
-         cluster = ifelse(grepl("HSCs.Lrp5|HSCs.Hlf", cluster), "HSCs", cluster)) %>%
-  mutate(cluster = factor(cluster, levels = cnames.rearranged))
-print(unique(dat.umap.glm.fillNAs.mod$cluster))
+
 
 # Load bed ----------------------------------------------------------------
 
@@ -162,36 +152,13 @@ for (jsamp in samp.remove){
   mats.lst.clean[[jsamp]] <- NULL
 }
 
-
-for (pseudos.merge.newname in names(pseudos.merge.lst)){
-  # merge Eryths
-  # https://stackoverflow.com/questions/26018216/calculating-mean-of-multiple-matrices-in-r
-  pseudos.merge <- pseudos.merge.lst[[pseudos.merge.newname]]
-  mats.lst.clean[[pseudos.merge.newname]] <- Reduce(mats.lst.clean[pseudos.merge], f = '+') / length(pseudos.merge)
-  # remove old ones
-  for (jname in pseudos.merge){
-    mats.lst.clean[[jname]] <- NULL
-  }
-}
-
+# # merge Eryths
+# # https://stackoverflow.com/questions/26018216/calculating-mean-of-multiple-matrices-in-r
 # pseudos.merge <- c("H3K4me3-BM_AllMerged.Eryth-Gfi1b_topic7.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Cdk6_topic9.sorted.100", "H3K4me3-BM_AllMerged.Eryth-Sox6_topic16.sorted.100")
 # pseudos.merge.newname <- "Eryth"
-# # mats.lst.clean[[pseudos.merge.newname]] <- purrr::reduce(mats.lst.clean[pseudos.merge], .f = "+") / length(pseudos.merge)
-# mats.lst.clean[[pseudos.merge.newname]] <- Reduce(mats.lst.clean[pseudos.merge], f = '+') / length(pseudos.merge)
-# # remove old ones
-# for (jname in pseudos.merge){
-#   mats.lst.clean[[jname]] <- NULL
-# }
-# 
-# # merge HSs
-# pseudos.merge <- c("H3K4me3-BM_AllMerged.HSCs-Hlf_topic26.sorted.100", "H3K4me3-BM_AllMerged.HSCs-Lrp5_topic14.sorted.100")
-# pseudos.merge.newname <- "HSCs"
-# # mats.lst.clean[[pseudos.merge.newname]] <- purrr::reduce(mats.lst.clean[pseudos.merge], .f = "+") / length(pseudos.merge)
-# mats.lst.clean[[pseudos.merge.newname]] <- Reduce(mats.lst.clean[pseudos.merge], f = '+') / length(pseudos.merge)
-# # remove old ones
-# for (jname in pseudos.merge){
-#   mats.lst.clean[[jname]] <- NULL
-# }
+# mats.lst.clean[[pseudos.merge.newname]] <- purrr::reduce(mats.lst.clean[pseudos.merge], .f = "+") / length(pseudos.merge)
+
+# merge HSs
 
 gene.exprs <- lapply(mats.lst.clean, function(jmat){
   rowMeans(jmat)
@@ -257,7 +224,7 @@ for (jclust in jclusts){
   cpm.mat.filt.ordered <- cpm.mat.filt[jgenes, ]
   heatmap3::heatmap3(cpm.mat.filt.ordered, Rowv = NA, Colv = NA, 
                     main = paste("Clust;", jclust, "(", markers.lst[[jclust]], "). Ngenes:", length(jgenes)), revC = TRUE, labRow = FALSE, 
-                    col = colorRampPalette(viridis(12))(1024))
+                    col = colorRampPalette(viridis(12, direction = 1))(1024))
 }
 
 # do all genes together?
@@ -280,17 +247,24 @@ gene.colors <- lapply(jclusts, function(jclust){
 }) %>%
   unlist()
 
+print(colnames(cpm.mat.filt.ordered))
 
 heatmap3::heatmap3(cpm.mat.filt.ordered[, cnames.rearranged.full], 
                    Rowv = NA, Colv = NA, margins = c(5, 1),
                   main = paste("\n\n\n", jmark, 'signal at TSS of\ncelltype specific BM genes'), 
                   revC = TRUE, labRow = FALSE, 
-                  col = colorRampPalette(viridis(12))(1024), 
+                  col = colorRampPalette(viridis(12, direction = 1))(1024), 
                   RowSideColors = gene.colors, RowSideLabs = "")
 
 
 # Plot the clusters in the UMAP again -------------------------------------
 
+# plot UMAP with same colors as heatmap
+dat.umap.glm.fillNAs.mod <- dat.umap.glm.fillNAs %>%
+  rowwise() %>%
+  mutate(cluster = make.names(strsplit(cluster, split = "_")[[1]][[1]])) %>%
+  ungroup() %>%
+  mutate(cluster = factor(cluster, levels = cnames.rearranged))
 
 m.umap <- ggplot(dat.umap.glm.fillNAs.mod, aes(x = umap1, y = umap2, color = cluster)) + geom_point(size = 3) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
