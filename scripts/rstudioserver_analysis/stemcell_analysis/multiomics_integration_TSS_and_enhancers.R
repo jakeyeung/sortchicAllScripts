@@ -23,21 +23,27 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 
 # get raw counts ----------------------------------------------------------
 
+# indir.lda <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-02-11.var_filt.UnenrichedAndAllMerged.KeepBestPlates2"
+# count.mat.lst <- lapply(jmarks, function(jmark){
+#   inf.lda <- file.path(indir.lda, paste0("lda_outputs.BM_", jmark, "_varfilt_countmat.2020-02-11.AllMerged.K-30.binarize.FALSE/ldaOut.BM_", jmark, "_varfilt_countmat.2020-02-11.AllMerged.K-30.Robj"))
+#   load(inf.lda, v=T)
+#   return(count.mat)
+# })
 
-indir.lda <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-02-11.var_filt.UnenrichedAndAllMerged.KeepBestPlates2"
-
+indir.mat <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawData_B6_All_MergedByMarks_final.count_tables_TSS.AnnotatedGeneRegionsWithPromsEnhs"
 count.mat.lst <- lapply(jmarks, function(jmark){
-  inf.lda <- file.path(indir.lda, paste0("lda_outputs.BM_", jmark, "_varfilt_countmat.2020-02-11.AllMerged.K-30.binarize.FALSE/ldaOut.BM_", jmark, "_varfilt_countmat.2020-02-11.AllMerged.K-30.Robj"))
-  load(inf.lda, v=T)
-  return(count.mat)
+  print(jmark)
+  inf.mat <- file.path(indir.mat, paste0(jmark, ".countTableTSS.mapq_40.TSS_10000.blfiltered.csv"))
+  ReadMatTSSFormat(inf.mat, as.sparse = TRUE, add.coord = TRUE)
 })
 
 # check rownames
 rnames.all <- lapply(count.mat.lst, function(x) rownames(x))
-
 lapply(rnames.all, length)
 
 rnames.common <- Reduce(intersect, rnames.all)
+
+print(length(rnames.common))
 
 count.mat.lst.filt <- lapply(count.mat.lst, function(x){
   x[rnames.common, ]
@@ -46,10 +52,27 @@ count.mat.lst.filt <- lapply(count.mat.lst, function(x){
 lapply(count.mat.lst.filt, dim)
 
 
+# Celltype sepcific genes -------------------------------------------------
+
+pval.min <- 0.01
+fc.min <- 0
+inf.de <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/Giladi_et_al_2018/diff_exprs_Giladi_seurat.celltypes_filt.rds"
+dat.de <- readRDS(inf.de)
+neutro.genes <- subset(dat.de, p_val_adj < pval.min & cluster == "Ltf" & avg_logFC > fc.min)$gene
+
+# label genes as cluster specific
+
+jclsts <- as.character(unique(dat.de$cluster))
+names(jclsts) <- jclsts
+
+de.genes.lst <- lapply(jclsts, function(jclst){
+  subset(dat.de, p_val_adj < pval.min & cluster == jclst & avg_logFC)$gene
+})
+
+
 # Load annots  ------------------------------------------------------------
 
 indir.annots <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/glmpca_analyses/GLMPCA_outputs.KeepBestPlates2.celltyping")
-
 dat.annots.all <- lapply(jmarks, function(jmark){
   inf.annots <- file.path(indir.annots, paste0("GLMPCA_celltyping.", jmark, ".AllMerged.mergesize_1000.nbins_1000.penalty_1.covar_ncuts.var.log2.CenteredAndScaled.RData"))
   load(inf.annots, v=T)
@@ -174,90 +197,70 @@ boxplot(count.mat.pbulk.all.norm.wide)
   
 # Plot genome-wide summary of neutophils  ---------------------------------
 
-count.sub <- count.mat.pbulk.all.norm.wide[, grepl("Eryth", colnames(count.mat.pbulk.all.norm.wide))]
-plot(count.sub[, 1], count.sub[, 2], pch = 20)
-plot(count.sub[, 1], count.sub[, 3], pch = 20)
-plot(count.sub[, 2], count.sub[, 3], pch = 20)
 
-# filter out TSS? 
+# Define each dot as either TSS or enhancer -------------------------------
 
+coords.vec <- sapply(rnames.common, function(x) strsplit(x, ";")[[1]][[1]])
 
-# Label each gene by TSS or not -------------------------------------------
+# # check dupes
+# jdupes <- which(duplicated(coords.vec))
+# coords.vec[which(coords.vec %in% jdupes)]
 
+# what to do with TSS of genes with exact same TSS? remove it? yeah... they should get same label
+# e.g. chrX:135732733-135752733;Armcx5+ chrX:135732733-135752733;Gprasp1
+coords.vec <- coords.vec[!duplicated(coords.vec)]
 
 jinf.tss <- "/home/jyeung/hub_oudenaarden/jyeung/data/databases/gene_tss/first_transcript_tss/gene_tss_winsize.10000.first_transcript.bed"
-# annotate coord to gene 
+# annotate coord to gene
 jchromos.keep <- c(paste("chr", seq(19), sep = ""), "chrX", "chrY")
-bins.annot <- AnnotateCoordsFromList(coords.vec = rownames(count.mat.pbulk.all.norm.wide), inf.tss = jinf.tss, txdb = TxDb.Mmusculus.UCSC.mm10.knownGene, annodb = "org.Mm.eg.db", chromos.keep = jchromos.keep)
+bins.annot <- AnnotateCoordsFromList(coords.vec = coords.vec, inf.tss = jinf.tss, txdb = TxDb.Mmusculus.UCSC.mm10.knownGene, annodb = "org.Mm.eg.db", chromos.keep = jchromos.keep)
 
 
-# Get neutro specific genes -----------------------------------------------
-
-
-pval.min <- 0.01
-fc.min <- 0
-inf.de <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/Giladi_et_al_2018/diff_exprs_Giladi_seurat.celltypes_filt.rds"
-dat.de <- readRDS(inf.de)
-neutro.genes <- subset(dat.de, p_val_adj < pval.min & cluster == "Ltf" & avg_logFC > fc.min)$gene
-
-# label genes as cluster specific
-
-jclsts <- as.character(unique(dat.de$cluster))
-names(jclsts) <- jclsts
-
-de.genes.lst <- lapply(jclsts, function(jclst){
-  subset(dat.de, p_val_adj < pval.min & cluster == jclst & avg_logFC)$gene
-})
-
-# Plot H3K4me1 vs H3K4me3, plot distance to nearest TSS  ------------------
-
-jctype <- "HSCs"
-jctype <- "Eryth"
-jctype <- "Bcells"
-jctype <- "H3K4me3"
-
-count.sub <- data.frame(region_coord = rownames(count.mat.pbulk.all.norm.wide), 
+jctype <- "H3K27me3"
+count.sub <- data.frame(region_coord_full = rownames(count.mat.pbulk.all.norm.wide), 
+                        region_coord = sapply(rownames(count.mat.pbulk.all.norm.wide), function(x) strsplit(x, split = ";")[[1]][[1]]),
                         count.mat.pbulk.all.norm.wide[, grepl(jctype, colnames(count.mat.pbulk.all.norm.wide))], stringsAsFactors = FALSE) %>%
   left_join(., bins.annot$out2.df.closest) %>%
   ungroup() %>%
   mutate(abs.dist.to.tss = abs(dist.to.tss)) %>%
-  mutate() %>%
-  # mutate(DistCategory = ifelse(abs.dist.to.tss < median(abs.dist.to.tss, na.rm = TRUE), "LessThanMedian", "GreaterThanMedian"))
-  mutate(DistCategory = ifelse(abs.dist.to.tss < 1000, "LessThanMedian", "GreaterThanMedian"))
+  mutate(is.enhancer = grepl("enhancer", region_coord_full))
 
-count.sub <- count.sub %>%
-  rowwise() %>%
-  mutate(is.neutro.specific = gene %in% neutro.genes)
+# plot mark 
+counts.sub.long <- data.table::melt(data.frame(region_coord_full = count.sub$region_coord_full, count.sub[, grepl(jctype, colnames(count.sub))]), 
+                                    id.vars = "region_coord_full", variable.name = "pseudobulk", value.name = "exprs") %>%
+  mutate(is.enhancer = grepl("enhancer", region_coord_full))
 
-jmed <- median(count.sub$abs.dist.to.tss, na.rm = TRUE)
-
-
-ggplot(count.sub %>% filter(!is.na(dist.to.tss)) %>% arrange(is.neutro.specific), aes_string(y = paste0(jctype, "_Neutro"), x = paste0(jctype, "_HSCs"), color = "is.neutro.specific")) + 
-  geom_point(alpha = 0.25) + 
+ggplot(counts.sub.long, aes(x = exprs, fill = is.enhancer)) + geom_density(alpha = 0.25) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  # scale_color_viridis_c(direction = -1) + 
-  ggtitle(paste0("", jctype, ", annotate 50 kb bins to dist to TSS"))
+  facet_wrap(~pseudobulk, ncol = 1) 
+  # facet_grid(is.enhancer ~ pseudobulk)
 
-ggplot(count.sub %>% filter(!is.na(dist.to.tss)) %>% arrange(is.neutro.specific), aes_string(y = paste0(jctype, "_Neutro"), 
-                                                                                             x = paste0(jctype, "_Bcells"), color = "is.neutro.specific")) + 
-  geom_point(alpha = 0.25) + 
+
+ggplot(count.sub, aes_string(x = paste0("H3K4me3_", jctype), y = paste0("H3K4me1_", jctype), color = "is.enhancer")) + geom_point(alpha = 0.25) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  # scale_color_viridis_c(direction = -1) + 
-  ggtitle(paste0("", jctype, ", annotate 50 kb bins to dist to TSS"))
+  facet_wrap(~is.enhancer) + ggtitle(paste0("H3K4me1 vs H3K4me3 on ENCODE annotations. Enhancer (TRUE) vs promoter (FALSE)"))
 
 
-ggplot(count.sub %>% filter(!is.na(dist.to.tss)), aes_string(y = paste0("H3K4me1_", jctype), x = paste0("H3K4me3_", jctype), color = "abs.dist.to.tss")) + 
-  geom_point(alpha = 0.25) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  scale_color_viridis_c(direction = -1) + ggtitle(paste0("H3K4me3 vs H3K4me1 ", jctype, ", annotate 50 kb bins to dist to TSS"))
+ggplot(count.sub, aes_string(x = paste0("H3K4me3_", jctype), y = paste0("H3K4me1_", jctype), color = "is.enhancer")) + geom_point(alpha = 0.25) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~is.enhancer)
 
-ggplot(count.sub %>% filter(!is.na(dist.to.tss)), aes_string(y = paste0("H3K4me1_", jctype), x = paste0("H3K4me3_", jctype), color = "DistCategory")) + 
-  geom_point(alpha = 0.25) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  # scale_color_viridis_c(direction = -1) + 
-  ggtitle(paste0("H3K4me3 vs H3K4me1 ", jctype, ", annotate 50 kb bins to dist to TSS"), paste0("Median Distance=", jmed)) + facet_wrap(~DistCategory)
+ggplot(count.sub, aes_string(x = paste0("H3K4me3_", jctype), y = paste0("H3K27me3_", jctype), color = "is.enhancer")) + geom_point(alpha = 0.25) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~is.enhancer)
 
-ggplot(count.sub %>% filter(!is.na(dist.to.tss)), aes_string(y = paste0("H3K4me1_", jctype), x = paste0("H3K4me3_", jctype), color = "DistCategory")) + 
-  geom_point(alpha = 0.25) + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  ggtitle(paste0("H3K4me3 vs H3K4me1 ", jctype, ", annotate 50 kb bins to dist to TSS"), paste0("Median Distance=", jmed))
+ggplot(count.sub %>% filter(!is.na(abs.dist.to.tss)) %>% arrange(desc(abs.dist.to.tss)), 
+       aes_string(x = paste0("H3K4me3_", jctype), y = paste0("H3K4me1_", jctype), color = "abs.dist.to.tss")) + 
+  geom_point(alpha = 0.1) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_viridis_c(direction = -1) 
+
+
+  
+ggplot(count.sub, aes_string(x = "H3K4me3_", jctype)) + geom_density() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+ggplot(count.sub, aes_string(x = H3K27me3_HSCs)) + geom_density()
+
+# Label annotations  ------------------------------------------------------
 
 
 

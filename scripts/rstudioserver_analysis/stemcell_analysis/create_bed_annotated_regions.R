@@ -42,9 +42,9 @@ proms.neg <- subset(proms, strand == "-") %>%
 
 
 # bed file should be chromo, start, stop, geneid
-fwrite(proms.pos, file = file.path(outdir, paste0("promotersPos_winsize_0.bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
-fwrite(proms.neg, file = file.path(outdir, paste0("promotersNeg_winsize_0.bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
-fwrite(enhs, file = file.path(outdir, paste0("enhancers_winsize_0.bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
+fwrite(proms.pos, file = file.path(outdir, paste0("promotersPos_winsize_0.", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
+fwrite(proms.neg, file = file.path(outdir, paste0("promotersNeg_winsize_0.", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
+fwrite(enhs, file = file.path(outdir, paste0("enhancers_winsize_0.", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
 
 
 # Writer promoters with window  -------------------------------------------
@@ -68,23 +68,25 @@ enhs.window <- enhs %>%
  
 promsenhs.window <- rbind(proms.window, enhs.window) 
 
-fwrite(proms.window, file = file.path(outdir, paste0("promoters_winsize_", winsize, ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
-fwrite(enhs.window, file = file.path(outdir, paste0("enhancers_winsize_", winsize, ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
-fwrite(promsenhs.window, file = file.path(outdir, paste0("promsenhs_winsize_", winsize, ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
+fwrite(proms.window, file = file.path(outdir, paste0("promoters_winsize_", winsize, ".", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
+fwrite(enhs.window, file = file.path(outdir, paste0("enhancers_winsize_", winsize, ".", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
+fwrite(promsenhs.window, file = file.path(outdir, paste0("promsenhs_winsize_", winsize, ".", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
 
 
   # Write all? --------------------------------------------------------------
 
+jchromos <- paste("chr", c(seq(19), "X", "Y"), sep = "")
 all.window <- subset(dat.annot, type != "gene") %>%
   ungroup() %>%
     mutate(start = as.integer(start - winsize / 2),
            stop = as.integer(stop + winsize / 2),
            chr2 = paste("chr", chr, sep = ""),
            name2 = paste(name, strand, sep = "")) %>%
-    dplyr::select(chr2, start, stop, name2)
+    dplyr::select(chr2, start, stop, name2) %>%
+  filter(chr2 %in% jchromos)
 
 
-fwrite(all.window, file = file.path(outdir, paste0("all_winsize_", winsize, ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
+fwrite(all.window, file = file.path(outdir, paste0("all_winsize_", winsize, ".", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
 
 
 
