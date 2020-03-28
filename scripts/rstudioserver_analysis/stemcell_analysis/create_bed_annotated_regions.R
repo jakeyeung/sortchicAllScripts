@@ -13,10 +13,12 @@ library(data.table)
 library(Matrix)
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/ENCODE"
-winsize <- 10000  # 5kb left and right
+winsize <- 10000L  # 5kb left and right
 
 inf.annot <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/ENCODE/genomic_regions_10kbpromoters.txt"
-dat.annot <- fread(inf.annot)
+dat.annot <- fread(inf.annot) %>%
+  mutate(start = as.integer(start),
+         stop = as.integer(stop))
 
 
 proms <- subset(dat.annot, type == "promotor") 
@@ -49,8 +51,8 @@ fwrite(enhs, file = file.path(outdir, paste0("enhancers_winsize_0.bed")), sep = 
 
 proms.window <- proms %>%
   rowwise() %>%
-    mutate(start = start - winsize / 2,
-           stop = stop + winsize / 2,
+    mutate(start = as.integer(start - winsize / 2),
+           stop = as.integer(stop + winsize / 2),
            chr2 = paste("chr", chr, sep = ""),
            name2 = paste(name, strand, sep = "")) %>%
            
@@ -58,8 +60,8 @@ proms.window <- proms %>%
 
 enhs.window <- enhs %>%
   rowwise() %>%
-    mutate(start = start - winsize / 2,
-           stop = stop + winsize / 2,
+    mutate(start = as.integer(start - winsize / 2),
+           stop = as.integer(stop + winsize / 2),
            chr2 = paste("chr", chr, sep = ""),
            name2 = paste(name, strand, sep = "")) %>%
     dplyr::select(chr2, start, stop, name2)
@@ -75,8 +77,8 @@ fwrite(promsenhs.window, file = file.path(outdir, paste0("promsenhs_winsize_", w
 
 all.window <- subset(dat.annot, type != "gene") %>%
   ungroup() %>%
-    mutate(start = start - winsize / 2,
-           stop = stop + winsize / 2,
+    mutate(start = as.integer(start - winsize / 2),
+           stop = as.integer(stop + winsize / 2),
            chr2 = paste("chr", chr, sep = ""),
            name2 = paste(name, strand, sep = "")) %>%
     dplyr::select(chr2, start, stop, name2)
