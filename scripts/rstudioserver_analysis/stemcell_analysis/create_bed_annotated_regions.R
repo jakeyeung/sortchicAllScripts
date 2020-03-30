@@ -13,7 +13,7 @@ library(data.table)
 library(Matrix)
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/ENCODE"
-winsize <- 10000L  # 5kb left and right
+winsize <- 500L  # 5kb left and right
 
 inf.annot <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/ENCODE/genomic_regions_10kbpromoters.txt"
 dat.annot <- fread(inf.annot) %>%
@@ -40,11 +40,16 @@ proms.neg <- subset(proms, strand == "-") %>%
          name2 = paste(name, strand, sep = "")) %>%
   dplyr::select(chr2, start, stop, name2)
 
+enhs.ref <- enhs %>%
+  rowwise() %>%
+  mutate(chr2 = paste("chr", chr, sep = ""),
+         name2 = paste(name, strand, sep = "")) %>%
+  dplyr::select(chr2, start, stop, name2)
 
 # bed file should be chromo, start, stop, geneid
 fwrite(proms.pos, file = file.path(outdir, paste0("promotersPos_winsize_0.", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
 fwrite(proms.neg, file = file.path(outdir, paste0("promotersNeg_winsize_0.", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
-fwrite(enhs, file = file.path(outdir, paste0("enhancers_winsize_0.", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
+fwrite(enhs.ref, file = file.path(outdir, paste0("enhancers_winsize_0.", Sys.Date(), ".bed")), sep = "\t", col.names = FALSE, row.names = FALSE)
 
 
 # Writer promoters with window  -------------------------------------------
