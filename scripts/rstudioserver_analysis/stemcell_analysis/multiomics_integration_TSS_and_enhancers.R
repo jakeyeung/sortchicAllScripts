@@ -14,6 +14,8 @@ library(Matrix)
 library(scchicFuncs)
 library(topicmodels)
 
+library(JFuncs)
+
 library(TxDb.Mmusculus.UCSC.mm10.knownGene)
 library(org.Mm.eg.db)
 library(ChIPseeker)
@@ -176,12 +178,82 @@ count.mat.pbulk.all <- lapply(jmarks, function(jmark){
 
 # What to do now?  --------------------------------------------------------
 
-# normalize 
+# get normalization constant by summing up across cells, also track how many cells per cluster
+totalcuts.pseudos <- lapply(jmarks, function(jmark){
+  exprs.lst <- lapply(cnames.keep.lst.all[[jmark]], function(cnames){
+    ikeep <- which(names(dat.cellsizes[[jmark]]) %in% cnames)
+    x <- dat.cellsizes[[jmark]][which(names(dat.cellsizes[[jmark]]) %in% cnames)]
+    totalcuts <- sum(x)
+  })
+  exprs.mat <- as.data.frame(do.call(cbind, exprs.lst))
+})
 
+ncells.pseudos <- lapply(jmarks, function(jmark){
+  exprs.lst <- lapply(cnames.keep.lst.all[[jmark]], function(cnames){
+    return(length(cnames))
+  })
+  exprs.mat <- as.data.frame(do.call(cbind, exprs.lst))
+})
+
+totalcuts.dat <- lapply(jmarks, function(jmark){
+  x <- totalcuts.pseudos[[jmark]]
+  dat <- data.frame(pseudobulk = names(x), totalcuts = unlist(x), stringsAsFactors = FALSE)
+  dat$mark <- jmark
+  return(dat)
+})
+
+ncells.dat <- lapply(jmarks, function(jmark){
+  x <- ncells.pseudos[[jmark]]
+  dat <- data.frame(pseudobulk = names(x), ncells = unlist(x), stringsAsFactors = FALSE)
+  dat$mark <- jmark
+  return(dat)
+})
+
+mlst <- lapply(totalcuts.dat, function(dat){
+  m <- ggplot(dat, aes(x = pseudobulk, y = totalcuts)) + geom_col() + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+    facet_wrap(~mark) 
+  return(m)
+})
+JFuncs::multiplot(mlst[[1]], mlst[[2]], mlst[[3]], cols = 3)
+
+mlst <- lapply(ncells.dat, function(dat){
+  m <- ggplot(dat, aes(x = pseudobulk, y = ncells)) + geom_col() + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+    facet_wrap(~mark) 
+  return(m)
+})
+JFuncs::multiplot(mlst[[1]], mlst[[2]], mlst[[3]], cols = 3)
+
+ncellscounts.dat <- lapply(jmarks, function(jmark){
+  left_join(ncells.dat[[jmark]], totalcuts.dat[[jmark]])
+})
+
+mlst <- lapply(ncellscounts.dat, function(dat){
+  m <- ggplot(dat, aes(x = pseudobulk, y = totalcuts / ncells)) + geom_col() + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+    facet_wrap(~mark) 
+  return(m)
+})
+JFuncs::multiplot(mlst[[1]], mlst[[2]], mlst[[3]], cols = 3)
+
+
+# normalize 
 coldat.all <- lapply(count.mat.pbulk.all, function(jmat){
   cdat <- data.frame(pseudobulk = colnames(jmat), stringsAsFactors = FALSE)
   rownames(cdat) <- cdat$pseudobulk
   return(cdat)
+})
+
+# do something simple: log2 transform, library size, quantile-normalized???
+
+count.mat.pbulk.all.norm2 <- lapply(jmarks, function(jmark){
+  dat.norm <- count.mat.pbulk.all[[jmark]]
+  ds <- DESeqDataSetFromMatrix(count.mat.pbulk.all[[jmark]], colData = coldat.all[[jmark]], design = ~1)
+  
 })
 
 count.mat.pbulk.all.norm <- lapply(jmarks, function(jmark){
@@ -581,8 +653,8 @@ ggplot(dat.cellsizes.gw %>% bind_rows(), aes(x = enh.cuts, fill = cond)) +
 
 # Save objects for downstream exploration ---------------------------------
 
-outrdata <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/rsessions/multiomics_integration_proms_enhs_few_celltypes.RData"
-save.image(file = outrdata)
+# outrdata <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/rsessions/multiomics_integration_proms_enhs_few_celltypes.RData"
+# save.image(file = outrdata)
 
 
   
