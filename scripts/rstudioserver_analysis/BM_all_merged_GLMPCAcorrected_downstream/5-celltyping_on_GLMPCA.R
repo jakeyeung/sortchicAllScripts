@@ -41,7 +41,7 @@ SumAcrossClusters <- function(count.mat, cnames.keep.lst){
 
 
 # H3K27me3 for fun
-jmark <- "H3K27me3"
+jmark <- "H3K4me3"
 print(jmark)
 
 jexperi <- "AllMerged"

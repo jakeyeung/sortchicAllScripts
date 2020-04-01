@@ -31,17 +31,22 @@ library(hash)
 library(ggrepel)
 
 cbPalette <- c("#696969", "#32CD32", "#56B4E9", "#FFB6C1", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf", "#fa8c30", "#bd0a42", "#1347d5")
-jdists <- c(500L, 1000L, 5000L, 10000L)
-jsuffixs <- c(".celltypes_filt", "")
+# jdists <- c(500L, 1000L, 5000L, 10000L)
+# jsuffixs <- c(".celltypes_filt", "")
+jdists <- c(1000L)
+jsuffixs <- c(".celltypes_filt")
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 m2c <- MarkerToCelltype()
 
 make.plots <- TRUE
+overwrite <- TRUE
 # jdist <- 1000L
 # jsuffix <- jsuffixs[[1]]
 
-outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/proms_enhs_genebody_analysis"
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/proms_enhs_genebody_analysis2"
 dir.create(outdir)
+
+des.keep <- c("Car1", "Ccl5", "core", "Fcrla", "Ltf", NA)
 
 for (jdist in jdists){
   for (jsuffix in jsuffixs){
@@ -52,9 +57,11 @@ for (jdist in jdists){
     # jsuffix <- ".celltypes_filt"
     outf <- file.path(outdir, paste0("multiomics_summary_ctypes.dist_", jdist, jsuffix, ".", Sys.Date(), ".pdf"))
     
-    if (file.exists(outf)){
-      print(paste("outf exists, skipping:", outf))
-      next
+    if (!overwrite){
+      if (file.exists(outf)){
+        print(paste("outf exists, skipping:", outf))
+        next
+      }
     }
     
     if (make.plots){
@@ -663,7 +670,7 @@ for (jdist in jdists){
     # print(mshapes)
     
     mshapes3 <- lapply(jmarks, function(jmark){
-      jsub <- counts.pbulk.long.lst[[jmark]] %>%
+      jsub <- subset(counts.pbulk.long.lst[[jmark]], de.ctype.choose %in% des.keep) %>%
         group_by(region_coord_full) %>%
         mutate(zscore = scale(exprs, center = TRUE, scale = TRUE),
                logFC = scale(exprs, center = TRUE, scale = FALSE))
@@ -674,18 +681,19 @@ for (jdist in jdists){
       m.zscore <- ggplot(jsub, aes(x = zscore, fill = biotype, group = biotype)) + geom_density(alpha = 0.3) + 
         facet_grid(ctype ~ de.ctype.choose) + 
         theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-        scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist))
+        scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist)) + 
+        geom_vline(xintercept = 0, linetype = "dotted", size = 0.5)
       m.logFC <- ggplot(jsub, aes(x = logFC, fill = biotype, group = biotype)) + geom_density(alpha = 0.3) + 
         facet_grid(ctype ~ de.ctype.choose) + 
         theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-        scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist))
+        scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist)) + 
+        geom_vline(xintercept = 0, linetype = "dotted", size = 0.5)
       return(list(m.exprs, m.zscore, m.logFC))
     })
     print(mshapes3)
     
-    
-    mshapes3.all <- lapply(jmarks, function(jmark){
-      jsub <- counts.pbulk.lst.allpseudos[[jmark]] %>%
+    mshapes3.nohsc <- lapply(jmarks, function(jmark){
+      jsub <- subset(counts.pbulk.long.lst[[jmark]], ctype != "HSCs" & de.ctype.choose %in% des.keep) %>%
         group_by(region_coord_full) %>%
         mutate(zscore = scale(exprs, center = TRUE, scale = TRUE),
                logFC = scale(exprs, center = TRUE, scale = FALSE))
@@ -696,11 +704,37 @@ for (jdist in jdists){
       m.zscore <- ggplot(jsub, aes(x = zscore, fill = biotype, group = biotype)) + geom_density(alpha = 0.3) + 
         facet_grid(ctype ~ de.ctype.choose) + 
         theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-        scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist))
+        scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist)) + 
+        geom_vline(xintercept = 0, linetype = "dotted", size = 0.5)
       m.logFC <- ggplot(jsub, aes(x = logFC, fill = biotype, group = biotype)) + geom_density(alpha = 0.3) + 
         facet_grid(ctype ~ de.ctype.choose) + 
         theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist)) + 
+        geom_vline(xintercept = 0, linetype = "dotted", size = 0.5)
+      return(list(m.exprs, m.zscore, m.logFC))
+    })
+    print(mshapes3.nohsc)
+    
+    
+    mshapes3.all <- lapply(jmarks, function(jmark){
+      jsub <- subset(counts.pbulk.lst.allpseudos[[jmark]], de.ctype.choose %in% des.keep) %>%
+        group_by(region_coord_full) %>%
+        mutate(zscore = scale(exprs, center = TRUE, scale = TRUE),
+               logFC = scale(exprs, center = TRUE, scale = FALSE))
+      m.exprs <- ggplot(jsub, aes(x = exprs, fill = biotype, group = biotype)) + geom_density(alpha = 0.3) + 
+        facet_grid(ctype ~ de.ctype.choose) + 
+        theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
         scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist))
+      m.zscore <- ggplot(jsub, aes(x = zscore, fill = biotype, group = biotype)) + geom_density(alpha = 0.3) + 
+        facet_grid(ctype ~ de.ctype.choose) + 
+        theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist)) + 
+        geom_vline(xintercept = 0, linetype = "dotted")
+      m.logFC <- ggplot(jsub, aes(x = logFC, fill = biotype, group = biotype)) + geom_density(alpha = 0.3) + 
+        facet_grid(ctype ~ de.ctype.choose) + 
+        theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_fill_manual(values = cbPalette) + ggtitle(paste0(jmark, " Bin dist:", jdist)) + 
+        geom_vline(xintercept = 0, linetype = "dotted")
       return(list(m.exprs, m.zscore, m.logFC))
     })
     print(mshapes3.all)
@@ -724,39 +758,40 @@ for (jdist in jdists){
     # jctype <- "NKcells"
     
     # Compare one ctype with another ------------------------------------------
+    # 
+    # jsub.wide.lst <- lapply(jmarks, function(jmark){
+    #   jsub <- counts.pbulk.long.lst[[jmark]] %>%
+    #     group_by(region_coord_full)
+    #   jsub.wide <- reshape2::dcast(subset(jsub, select = c(region_coord_full, de.ctype.choose, biotype, gene, de.ctype.choose, ctype, exprs)), 
+    #                                formula = "region_coord_full  + biotype + gene + de.ctype.choose ~ ctype", value.var = "exprs")
+    # })
     
-    jsub.wide.lst <- lapply(jmarks, function(jmark){
-      jsub <- counts.pbulk.long.lst[[jmark]] %>%
-        group_by(region_coord_full)
-      jsub.wide <- reshape2::dcast(subset(jsub, select = c(region_coord_full, de.ctype.choose, biotype, gene, de.ctype.choose, ctype, exprs)), 
-                                   formula = "region_coord_full  + biotype + gene + de.ctype.choose ~ ctype", value.var = "exprs")
-    })
-    
-    ctypes <- sort(unique(counts.pbulk.long$ctype))
-    m.ctypevctype <- lapply(jmarks, function(jmark){
-      print(jmark)
-      for (ctype1 in ctypes){
-        for (ctype2 in ctypes){
-          if (ctype1 == ctype2){
-            next
-          }
-          print(paste(ctype1, ctype2))
-          m <- ggplot(jsub.wide.lst[[jmark]] %>% arrange(de.ctype.choose) %>% filter(!is.na(de.ctype.choose)), 
-                      aes_string(x = ctype1, y = ctype2, color = "biotype")) + geom_point() + 
-            theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-            scale_color_manual(values = cbPalette, na.value = "grey85") + ggtitle(jmark) + 
-            facet_wrap(~de.ctype.choose)
-          print(m)
-        }
-      }
-    })
+    # ctypes <- sort(unique(counts.pbulk.long$ctype))
+    # m.ctypevctype <- lapply(jmarks, function(jmark){
+    #   print(jmark)
+    #   for (ctype1 in ctypes){
+    #     for (ctype2 in ctypes){
+    #       if (ctype1 == ctype2){
+    #         next
+    #       }
+    #       print(paste(ctype1, ctype2))
+    #       m <- ggplot(jsub.wide.lst[[jmark]] %>% arrange(de.ctype.choose) %>% filter(!is.na(de.ctype.choose)), 
+    #                   aes_string(x = ctype1, y = ctype2, color = "biotype")) + geom_point() + 
+    #         theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    #         scale_color_manual(values = cbPalette, na.value = "grey85") + ggtitle(jmark) + 
+    #         facet_wrap(~de.ctype.choose)
+    #       print(m)
+    #     }
+    #   }
+    # })
     
     
     # Compare promoter and enhancer signal in K4me1 vs K4me3  -----------------
     
     stripsize <- 7
     
-    jsub <- counts.pbulk.long %>%
+    
+    jsub <- subset(counts.pbulk.long, de.ctype.choose %in% des.keep) %>%
       group_by(region_coord_full, mark) %>%
       mutate(zscore = scale(exprs, center = TRUE, scale = TRUE),
              logFC = scale(exprs, center = TRUE, scale = FALSE))
@@ -777,7 +812,8 @@ for (jdist in jdists){
       theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
             strip.text = element_text(size = stripsize, margin = margin()),
             legend.position = "bottom") + 
-      xlab("")
+      xlab("") + 
+      geom_hline(yintercept = 0, linetype = "dotted", size = 0.5)
     print(m)
     
     m <- ggplot(jsub, aes(x = ctype, y = logFC, fill = mark)) + geom_boxplot() + 
@@ -786,14 +822,83 @@ for (jdist in jdists){
       theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
             strip.text = element_text(size = stripsize, margin = margin()),
             legend.position = "bottom") + 
-      xlab("")
+      xlab("") + 
+      geom_hline(yintercept = 0, linetype = "dotted", size = 0.5)
     print(m)
+    
+
+    # show single celll UMAP  -------------------------------------------------
+    
+    ncuts.dat.lst <- lapply(jmarks, function(jmark){
+      print(jmark)
+      jmat <- count.mat.lst.filt[[jmark]]
+      rows.enhs <- which(rownames(jmat) %in% subset(biotype.dat, biotype == "enhancer")$region_coord_full)
+      rows.proms <- which(rownames(jmat) %in% subset(biotype.dat, biotype == "promoter")$region_coord_full)
+      rows.gb <- which(rownames(jmat) %in% subset(biotype.dat, biotype == "genebody")$region_coord_full)
+      print(jmark) 
+      sapply(list(rows.enhs, rows.proms, rows.gb), function(x) print(length(x)))
+      ncuts.enhs <- colSums(jmat[rows.enhs, ])
+      ncuts.proms <- colSums(jmat[rows.proms, ])
+      ncuts.gb <- colSums(jmat[rows.gb, ])
+      ncuts.total <- data.frame(cell = names(dat.totalcuts[[jmark]]), ncuts.Total = dat.totalcuts[[jmark]], stringsAsFactors = FALSE)
+      ncuts.dat <- data.frame(cell = colnames(jmat), ncuts.Enhancer = ncuts.enhs, ncuts.Promoter = ncuts.proms, ncuts.GeneBody = ncuts.gb, stringsAsFactors = FALSE) %>%
+        left_join(., ncuts.total) %>%
+        left_join(., dat.annots.all[[jmark]])
+      return(ncuts.dat)
+    })
+    
+    m.umaps.proms <- lapply(jmarks, function(jmark){
+      m <- ggplot(ncuts.dat.lst[[jmark]], aes(x = umap1, y = umap2, color = ncuts.Promoter / ncuts.Total)) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_color_viridis_c() + ggtitle(jmark)
+      m1 <- ggplot(ncuts.dat.lst[[jmark]], aes(x = umap1, y = umap2, color = ncuts.Promoter / ncuts.Total)) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_color_viridis_c(direction = -1) + ggtitle(jmark)
+      return(list(m, m1))
+    })
+    print(m.umaps.proms)
+    
+    m.umaps.enhs <- lapply(jmarks, function(jmark){
+      m <- ggplot(ncuts.dat.lst[[jmark]], aes(x = umap1, y = umap2, color = ncuts.Enhancer / ncuts.Total)) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_color_viridis_c() + ggtitle(jmark)
+      m1 <- ggplot(ncuts.dat.lst[[jmark]], aes(x = umap1, y = umap2, color = ncuts.Enhancer / ncuts.Total)) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_color_viridis_c(direction = -1) + ggtitle(jmark)
+      return(list(m, m1))
+    })
+    print(m.umaps.enhs)
+    
+    m.umaps.genebody <- lapply(jmarks, function(jmark){
+      m <- ggplot(ncuts.dat.lst[[jmark]], aes(x = umap1, y = umap2, color = ncuts.GeneBody / ncuts.Total)) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_color_viridis_c() + ggtitle(jmark)
+      m1 <- ggplot(ncuts.dat.lst[[jmark]], aes(x = umap1, y = umap2, color = ncuts.GeneBody / ncuts.Total)) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_color_viridis_c(direction = -1) + ggtitle(jmark)
+      return(list(m, m1))
+    })
+    print(m.umaps.genebody)
+    
+    # outf2 <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/proms_enhs_genebody_analysis2/multiomics_summary_ctypes.dist_1000.celltypes_filt.2020-04-01.totalcuts.pdf")
+    m.umaps.total <- lapply(jmarks, function(jmark){
+      m <- ggplot(ncuts.dat.lst[[jmark]], aes(x = umap1, y = umap2, color = log10(ncuts.Total))) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_color_viridis_c() + ggtitle(jmark)
+      m1 <- ggplot(ncuts.dat.lst[[jmark]], aes(x = umap1, y = umap2, color = log10(ncuts.Total))) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        scale_color_viridis_c(direction = -1) + ggtitle(jmark)
+      return(list(m, m1))
+    })
+    # pdf(outf2, width = 1440/72, height = 815/72, useDingbats = FALSE)
+    #   print(m.umaps.total)
+    # dev.off()
+    
     
     if (make.plots){
       dev.off()
       print(paste("Done writing:", outf))
     }
-        
   }
 }
 
