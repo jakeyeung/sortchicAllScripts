@@ -14,24 +14,30 @@ library(GenomicRanges)
 # winsize <- 100000L
 # use gene start and gene body 
 
+pfilt <- 0.8
+species <- "drerio"
 upstream <- 2000L
 downstream <- 2000L
 
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/databases/genebodies/zebrafish"
+fname <- paste0("gene_start_end.species_", species, ".withNonCoding.", Sys.Date(), ".pfilt_", pfilt, ".up_", upstream, ".down_", downstream, ".bed")
+fname.nochr <- paste0("gene_start_end.species_", species, ".withNonCoding.nochr.", Sys.Date(), ".pfilt_", pfilt, ".up_", upstream, ".down_", downstream, ".bed")
+outf <- file.path(outdir, fname)
+outf.nochr <- file.path(outdir, fname.nochr)
 
 # Biomart init ------------------------------------------------------------
 
 
-mart.obj <- useMart(biomart = 'ENSEMBL_MART_ENSEMBL', dataset = 'mmusculus_gene_ensembl')
+mart.obj <- useMart(biomart = 'ENSEMBL_MART_ENSEMBL', dataset = paste0(species, '_gene_ensembl'))
 
-gos <- getBM(attributes=c("ensembl_gene_id", "external_gene_name", 
-                          "chromosome_name", "transcription_start_site", 
-                          "transcript_start", "transcript_end", "strand", "gene_biotype"),
-             mart=mart.obj)
+gos <- getBM(
+  attributes=c("external_gene_name", "chromosome_name", "transcription_start_site", "start_position", "end_position", "strand", "gene_biotype"),
+  mart=mart.obj)
 
 # 
 print(unique(gos$chromosome_name))
 
-chromos <- c(seq(19), c("X", "Y"))
+chromos <- c(seq(25))
 chromos.withprefix <- paste("chr", chromos, sep = "")
 
 # Processs ----------------------------------------------------------------
@@ -83,7 +89,7 @@ gos.sum <- gos.filt %>%
 
 # add window that is basically start and end position
 dat.win <- gos.filt %>%
-  dplyr::rename(gene = external_gene_name, seqnames = chromosome_name, tss = transcription_start_site, gstart = transcript_start, gend = transcript_end) %>%
+  dplyr::rename(gene = external_gene_name, seqnames = chromosome_name, tss = transcription_start_site, gstart = start_position, gend = end_position) %>%
   dplyr::select(gene, seqnames, tss, gstart, gend, isoform) %>%
   # define start and end, also extend upstream and downstream
   mutate(start = gstart - upstream, 
@@ -99,10 +105,15 @@ dat.win <- gos.filt %>%
   # mutate(dist = 0)
 
 # take median size?
-pfilt <- 0.8
 dat.win.filt <- dat.win %>%
   group_by(gene) %>%
   filter(gene.length == quantile(gene.length, p = pfilt, type = 3))
+
+# handle negatives 
+dat.win.filt <- dat.win.filt %>%
+  rowwise() %>%
+  mutate(start = max(0, start),
+         end = max(0, end))
 
 
 # # collapse identical start and end sites
@@ -114,8 +125,10 @@ dat.win.filt <- dat.win %>%
 # Write -------------------------------------------------------------------
 
 # write bedfile to table
-data.table::fwrite(dat.win.filt, file = paste0("~/data/gastru_scchic/tables/gene_start_end.withNonCoding.", Sys.Date(), ".pfilt_", pfilt, ".up_", upstream, ".down_", downstream, ".bed"), 
+data.table::fwrite(dat.win.filt, file = outf, 
                    sep = "\t", col.names = FALSE, row.names = FALSE)
 
+data.table::fwrite(dat.win.filt %>% mutate(seqnames = gsub("chr", "", seqnames)), file = outf.nochr, 
+                   sep = "\t", col.names = FALSE, row.names = FALSE)
 
 
