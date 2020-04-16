@@ -297,7 +297,7 @@ out.lst <- lapply(infs, function(inf){
        
        # jsub.terms <- subset(annot.out$terms.annot, topic == jtop) %>%
        #   dplyr::filter(rnk <= keepn)
-       jsub.terms.vec <- sort(terms.mat.tmp[jtop, ])[1:keepn]
+       jsub.terms.vec <- sort(terms.mat.tmp[jtop, ], decreasing=TRUE)[1:keepn]
        jsub.terms <- data.frame(term = names(jsub.terms.vec), weight = jsub.terms.vec, stringsAsFactors = FALSE) %>%
          rowwise() %>%
          mutate(gene = strsplit(term, split = ";")[[1]][[2]])

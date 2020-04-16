@@ -99,7 +99,7 @@ jwin <- 50000L
 jprefix <- "/home/jyeung/hub_oudenaarden/jyeung"
 
 # jsuffix <- ""
-jsuffix <- ".imputevarfilt.lessstringent"
+jsuffix <- ".imputevarfilt.lessstringent.remove_eryth"
 # jsuffix2 <- ".lessstringent"
 # jsuffix <- ".lessstringent"
 indir <- file.path(jprefix, paste0("data/zebrafish_scchic/LDA_outputs/ldaAnalysisBins_ZF_AllMerged.winsize_", jwin, jsuffix))

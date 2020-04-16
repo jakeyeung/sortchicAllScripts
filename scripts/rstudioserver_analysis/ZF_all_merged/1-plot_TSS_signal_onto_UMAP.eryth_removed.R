@@ -31,7 +31,8 @@ jmark <- "H3K4me3"
 
 # Load TSS signal ---------------------------------------------------------
 
-inf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables.TSS.winsize_10000/PZ-ChIC-ZF_", jmark, "_2020-04-07.countTable.TSS.csv")
+jdist <- "50000"
+inf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables_all/count_tables.TSS.winsize_", jdist, "/PZ-ChIC-ZF_", jmark, "_2020-04-07.countTable.TSS.csv")
 assertthat::assert_that(file.exists(inf))
 
 indir.lda <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/LDA_outputs/ldaAnalysisBins_ZF_AllMerged.winsize_50000.remove_eryth"
@@ -75,12 +76,18 @@ dat.umap.merge <- left_join(dat.umap, merge.cuts.dat) %>%
   rowwise() %>%
   mutate(plate = ClipLast(cell, jsep = "_"))
 
-ggplot(dat.umap.merge %>% filter(cell.var.within.sum.norm > 2), aes(x = umap1, y = umap2, color = frac.tss)) + geom_point() +  
+ggplot(dat.umap.merge, aes(x = umap1, y = umap2, color = frac.tss)) + geom_point() +  
   scale_color_viridis_c(direction = 1) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
   facet_wrap(~plate) + ggtitle(jmark)
 
-ggplot(dat.umap.merge %>% filter(cell.var.within.sum.norm > 1), aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + geom_point() +  
+ggplot(dat.umap.merge, aes(x = frac.tss, y = cell.var.within.sum.norm)) + geom_point() +  
+  scale_color_viridis_c(direction = 1) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+  facet_wrap(~plate) + ggtitle(jmark)
+
+
+ggplot(dat.umap.merge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + geom_point() +  
   scale_color_viridis_c(direction = 1) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   facet_wrap(~plate) + ggtitle(jmark)

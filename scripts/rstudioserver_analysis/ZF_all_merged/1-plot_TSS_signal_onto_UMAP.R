@@ -32,7 +32,8 @@ jmark <- "H3K4me3"
 
 # Load TSS signal ---------------------------------------------------------
 
-inf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables.TSS.winsize_10000/PZ-ChIC-ZF_", jmark, "_2020-04-07.countTable.TSS.csv")
+jdist <- 10000
+inf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables_all/count_tables.TSS.winsize_", jdist, "/PZ-ChIC-ZF_", jmark, "_2020-04-07.countTable.TSS.csv")
 assertthat::assert_that(file.exists(inf))
 
 indir.lda <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/LDA_outputs/ldaAnalysisBins_ZF_AllMerged.winsize_50000"
@@ -40,6 +41,9 @@ inf.lda <- file.path(indir.lda, paste0("lda_outputs.count_mat.", jmark, ".countc
 
 count.tss <- ReadMatTSSFormat(inf)
 count.tss.filt <- CollapseRowsByGene(count.tss, as.long = FALSE, track.kept.gene = TRUE)
+
+
+# count.tss.filt <- BinarizeMatrix(count.tss.filt)
 
 # Load LDA ----------------------------------------------------------------
 
@@ -59,6 +63,8 @@ dat.impute.log <- log2(t(tm.result$topics %*% tm.result$terms))
 dat.umap <- DoUmapAndLouvain(topics.mat, jsettings)
 
 dat.var <- CalculateVarAll(dat.impute.log, jchromos)
+
+
 
 
 # Plot TSS signal onto UMAP  ----------------------------------------------
@@ -81,7 +87,19 @@ ggplot(dat.umap.merge, aes(x = umap1, y = umap2, color = frac.tss)) + geom_point
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
   facet_wrap(~plate) + ggtitle(jmark)
 
+ggplot(dat.umap.merge, aes(x = umap1, y = umap2, color = frac.tss)) + geom_point() +  
+  scale_color_viridis_c(direction = 1) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+  ggtitle(jmark)
+
+ngenes <- nrow(count.tss.filt)
+ggplot(dat.umap.merge, aes(x = umap1, y = umap2, color = tss.cuts / ngenes)) + geom_point() +  
+  scale_color_viridis_c(direction = 1) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+  facet_wrap(~plate) + ggtitle(jmark)
+
+
 ggplot(dat.umap.merge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + geom_point() +  
-  scale_color_viridis_c(direction = -1) + 
+  scale_color_viridis_c(direction = 1) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   facet_wrap(~plate) + ggtitle(jmark)
