@@ -67,7 +67,7 @@ jmark <- jmarks[[1]]
 # bad.ctype.grep <- "eryth|Unknown"
 bad.ctype.grep <- ""
 # btypes.keep <- c("tss")
-btypes.keep <- c("tss", "gb", "enh")
+btypes.keep <- c("gb")
 
 bad.ctype.grep.str <- paste(strsplit(bad.ctype.grep, split = "\\|")[[1]], collapse = "_")
 btypes.keep.str <- paste(btypes.keep, collapse = "_")

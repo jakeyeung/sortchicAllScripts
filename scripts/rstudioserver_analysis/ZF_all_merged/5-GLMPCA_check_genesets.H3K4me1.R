@@ -132,7 +132,8 @@ dat.umap.before <- DoUmapAndLouvain(tm.result.lda$topics, jsettings) %>%
 
 dat.umap <- DoUmapAndLouvain(glm.out$factors, jsettings) %>%
   rowwise() %>%
-  mutate(plate = ClipLast(cell, jsep = "_")) %>%
+  mutate(plate = ClipLast(cell, jsep = "_"),
+         cond = grepl("cd41", cell, ignore.case = TRUE)) %>%
   left_join(., subset(dat.umap.before, select = c(cell, louvain.before))) %>%
   left_join(., subset(dat.ncuts.merge, select = -plate))
 
@@ -150,13 +151,33 @@ m.after <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = louvain)) + geom_p
 
 m.after.plates <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = louvain)) + geom_point()  + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  scale_color_manual(values = cbPalette)  + facet_wrap(~plate)
+  scale_color_manual(values = cbPalette) + facet_wrap(~plate)
+
+m.after.conds <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = louvain)) + geom_point()  + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_manual(values = cbPalette) + facet_wrap(~cond)
 
 m.after.tss <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = tss.cuts / total.cuts)) + geom_point()  + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_viridis_c()
+
+m.after.tss.plates <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = tss.cuts / total.cuts)) + geom_point()  + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_viridis_c() + facet_wrap(~plate)
+
+m.after.tss.conds <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = tss.cuts / total.cuts)) + geom_point()  + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_viridis_c() + facet_wrap(~plate)
 
 m.after.tss.filt <- ggplot(dat.umap %>% filter(louvain != eryth.louv), aes(x = umap1, y = umap2, color = tss.cuts / total.cuts)) + geom_point()  + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_viridis_c()
+
+m.after.tss.filt.conds <- ggplot(dat.umap %>% filter(louvain != eryth.louv), aes(x = umap1, y = umap2, color = tss.cuts / total.cuts)) + geom_point()  + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_color_viridis_c() + facet_wrap(~cond)
+
+m.after.tss.filt.plates <- ggplot(dat.umap %>% filter(louvain != eryth.louv), aes(x = umap1, y = umap2, color = tss.cuts / total.cuts)) + geom_point()  + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   scale_color_viridis_c() + facet_wrap(~plate)
 
@@ -171,7 +192,11 @@ print(m.after)
 print(m.after + facet_wrap(~cond))
 print(m.after.plates)
 print(m.after.tss)
+print(m.after.tss.plates)
+print(m.after.tss.conds)
 print(m.after.tss.filt)
+print(m.after.tss.filt.plates)
+print(m.after.tss.filt.conds)
 print(m.after.tss.filt2)
 print(m.tssvstotal)
 print(m.tssfracvsraw)
@@ -226,7 +251,7 @@ merged.coords.exprs.lst <- lapply(names(jtopics.lst), function(jname){
   jcoords <- jsub.terms$term
   
   # write jsub.terms to output
-  saveRDS(jsub.terms, file = file.path(outdir, paste0("celltype_specific_coords_and_genes.", jmark, ".rds")))
+  saveRDS(jsub.terms, file = file.path(outdir, paste0("celltype_specific_coords_and_genes.", jmark, ".", jname, ".rds")))
   
   # show the gene set is celltype specific
   pbulk.sub <- subset(dat.bulk, gene %in% jgenes)

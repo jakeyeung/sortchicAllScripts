@@ -84,8 +84,8 @@ for (winsize in winsizes){
   dat.win <- gos.filt %>%
     dplyr::rename(gene = external_gene_name, seqnames = chromosome_name, tss = transcription_start_site, gstart = start_position, gend = end_position) %>%
     dplyr::select(gene, seqnames, tss, isoform) %>%
-    mutate(start = tss - winsize / 2, 
-           end = tss + winsize / 2,
+    mutate(start = as.integer(tss - winsize / 2), 
+           end = as.integer(tss + winsize / 2),
            seqnames = paste("chr", seqnames, sep = "")) %>%
     dplyr::select(-tss) %>%
     arrange(seqnames, start) %>%
