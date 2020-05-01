@@ -7,6 +7,8 @@ rm(list=ls())
 
 jstart <- Sys.time()
 
+set.seed(0)
+
 library(dplyr)
 library(tidyr)
 library(ggplot2)
