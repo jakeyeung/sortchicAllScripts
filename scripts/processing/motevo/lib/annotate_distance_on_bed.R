@@ -47,7 +47,8 @@ library(GenomicRanges)
 library(TxDb.Mmusculus.UCSC.mm10.knownGene)
 library(org.Mm.eg.db)
 library(ChIPseeker)
-source("scripts/Rfunctions/Aux.R")  # set WD properly
+# source("scripts/Rfunctions/Aux.R")  # set WD properly
+library(scchicFuncs)  # handles the WD cleanly
 
 # Do stuff
 dat <- data.table::fread(args$infile)

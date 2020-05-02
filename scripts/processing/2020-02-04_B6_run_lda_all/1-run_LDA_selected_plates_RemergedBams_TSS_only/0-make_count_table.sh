@@ -8,8 +8,10 @@ jmem='32G'
 jtime='2:00:00'
 
 mapq=40
-dist=50000
+dist=10000
 prefixs="H3K4me1 H3K4me3 H3K27me3 H3K9me3"
+
+outsuffix=""
 
 ps="/home/hub_oudenaarden/jyeung/projects/SingleCellMultiOmics.ForDev/singlecellmultiomics/bamProcessing/bamToCountTable.WithBlacklist.py"
 [[ ! -e $ps ]] && echo "$ps not found, exiting" && exit 1
@@ -17,13 +19,14 @@ inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawData_B6_All_Me
 [[ ! -d $inmain ]] && echo "$inmain not found, exiting" && exit 1
 
 # inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/nochr/gene_tss_winsize.${dist}.bed"
-inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/gene_tss_winsize.${dist}.bed"
+# inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/first_transcript_tss/gene_tss_winsize.${dist}.first_transcript.bed"
+inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/first_transcript_tss/gene_tss_winsize.${dist}${outsuffix}"
 [[ ! -e $inbed ]] && echo "$inbed not found, exiting" && exit 1
 
 bl="/hpc/hub_oudenaarden/jyeung/data/databases/blacklists/mm10.blacklist.copy.bed"
 [[ ! -e $bl ]] && echo "$bl not found, exiting" && exit 1
 
-outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawData_B6_All_MergedByMarks_final.count_tables_TSS"
+outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawData_B6_All_MergedByMarks_final.count_tables_TSS${outsuffix}"
 [[ ! -d $outdir ]] && mkdir $outdir
 
 for prefix in $prefixs; do

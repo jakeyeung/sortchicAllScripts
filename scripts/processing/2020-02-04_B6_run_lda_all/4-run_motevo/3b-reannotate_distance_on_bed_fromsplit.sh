@@ -15,9 +15,9 @@ cd $wd
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
 
 # jmarks="H3K4me3"
-# jmarks="H3K27me3"
+jmarks="H3K27me3"
 # jmarks="H3K9me3"
-jmarks="H3K4me1"
+# jmarks="H3K4me1"
 
 n=0
 maxjobs=1
@@ -36,8 +36,8 @@ for jmark in $jmarks; do
         DBASE=$(dirname "${BNAME}")
         [[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
 
-        # echo ". /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; Rscript $rs $inf $outf" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -pe threaded 1 -m beas -M j.yeung@hubrecht.eu -N Annot_${jmark}
-        . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; Rscript $rs $inf $outf
+        echo ". /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; Rscript $rs $inf $outf" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -pe threaded 1 -m beas -M j.yeung@hubrecht.eu -N Annot_${jmark}
+        # . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; Rscript $rs $inf $outf
     done
 done
 wait

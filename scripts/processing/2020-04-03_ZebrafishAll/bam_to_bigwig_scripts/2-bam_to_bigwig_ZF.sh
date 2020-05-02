@@ -4,6 +4,11 @@
 #  
 # 2020-04-14
 
+# WRAP UP
+while [[ `qstat | grep split | wc -l` > 0 ]]; do
+        echo "sleep for 60 seconds"
+        sleep 60
+done
 
 jmem='16G'
 jtime='6:00:00'
