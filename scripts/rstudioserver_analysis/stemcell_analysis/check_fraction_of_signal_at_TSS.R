@@ -50,14 +50,35 @@ for (jmark in jmarks){
   # Plot fraction of signal at TSS ------------------------------------------
   
   dat.tss <- data.frame(cell = colnames(mat), tss.cuts = colSums(mat), stringsAsFactors = FALSE)
+  
+  # check fraction of TSS's with a count
+  mat.bin <- BinarizeMatrix(mat)
+  
+  dat.tss.ngenes <- data.frame(cell = colnames(mat.bin), ngenes = colSums(mat.bin), ngenes.frac = colSums(mat.bin) / nrow(mat.bin), stringsAsFactors = FALSE)
+  
   dat.size <- data.frame(cell = names(glm.inits$size.factor), total.cuts = glm.inits$size.factor, stringsAsFactors = FALSE)
+  
   dat.merge <- left_join(dat.tss, dat.size)
   dat.merge <- left_join(dat.merge, dat.umap.glm.fillNAs)
+  dat.merge <- left_join(dat.merge, dat.tss.ngenes)
   
   m <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = tss.cuts / total.cuts)) + geom_point() + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     scale_color_viridis_c(direction = 1) + ggtitle(paste(jmark, jdist, "around TSS"))
   m.rev <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = tss.cuts / total.cuts)) + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_viridis_c(direction = -1) + ggtitle(paste(jmark, jdist, "around TSS"))
+  
+  m.ngenes <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = log10(ngenes))) + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_viridis_c(direction = 1) + ggtitle(paste(jmark, jdist, "around TSS"))
+  m.ngenes.rev <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = log10(ngenes))) + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_viridis_c(direction = -1) + ggtitle(paste(jmark, jdist, "around TSS"))
+  m.ngenes.frac <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = log10(ngenes.frac))) + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_viridis_c(direction = 1) + ggtitle(paste(jmark, jdist, "around TSS"))
+  m.ngenes.frac.rev <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = log10(ngenes.frac))) + geom_point() + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     scale_color_viridis_c(direction = -1) + ggtitle(paste(jmark, jdist, "around TSS"))
   
@@ -75,7 +96,14 @@ for (jmark in jmarks){
     scale_color_viridis_c(direction = 1) + ggtitle(paste(jmark, jdist, "around TSS")) + 
     xlab(paste0("Fraction of TSS cuts in genome (", jdist, " bp window)"))  + 
     scale_fill_manual(values = cbPalette)
-
+  
+  dat.var.raw <- data.frame(cell = rownames(glm.inits$X.mat), ncuts.var = glm.inits$X.mat[, 1], stringsAsFactors = FALSE)
+  
+  dat.merge <- left_join(dat.merge, dat.var.raw)
+  
+  m.scatter <- ggplot(dat.merge, mapping = aes(x = tss.cuts / total.cuts, y = ncuts.var, color = cond)) + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
   
   # plot outputs
   
@@ -85,6 +113,11 @@ for (jmark in jmarks){
     print(m.plates)
     print(m.plates.rev)
     print(m.dens) 
+    print(m.ngenes)
+    print(m.ngenes.frac)
+    print(m.ngenes.rev)
+    print(m.ngenes.frac.rev)
+    print(m.scatter)
   dev.off()
   # save objs for easier loading llater
   if (!file.exists(outrdata)){

@@ -20,7 +20,7 @@ upstream <- 2000L
 downstream <- 2000L
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/databases/genebodies/zebrafish"
-fname <- paste0("gene_start_end.species_", species, ".withNonCoding.", Sys.Date(), ".pfilt_", pfilt, ".up_", upstream, ".down_", downstream, ".bed")
+fname <- paste0("gene_start_end.species_", species, ".withCodingOnly.", Sys.Date(), ".pfilt_", pfilt, ".up_", upstream, ".down_", downstream, ".bed")
 fname.nochr <- paste0("gene_start_end.species_", species, ".withNonCoding.nochr.", Sys.Date(), ".pfilt_", pfilt, ".up_", upstream, ".down_", downstream, ".bed")
 outf <- file.path(outdir, fname)
 outf.nochr <- file.path(outdir, fname.nochr)
@@ -42,30 +42,30 @@ chromos.withprefix <- paste("chr", chromos, sep = "")
 
 # Processs ----------------------------------------------------------------
 
-# get biotypes
-igvtypes <- "IG_C_gene
-IG_D_gene
-IG_J_gene
-IG_LV_gene
-IG_V_gene
-TR_C_gene
-TR_J_gene
-TR_V_gene
-TR_D_gene"
-igvtypes <- strsplit(igvtypes, "\n")[[1]]
+# # get biotypes
+# igvtypes <- "IG_C_gene
+# IG_D_gene
+# IG_J_gene
+# IG_LV_gene
+# IG_V_gene
+# TR_C_gene
+# TR_J_gene
+# TR_V_gene
+# TR_D_gene"
+# igvtypes <- strsplit(igvtypes, "\n")[[1]]
 
-nctypes <- "lncRNA
-miRNA
-misc_RNA
-scRNA
-snRNA
-snoRNA
-ribozyme
-sRNA
-scaRNA"
-nctypes <- strsplit(nctypes, "\n")[[1]]
+# nctypes <- "lncRNA
+# miRNA
+# misc_RNA
+# scRNA
+# snRNA
+# snoRNA
+# ribozyme
+# sRNA
+# scaRNA"
+# nctypes <- strsplit(nctypes, "\n")[[1]]
 
-biotypes <- c("protein_coding", igvtypes, nctypes)
+biotypes <- c("protein_coding")
 # biotypes <- c("protein_coding", igvtypes)
 
 gos.filt <- gos %>% filter(chromosome_name %in% chromos) %>%
