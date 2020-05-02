@@ -24,14 +24,13 @@ jtime='6:00:00'
 
 mapq=40
 # binsize=10000  # try other binsizes?
-binsize=5000  # try other binsizes?
+binsize=10000  # try other binsizes?
 stepsize=${binsize}
 ps="/home/hub_oudenaarden/jyeung/projects/SingleCellMultiOmics.ForDev/singlecellmultiomics/bamProcessing/bamToCountTable.test.py"
-# bl="/hpc/hub_oudenaarden/jyeung/data/databases/blacklists/mm10.blacklist.nochr.bed"
 
-inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/zebrafish/gene_tss.winsize_${binsize}.species_drerio.nochr.bed"
+inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/zebrafish/gene_tss.CodingOnly.winsize_${binsize}.species_drerio.nochr.asinteger.bed"
 
-outdir="/hpc/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables.TSS.winsize_${binsize}"
+outdir="/hpc/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables.TSS.CodingOnly.winsize_${binsize}"
 [[ ! -d $outdir ]] && mkdir $outdir
 
 for inbami in `ls -d $inmain/*.bam.bai`; do

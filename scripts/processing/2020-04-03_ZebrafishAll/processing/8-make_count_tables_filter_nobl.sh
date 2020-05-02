@@ -23,7 +23,7 @@ jmem='32G'
 jtime='6:00:00'
 
 mapq=40
-binsize=50000  # try other binsizes?
+binsize=5000  # try other binsizes?
 stepsize=${binsize}
 ps="/home/hub_oudenaarden/jyeung/projects/SingleCellMultiOmics.ForDev/singlecellmultiomics/bamProcessing/bamToCountTable.test.py"
 # bl="/hpc/hub_oudenaarden/jyeung/data/databases/blacklists/mm10.blacklist.nochr.bed"

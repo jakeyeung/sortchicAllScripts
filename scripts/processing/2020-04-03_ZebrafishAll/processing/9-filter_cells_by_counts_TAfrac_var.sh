@@ -54,4 +54,6 @@ BNAME=$outdir/filter_cells_qsub
 DBASE=$(dirname "${BNAME}")
 [[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
 
-echo ". /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; Rscript $rs -countcutoffmin $ccutoff -countcutoffmax $countsmax -varcutoffmin $varmin -varcutoffmax $varmax -TAcutoff $tcutoff  -infilerz $inf1 $inf2 $inf3 $inf4 -infilecounts $infmat1 $infmat2 $infmat3 $infmat4 -names $m1 $m2 $m3 $m4 -chromoskeep $chromos -outdir $outdir" --overwrite | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -pe threaded 1 -m beas -M j.yeung@hubrecht.eu -N filter_cells_ZF
+echo ". /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; Rscript $rs -countcutoffmin $ccutoff -countcutoffmax $countsmax -varcutoffmin $varmin -varcutoffmax $varmax -TAcutoff $tcutoff  -infilerz $inf1 $inf2 $inf3 $inf4 -infilecounts $infmat1 $infmat2 $infmat3 $infmat4 -names $m1 $m2 $m3 $m4 -chromoskeep $chromos -outdir $outdir" --overwrite
+
+# echo ". /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; Rscript $rs -countcutoffmin $ccutoff -countcutoffmax $countsmax -varcutoffmin $varmin -varcutoffmax $varmax -TAcutoff $tcutoff  -infilerz $inf1 $inf2 $inf3 $inf4 -infilecounts $infmat1 $infmat2 $infmat3 $infmat4 -names $m1 $m2 $m3 $m4 -chromoskeep $chromos -outdir $outdir" --overwrite | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -pe threaded 1 -m beas -M j.yeung@hubrecht.eu -N filter_cells_ZF
