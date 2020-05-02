@@ -4,21 +4,23 @@
 # Merge peaks across clusters 
 # 2019-04-15
 
-inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_cluster_bam_hiddenDomains_output_build95"
+inbase="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_cluster_bam_hiddenDomains_output_build95"
+[[ ! -d $inbase ]] && echo "$inbase not found, exiting" && exit 1
 
 marks="H3K4me1 H3K4me3 H3K27me3 H3K9me3"
-distfilt=1000
+minlength=1000
 
 for mark in $marks; do
-    outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/merged_cluster_bam_hiddenDomains_output_build95/merged_across_clusters_${mark}"
+    outdir=${inmain}/hd_merged.${mark}.minlength_${minlength}
     [[ ! -d $outdir ]] && mkdir $outdir
-    outname="merged_${mark}.${distfilt}.cutoff_analysis.blacklistfilt.bed"
+    outname="merged.${mark}.minlength_${minlength}.cutoff_analysis.bed"
     outf=${outdir}/${outname}
     [[ -e $outf ]] && echo "$outf found, skipping" && continue
-    for indir in $(ls -d ${inmain}/${mark}_cluster_*); do
+    inmain=${inbase}/hd_clusters.${mark}.minlength_${minlength}
+    for indir in $(ls -d ${inmain}/${mark}*); do
         bdir=$(basename $indir)
-        inbed="${indir}/${bdir}_analysis.blacklistfilt.bed"
+        inbed="${indir}/${bdir}_analysis.bed"
         [[ ! -e $inbed ]] && echo "$inbed not found, exiting" && exit 1
-        cat $inbed >> $outf
+        echo "cat $inbed >> $outf"
     done
 done
