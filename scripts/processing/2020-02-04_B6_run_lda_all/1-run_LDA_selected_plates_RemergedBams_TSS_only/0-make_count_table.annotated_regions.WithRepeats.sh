@@ -4,23 +4,23 @@
 #  
 # 2019-06-23
 
-jmem='32G'
-jtime='2:00:00'
+jmem='100G'
+jtime='24:00:00'
 
 mapq=40
-dist=10000
+dist=1000
 prefixs="H3K4me1 H3K4me3 H3K27me3 H3K9me3"
 
-outsuffix=""
+outsuffix=".AnnotatedGeneRegionsWithRepeats"
+# outsuffix=".AnnotatedGeneRegionsWithPromsEnhs"
 
 ps="/home/hub_oudenaarden/jyeung/projects/SingleCellMultiOmics.ForDev/singlecellmultiomics/bamProcessing/bamToCountTable.WithBlacklist.py"
 [[ ! -e $ps ]] && echo "$ps not found, exiting" && exit 1
 inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawData_B6_All_MergedByMarks_final.bams_remerged_by_cluster.MAPQ_40"
 [[ ! -d $inmain ]] && echo "$inmain not found, exiting" && exit 1
 
-# inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/nochr/gene_tss_winsize.${dist}.bed"
-# inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/first_transcript_tss/gene_tss_winsize.${dist}.first_transcript.bed"
-inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/first_transcript_tss/gene_tss_winsize.${dist}${outsuffix}"
+inbed="/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/ENCODE/all_winsize_${dist}.2020-03-29.bed"
+# inbed="/hpc/hub_oudenaarden/jyeung/data/scChiC/public_data/ENCODE/promsenhs_winsize_${dist}.bed"
 [[ ! -e $inbed ]] && echo "$inbed not found, exiting" && exit 1
 
 bl="/hpc/hub_oudenaarden/jyeung/data/databases/blacklists/mm10.blacklist.copy.bed"

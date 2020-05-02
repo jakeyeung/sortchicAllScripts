@@ -7,7 +7,7 @@
 jmem='128G'
 jtime='6:00:00'
 
-jmarks="H3K4me1"
+jmarks="H3K4me1 H3K4me3 H3K27me3"
 
 n=0
 maxjobs=6
@@ -32,9 +32,9 @@ for jmark in $jmarks; do
     outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_${jsuffix}/${jmark}/mara_input/sitecount_mats"
     [[ ! -d $outdir ]] && mkdir -p $outdir
 
-    outf="${outdir}/hiddenDomains_motevo_merged.closest.long.scale_${jscale}.center_${jcenter}.byrow_${byrow}.bugfix.$fstr.txt"
+    outf="${outdir}/hiddenDomains_motevo_merged.closest.long.scale_${jscale}.center_${jcenter}.byrow_${byrow}.${jmark}.txt"
 
-    BNAME=${outdir}/${fstr}_qsub
+    BNAME=${outdir}/${jmark}_qsub
     DBASE=$(dirname "${BNAME}")
     [[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
 
@@ -45,10 +45,10 @@ for jmark in $jmarks; do
     if [ $byrow -eq 0 ]
     then
         # Rscript $rs $inf $outf --scale $jscale --center $jcenter&
-        echo "cd $wd; Rscript $rs $inf $outf --scale $jscale --center $jcenter" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -m beas -M j.yeung@hubrecht.eu -N SCMat_${jmark}
+        echo ". /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; cd $wd; Rscript $rs $inf $outf --scale $jscale --center $jcenter" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -m beas -M j.yeung@hubrecht.eu -N SCMat_${jmark}
     else
         # Rscript $rs $inf $outf --scale $jscale --center $jcenter --byrow&
-        echo "cd $wd; Rscript $rs $inf $outf --scale $jscale --center $jcenter --byrow" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -m beas -M j.yeung@hubrecht.eu -N SCMatnorm_${jmark}
+        echo ". /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; cd $wd; Rscript $rs $inf $outf --scale $jscale --center $jcenter --byrow" | qsub -l h_rt=${jtime} -l h_vmem=${jmem} -o ${BNAME}.out -e ${BNAME}.err -m beas -M j.yeung@hubrecht.eu -N SCMatnorm_${jmark}
     fi
 done
 wait

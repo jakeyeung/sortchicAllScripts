@@ -4,9 +4,9 @@
 # After calculating distances, remerge the split files 
 # 2019-03-07
 
-# marks="H3K4me1 H3K4me3"
+marks="H3K4me1 H3K4me3 H3K27me3"
 # marks="H3K27me3 H3K9me3"
-marks="H3K4me1"
+# marks="H3K4me1"
 # marks="H3K4me3"
 # marks="H3K27me3"
 # marks="H3K27me3"

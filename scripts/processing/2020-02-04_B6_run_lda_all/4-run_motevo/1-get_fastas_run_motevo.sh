@@ -7,7 +7,7 @@
 
 . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate py2
 
-jmark="H3K27me3"
+jmark="H3K9me3"
 # jmark="H3K4me1"
 
 prefix="cluster"
