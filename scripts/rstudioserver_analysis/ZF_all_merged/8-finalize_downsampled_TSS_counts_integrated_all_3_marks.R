@@ -53,7 +53,7 @@ cbPalette <- c("grey85", "#32CD32", "#56B4E9", "#CC79A7", "#F0E442", "#0072B2", 
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/pseudobulk_analysis.integrated_analysis.TSS"
 dir.create(outdir)
-outname <- paste0("integrated_analysis.", Sys.Date(), ".pdf")
+outname <- paste0("integrated_analysis.", Sys.Date(), ".UseTSSfromH3K4me3.pdf")
 
 outpdf <- file.path(outdir, outname)
 
@@ -69,19 +69,19 @@ tss.out <- lapply(jmarks, function(jmark){
   print(jmark)
   inf.tss <- file.path(indir.tss, paste0("PZ-ChIC-ZF_", jmark, "_2020-04-07.countTable.TSS.csv"))
   mat.tss <- ReadMatTSSFormat(inf.tss)
-  mat.tss <- CollapseRowsByGene(mat.tss, as.long=FALSE, track.kept.gene = TRUE)
+  # mat.tss <- CollapseRowsByGene(mat.tss, as.long=FALSE, track.kept.gene = TRUE)  # do this for just one mark
   return(list(mat.tss = mat.tss, tss.exprs = rowSums(mat.tss)))
 })
 
-tss.exprs.lst <- lapply(tss.out, function(x) x$tss.exprs)
-tss.mats.singlecell <- lapply(tss.out, function(x) x$mat.tss)
+tss.exprs.lst.unfilt <- lapply(tss.out, function(x) x$tss.exprs)
+tss.mats.singlecell.unfilt <- lapply(tss.out, function(x) x$mat.tss)
 
 
 
 # exprs.vec <- tss.exprs.lst$H3K4me1
 
 lapply(jmarks, function(jmark){
-  plot(density(tss.exprs.lst[[jmark]]), main = jmark)
+  plot(density(tss.exprs.lst.unfilt[[jmark]]), main = jmark)
 })
 
 
@@ -89,18 +89,35 @@ lapply(jmarks, function(jmark){
 
 ref.mark <- "H3K4me3"
 jthres <- 50  # maybe not exactly at hump? what about tissuespecific stuff? rare celltypes? complicated from the bulk 
-plot(density(tss.exprs.lst[[ref.mark]]))
+plot(density(tss.exprs.lst.unfilt[[ref.mark]]))
 abline(v = jthres)
+
+tss.mat.ref <- CollapseRowsByGene(count.mat = tss.mats.singlecell.unfilt[[ref.mark]], as.long = FALSE, track.kept.gene = TRUE)
+
+tss.keep <- rownames(tss.mat.ref)
 
 # # pick TSS's that are active, the rest are thrown out 
 # tss.keep.i <- which(tss.exprs.lst[[ref.mark]] >= jthres)
 # tss.keep <- tss.exprs.lst[[ref.mark]][tss.keep.i]
 
+tss.exprs.lst <- lapply(tss.exprs.lst.unfilt, function(exprs.vec){
+  jkeep <- names(exprs.vec) %in% tss.keep
+  return(exprs.vec[jkeep])
+})
 
+print("Dimensions of TSS raw keeping all TSS")
+lapply(tss.mats.singlecell.unfilt, length)
+tss.mats.singlecell <- lapply(tss.mats.singlecell.unfilt, function(tss.mat){
+  jkeep <- rownames(tss.mat) %in% tss.keep
+  return(tss.mat[jkeep, ])
+})
+
+print("Dimensions of TSS after keeping one TSS for each gene, defined by highest expression in H3K4me3")
+lapply(tss.mats.singlecell, length)
 
 # Get common rows ---------------------------------------------------------
 
-lapply(tss.exprs.lst, length)
+lapply(tss.exprs.lst.unfilt, length)
 
 tss.all <- lapply(tss.exprs.lst, function(exprs.lst){
   names(exprs.lst)
@@ -337,5 +354,28 @@ ggplot(jmerged.annot, aes(x = H3K4me3, y = H3K4me1, color = geneset)) +
   scale_color_manual(values = cbPalette) + 
   geom_density_2d(color = "black", alpha = 0.5)
 
+# plot marginals
+m.dens <- lapply(jmarks, function(jmark){
+  m <- ggplot(jmerged.annot, aes_string(x = jmark, fill = "cluster")) + 
+    geom_density(alpha = 0.3) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    facet_wrap(~cluster) + 
+    scale_color_manual(values = cbPalette)
+  return(m)
+})
+print(m.dens)
+
+m.dens.log <- lapply(jmarks, function(jmark){
+  m <- ggplot(jmerged.annot, aes_string(x = jmark, fill = "cluster")) + 
+    geom_histogram(alpha = 0.3) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    facet_wrap(~cluster) + 
+    scale_color_manual(values = cbPalette) + 
+    scale_x_log10() 
+  return(m)
+})
+print(m.dens.log)
 
 dev.off()
+
+print(Sys.time() - jstart)
