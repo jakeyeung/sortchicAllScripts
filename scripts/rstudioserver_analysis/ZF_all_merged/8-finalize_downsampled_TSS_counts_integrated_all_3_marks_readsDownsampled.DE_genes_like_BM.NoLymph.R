@@ -1,7 +1,8 @@
-t# Jake Yeung
-# Date of Creation: 2020-05-04
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/ZF_all_merged/8-finalize_downsampled_TSS_counts_integrated_all_3_marks_readsDownsampled.DE_genes_like_BM.R
+# Jake Yeung
+# Date of Creation: 2020-05-05
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/ZF_all_merged/8-finalize_downsampled_TSS_counts_integrated_all_3_marks_readsDownsampled.DE_genes_like_BM.NoLymph.R
 # 
+
 
 
 rm(list=ls())
@@ -39,6 +40,12 @@ library(ggrastr)
 
 # Constants ---------------------------------------------------------------
 
+min.cells.keep <- 100
+inf.zf.de <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/pseudobulk_analysis.get_DE_genes_from_pbulk_scrnaseq.nolymph/de_genes_sorted_and_giladi.NoLymph.WithHouseKeepAndNotExpressed.FixExprsOther.exprsmax_5.logfcmin_2.logfcmax_1.RData"
+
+jname.hash <- hash::hash(c("eryth1", "HSC1"), c("eryth", "HSC"))
+jnames.keep <- c("eryth", "HSC", "monocyte")
+
 jwinsize <- "10000"
 
 
@@ -55,14 +62,10 @@ cbPalette <- c("grey85", "#32CD32", "#56B4E9", "#CC79A7", "#F0E442", "#0072B2", 
 
 downsample.reads <- TRUE
 downsample.cells <- FALSE
-
-if (downsample.cells){
-  min.cells.keep <- 100
-}
-outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/pseudobulk_analysis.integrated_analysis.TSS.readsDS.likeBM"
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/pseudobulk_analysis.integrated_analysis.TSS.readsDS.likeBM.NoLymph"
 dir.create(outdir)
 
-outprefix <- paste0("integrated_analysis.", Sys.Date(), ".UseTSSfromH3K4me3.DSreads_", downsample.reads, ".DScells_", downsample.cells, ".likeBM.")
+outprefix <- paste0("integrated_analysis.", Sys.Date(), ".UseTSSfromH3K4me3.DSreads_", downsample.reads, ".DScells_", downsample.cells, ".likeBM.NoLymph")
 outname <- paste0(outprefix, ".pdf")
 outname.rdata <- paste0(outprefix, ".RData")
 
@@ -202,11 +205,12 @@ cnames.keep.lst.lst <- lapply(jmarks, function(jmark){
 })
 
 # try to downsample to lowest number of cells? 
+print("Trying to find lowest number of cells...")
 lapply(cnames.keep.lst.lst, function(cnames.by.mark) lapply(cnames.by.mark, function(cnames.by.cluster) length(cnames.by.cluster)))
 
 
-# down sample pbulk to 100 cells
 if (downsample.cells){
+  # down sample pbulk to 100 cells
   cnames.keep.lst.lst <- lapply(cnames.keep.lst.lst, function(cnames.by.mark){
     lapply(cnames.by.mark, function(cnames.by.cluster){
       return(sample(cnames.by.cluster, size = min.cells.keep, replace = FALSE))
@@ -257,8 +261,6 @@ if (downsample.reads){
 
 # Make long  --------------------------------------------------------------
 
-jname.hash <- hash::hash(c("eryth1", "HSC1"), c("eryth", "HSC"))
-jnames.keep <- c("eryth", "HSC", "lymph", "monocyte")
 
 jlong.lst <- lapply(jmarks, function(jmark){
   jmat.tmp <- tss.mats.pbulk[[jmark]]
@@ -321,7 +323,6 @@ g2e <- hash::hash(genes.common, ens.common)
 
 genesets <- list()
 
-inf.zf.de <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/pseudobulk_analysis.get_DE_genes_from_pbulk_scrnaseq/de_genes_sorted_and_giladi.WithHouseKeepAndNotExpressed.FixExprsOther.exprsmax_5.logfcmin_2.logfcmax_1.RData"
 load(inf.zf.de, v=T)
 
 genesets <- de.ens.zf.stringent

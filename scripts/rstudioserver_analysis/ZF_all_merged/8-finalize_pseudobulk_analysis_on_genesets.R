@@ -361,16 +361,59 @@ for (jclst in jclsts){
     jmerge.lda <- left_join(annot.glmpca.filt.lst[[jmark.tmp]], exprs.dat.lda)
     jmerge.glm <- left_join(annot.glmpca.filt.lst[[jmark.tmp]], exprs.dat.glm)
     
+    # plot the sumaries
+    jmerge.lda.sum <- jmerge.lda %>%
+      group_by(cluster) %>%
+      summarise(ncells = length(cell),
+                exprs.mean = mean(exprs),
+                exprs.sd = sd(exprs))
+    
+    jmerge.glm.sum <- jmerge.glm %>%
+      group_by(cluster) %>%
+      summarise(ncells = length(cell),
+                exprs.mean = mean(exprs),
+                exprs.sd = sd(exprs))
+    
+    jtitle1 <- paste(jmark.tmp, "LDA:", jclst, "ngenes:", ngenes)
+    jtitle2 <- paste(jmark.tmp, "GLMPCA:", jclst, "ngenes:", ngenes)
+    
     m.lda <- ggplot(jmerge.lda, aes(x = umap1, y = umap2, color = exprs)) + 
       geom_point() + theme_bw() + 
       theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-      scale_color_viridis_c() + ggtitle(jmark.tmp, paste("LDA:", jclst, "ngenes:", ngenes))
+      scale_color_viridis_c() + ggtitle(jtitle1)
     print(m.lda)
     m.glmpca <- ggplot(jmerge.glm, aes(x = umap1, y = umap2, color = exprs)) + geom_point() + 
       theme_bw() + 
       theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
-      scale_color_viridis_c() + ggtitle(jmark.tmp, paste("GLMPCA:", jclst, "ngenes:", ngenes.glm))
+      scale_color_viridis_c() + ggtitle(jtitle2)
     print(m.glmpca)
+    
+    m.lda.rev <- ggplot(jmerge.lda, aes(x = umap1, y = umap2, color = exprs)) + 
+      geom_point() + theme_bw() + 
+      theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+      scale_color_viridis_c(direction = -1) + ggtitle(jtitle1)
+    print(m.lda.rev)
+    m.glmpca.rev <- ggplot(jmerge.glm, aes(x = umap1, y = umap2, color = exprs)) + geom_point() + 
+      theme_bw() + 
+      theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+      scale_color_viridis_c(direction = -1) + ggtitle(jtitle2)
+    print(m.glmpca.rev)
+    
+    m.avg1 <- ggplot(jmerge.lda.sum %>% 
+                      filter(!is.na(cluster)), 
+                    aes(x = forcats::fct_reorder(.f = cluster, .x = exprs.mean, .fun = median, .desc = TRUE), y = exprs.mean, ymin = exprs.mean - exprs.sd, ymax = exprs.mean + exprs.sd)) + 
+      geom_point() + geom_errorbar() + 
+      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+      xlab("") + ylab("Imputed scChIC signal") + ggtitle(jtitle1)
+    
+    m.avg2 <- ggplot(jmerge.glm.sum %>% 
+                      filter(!is.na(cluster)), 
+                    aes(x = forcats::fct_reorder(.f = cluster, .x = exprs.mean, .fun = median, .desc = TRUE), y = exprs.mean, ymin = exprs.mean - exprs.sd, ymax = exprs.mean + exprs.sd)) + 
+      geom_point() + geom_errorbar() + 
+      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+      xlab("") + ylab("Imputed scChIC signal") + ggtitle(jtitle2)
+    print(m.avg1)
+    print(m.avg2)
   }
 }
 dev.off()

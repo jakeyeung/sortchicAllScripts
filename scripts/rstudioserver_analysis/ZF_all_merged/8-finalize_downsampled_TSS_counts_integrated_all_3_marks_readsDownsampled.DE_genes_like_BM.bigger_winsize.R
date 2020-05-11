@@ -39,7 +39,7 @@ library(ggrastr)
 
 # Constants ---------------------------------------------------------------
 
-jwinsize <- "10000"
+jwinsize <- "20000"
 
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
@@ -59,10 +59,10 @@ downsample.cells <- FALSE
 if (downsample.cells){
   min.cells.keep <- 100
 }
-outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/pseudobulk_analysis.integrated_analysis.TSS.readsDS.likeBM"
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/pseudobulk_analysis.integrated_analysis.TSS.readsDS.likeBM.OtherWinsizes"
 dir.create(outdir)
 
-outprefix <- paste0("integrated_analysis.", Sys.Date(), ".UseTSSfromH3K4me3.DSreads_", downsample.reads, ".DScells_", downsample.cells, ".likeBM.")
+outprefix <- paste0("integrated_analysis.", Sys.Date(), ".UseTSSfromH3K4me3.DSreads_", downsample.reads, ".DScells_", downsample.cells, ".likeBM.winsize_", jwinsize)
 outname <- paste0(outprefix, ".pdf")
 outname.rdata <- paste0(outprefix, ".RData")
 
@@ -74,12 +74,14 @@ pdf(outpdf, useDingbats = FALSE)
 
 # Read TSS Signal to figure out which transcript to keep  -----------------
 
-indir.tss <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables.TSS.CodingOnly.winsize_", jwinsize)
+indir.tss <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables_all/count_tables.TSS.CodingOnly.imputevarfilt.lessstringent.mapq_40.winsize_", jwinsize)
+# indir.tss <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables.TSS.CodingOnly.winsize_", jwinsize)
 assertthat::assert_that(dir.exists(indir.tss))
 
 tss.out <- lapply(jmarks, function(jmark){
   print(jmark)
-  inf.tss <- file.path(indir.tss, paste0("PZ-ChIC-ZF_", jmark, "_2020-04-07.countTable.TSS.csv"))
+  # inf.tss <- file.path(indir.tss, paste0("PZ-ChIC-ZF_", jmark, "_2020-04-07.countTable.TSS.csv"))
+  inf.tss <- file.path(indir.tss, paste0(jmark, ".imputevarfilt.lessstringent.mapq_40.remerged.countTable.TSS.csv"))
   mat.tss <- ReadMatTSSFormat(inf.tss)
   # mat.tss <- CollapseRowsByGene(mat.tss, as.long=FALSE, track.kept.gene = TRUE)  # do this for just one mark
   return(list(mat.tss = mat.tss, tss.exprs = rowSums(mat.tss)))
