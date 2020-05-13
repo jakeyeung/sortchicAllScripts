@@ -97,8 +97,6 @@ inrdata <- paste0(inprefix, ".RData")
 infrdata <- file.path(indir, inrdata)
 
 assertthat::assert_that(file.exists(infrdata))
-
-
 load(infrdata, v=T)
 jlong.diff.genesets.WKM <- jlong.diff.genesets
 jlong.diff.genesets.WKM$cluster <- sapply(jlong.diff.genesets.WKM$cluster, function(x) gsub("monocyte", "granu", x = x))
