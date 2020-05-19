@@ -255,7 +255,6 @@ ggplot(jmerged.s2n.fc, aes(x = H3K4me3, y = H3K27me3, color = cluster)) +
   geom_density2d(color = "black") + 
   ggtitle("Signal2Noise log2FoldChange")
 
-
 ggplot(jmerged.s2n.sqrt, aes(x = H3K4me1, y = H3K27me3, color = cluster)) + 
   ggrastr::geom_point_rast(size = jdotsize, alpha = jalpha) + 
   facet_wrap(~cluster, ncol = 1) + 
