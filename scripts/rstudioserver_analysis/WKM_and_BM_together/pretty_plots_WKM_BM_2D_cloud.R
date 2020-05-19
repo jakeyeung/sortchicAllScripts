@@ -14,14 +14,23 @@ library(hash)
 library(JFuncs)
 library(scchicFuncs)
 
-jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
-
-
-cbPalette <- c("#696969", "#32CD32", "#56B4E9", "#FFB6C1", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
-cbPalette2 <- c("#56B4E9", "#32CD32", "#FFB6C1", "#696969", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
-# rename some clusters
-wkm.rename <- hash(c("eryth1", "eryth2", "HSC1", "HSC2", "monocyte"), c("eryth", "eryth", "HSPCs", "HSPCs", "granu"))
-bm.rename <- as.list(hash(c("Bcells", "Eryth", "HSCs", "Neutrophils"), c("lymph", "eryth", "HSPCs", "granu")))
+WrangleRefCtype <- function(zscore.bm.arrows, jclst, jgset){
+  zscore.bm.arrows.cspec <- zscore.bm.arrows %>%
+    filter(cluster %in% c("HSPCs", jclst)) %>%
+    rowwise() %>%
+    mutate(geneset = ifelse(geneset == jgset, "CSpecific", "NotCtypeSpecific")) %>%
+    group_by(geneset, cluster) %>%
+    summarise(H3K4me1 = mean(H3K4me1),
+              H3K4me3 = mean(H3K4me3),
+              H3K27me3 = mean(H3K27me3))
+  zscore.bm.arrows.cspec.wide <- zscore.bm.arrows.cspec %>%
+    data.table::melt(., id.vars = c("geneset", "cluster"), measure.vars = c("H3K4me1", "H3K4me3", "H3K27me3"), variable.name = "mark", value.name = "zscore") %>% 
+    rowwise() %>%
+    mutate(cluster = ifelse(cluster == jclst, "Ctype", "HSPCs")) %>%
+    data.table::dcast(., geneset ~ cluster + mark, value.var = "zscore") %>%
+    mutate(ref.ctype = jclst)
+  return(zscore.bm.arrows.cspec.wide)
+}
 
 RenameClusterBM <- function(clstr.orig, bm.rename){
   # clstr.orig <- "Bcells-Cd83_topic10"
@@ -35,10 +44,41 @@ RenameClusterBM <- function(clstr.orig, bm.rename){
   return(clstr.new)
 }
 
+CalculateGeometricMedian <- function(x1, x2, x3, cname.out, cnames = c("H3K4me1", "H3K4me3", "H3K27me3")){
+  # create matrix
+  X <- as.matrix(data.frame(x1 = x1, x2 = x2, x3 = x3, stringsAsFactors = FALSE))
+  colnames(X) <- cnames
+  gmed.out <- Gmedian::Gmedian(X)
+  colnames(gmed.out) <- cnames
+  gmed.out <- as.data.frame(gmed.out)
+  return(gmed.out[[cname.out]])
+}
 
-pdfout <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/WKM_BM_together.", Sys.Date(), ".pdf")
 
-pdf(pdfout, useDingbats = FALSE)
+# Constants ---------------------------------------------------------------
+
+
+make.plots <- FALSE
+
+
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
+
+
+cbPalette <- c("#696969", "#32CD32", "#56B4E9", "#FFB6C1", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+cbPalette2 <- c("#56B4E9", "#32CD32", "#FFB6C1", "#696969", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+cbPalette2.shift <- c("#32CD32", "#FFB6C1", "#696969", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+# rename some clusters
+wkm.rename <- hash(c("eryth1", "eryth2", "HSC1", "HSC2", "monocyte"), c("eryth", "eryth", "HSPCs", "HSPCs", "granu"))
+bm.rename <- as.list(hash(c("Bcells", "Eryth", "HSCs", "Neutrophils"), c("lymph", "eryth", "HSPCs", "granu")))
+
+
+
+
+pdfout <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/WKM_BM_together.", Sys.Date(), ".2Dcloud.pdf")
+
+if (make.plots){
+  pdf(pdfout, useDingbats = FALSE)
+}
 
 # Load UMAPs for BM and WKM  ----------------------------------------------
 
@@ -277,4 +317,158 @@ print(m.box.counts.filt.bm)
 
 
 
-dev.off()
+# Show the 2D cloud of zscores  -------------------------------------------
+
+# create matrix of zscores for each mark, labeled by geneset
+
+zscore.bm.mat <- reshape2::dcast(data = jlong.diff.genesets.BM, formula = bin + ens + geneset + cluster ~ mark, value.var = "zscore")
+zscore.wkm.mat <- reshape2::dcast(data = jlong.diff.genesets.WKM, formula = bin + ens + geneset + cluster ~ mark, value.var = "zscore")
+
+# zscore.bm.arrows <- zscore.bm.mat %>%
+#   group_by(geneset, cluster) %>%
+#   summarise(H3K4me3 = CalculateGeometricMedian(x1 = H3K4me1, x2 = H3K4me3, x3 = H3K27me3, cname.out = "H3K4me3", cnames = c("H3K4me1", "H3K4me3", "H3K27me3")),
+#             H3K27me3 = CalculateGeometricMedian(x1 = H3K4me1, x2 = H3K4me3, x3 = H3K27me3, cname.out = "H3K27me3", cnames = c("H3K4me1", "H3K4me3", "H3K27me3")),
+#             H3K4me1 = CalculateGeometricMedian(x1 = H3K4me1, x2 = H3K4me3, x3 = H3K27me3, cname.out = "H3K4me1", cnames = c("H3K4me1", "H3K4me3", "H3K27me3")),
+#             H3K4me1.start = 0,
+#             H3K4me3.start = 0,
+#             H3K27me3.start = 0)
+# zscore.wkm.arrows <- zscore.wkm.mat %>%
+#   group_by(geneset, cluster) %>%
+#   summarise(H3K4me3 = CalculateGeometricMedian(x1 = H3K4me1, x2 = H3K4me3, x3 = H3K27me3, cname.out = "H3K4me3", cnames = c("H3K4me1", "H3K4me3", "H3K27me3")),
+#             H3K27me3 = CalculateGeometricMedian(x1 = H3K4me1, x2 = H3K4me3, x3 = H3K27me3, cname.out = "H3K27me3", cnames = c("H3K4me1", "H3K4me3", "H3K27me3")),
+#             H3K4me1 = CalculateGeometricMedian(x1 = H3K4me1, x2 = H3K4me3, x3 = H3K27me3, cname.out = "H3K4me1", cnames = c("H3K4me1", "H3K4me3", "H3K27me3")),
+#             H3K4me1.start = 0,
+#             H3K4me3.start = 0,
+#             H3K27me3.start = 0)
+
+zscore.bm.arrows <- zscore.bm.mat %>%
+  group_by(geneset, cluster) %>%
+  summarise(H3K4me3 = mean(H3K4me3, na.rm = TRUE),
+            H3K27me3 = mean(H3K27me3, na.rm = TRUE),
+            H3K4me1 = mean(H3K4me1, na.rm = TRUE),
+            H3K4me1.start = 0,
+            H3K4me3.start = 0,
+            H3K27me3.start = 0)
+
+zscore.wkm.arrows <- zscore.wkm.mat %>%
+  group_by(geneset, cluster) %>%
+  summarise(H3K4me3 = mean(H3K4me3, na.rm = TRUE),
+            H3K27me3 = mean(H3K27me3, na.rm = TRUE),
+            H3K4me1 = mean(H3K4me1, na.rm = TRUE),
+            H3K4me1.start = 0,
+            H3K4me3.start = 0,
+            H3K27me3.start = 0)
+  
+
+# calculate arrows in 3D?
+
+m.bm.act <- ggplot(subset(zscore.bm.mat, geneset %in% gsetfilt.BM), aes(x = H3K4me3, y = H3K4me1, color = geneset)) + geom_point(alpha = 0.1) + 
+  facet_grid(geneset ~ cluster) +
+  # facet_grid(cluster ~ geneset) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
+  geom_segment(data = subset(zscore.bm.arrows, geneset %in% gsetfilt.BM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  ggtitle("Mouse Bone Marrow: active vs active")
+print(m.bm.act)
+
+m.bm.rep <- ggplot(subset(zscore.bm.mat, geneset %in% gsetfilt.BM), aes(x = H3K4me3, y = H3K27me3, color = geneset)) + geom_point(alpha = 0.1) + 
+  facet_grid(geneset ~ cluster) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
+  geom_segment(data = subset(zscore.bm.arrows, geneset %in% gsetfilt.BM), mapping = aes(xend = H3K4me3.start, yend = H3K27me3.start), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  ggtitle("Mouse Bone Marrow: active vs repressive")
+print(m.bm.rep)
+
+m.bm.rep2 <- ggplot(subset(zscore.bm.mat, geneset %in% gsetfilt.BM), aes(x = H3K4me1, y = H3K27me3, color = geneset)) + geom_point(alpha = 0.1) + 
+  facet_grid(geneset ~ cluster) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
+  geom_segment(data = subset(zscore.bm.arrows, geneset %in% gsetfilt.BM), mapping = aes(xend = H3K4me1.start, yend = H3K27me3.start), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  ggtitle("Mouse Bone Marrow: active vs repressive 2")
+print(m.bm.rep2)
+
+
+
+m.wkm.act <- ggplot(subset(zscore.wkm.mat, geneset %in% gsetfilt.WKM), aes(x = H3K4me3, y = H3K4me1, color = geneset)) + geom_point(alpha = 0.1) + 
+  facet_grid(geneset ~ cluster) +
+  # facet_grid(cluster ~ geneset) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
+  geom_segment(data = subset(zscore.wkm.arrows, geneset %in% gsetfilt.WKM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  ggtitle("WKM: active vs active")
+print(m.wkm.act)
+
+m.wkm.rep <- ggplot(subset(zscore.wkm.mat, geneset %in% gsetfilt.WKM), aes(x = H3K4me3, y = H3K27me3, color = geneset)) + geom_point(alpha = 0.1) + 
+  facet_grid(geneset ~ cluster) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
+  geom_segment(data = subset(zscore.wkm.arrows, geneset %in% gsetfilt.WKM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  ggtitle("WKM: active vs rep")
+print(m.wkm.rep)
+
+m.wkm.rep2 <- ggplot(subset(zscore.wkm.mat, geneset %in% gsetfilt.WKM), aes(x = H3K4me1, y = H3K27me3, color = geneset)) + geom_point(alpha = 0.1) + 
+  facet_grid(geneset ~ cluster) +
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
+  geom_segment(data = subset(zscore.wkm.arrows, geneset %in% gsetfilt.WKM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  ggtitle("WKM: active vs rep")
+print(m.wkm.rep2)
+
+# collapse these arrows into one plot to summarize everything 
+
+# do this cellltype by celltype (tedious?)
+
+
+
+# 3 possible celltypes: granu, lymph, eryth
+print(gsetfilt.BM)
+print(unique(as.character(zscore.bm.arrows$cluster)))
+clstrfilt.BM <- c("HSPCs", "Granulocytes", "Bcells", "Erythroblasts"); names(clstrfilt.BM) <- clstrfilt.BM
+jclsts <- clstrfilt.BM[which(clstrfilt.BM != "HSPCs")]
+
+print(gsetfilt.WKM)
+print(unique(as.character(zscore.wkm.arrows$cluster)))
+clstrfilt.WKM <- c("HSPCs", "granu", "lymph", "eryth"); names(clstrfilt.BM) <- clstrfilt.BM
+jclsts.WKM <- clstrfilt.WKM[which(clstrfilt.WKM != "HSPCs")]
+
+
+zscore.cspec.BM.wide <- lapply(jclsts, function(jclst){
+  print(jclst)
+  jgset <- gsetfilt.BM[which(clstrfilt.BM  == jclst)]
+  zscore.bm.arrows.cspec.wide <- WrangleRefCtype(zscore.bm.arrows, jclst, jgset)
+}) %>%
+  bind_rows()
+
+zscore.cspec.WKM.wide <- lapply(jclsts.WKM, function(jclst){
+  print(jclst)
+  jgset <- gsetfilt.WKM[which(clstrfilt.WKM  == jclst)]
+  zscore.bm.arrows.cspec.wide <- WrangleRefCtype(zscore.wkm.arrows, jclst, jgset)
+}) %>%
+  bind_rows() 
+zscore.cspec.WKM.wide$ref.ctype <- factor(zscore.cspec.WKM.wide$ref.ctype, levels = c("granu", "lymph", "eryth"))
+
+ggplot(zscore.cspec.BM.wide, aes(x = HSPCs_H3K4me3, xend = Ctype_H3K4me3, y = HSPCs_H3K27me3, yend = Ctype_H3K27me3, color = ref.ctype)) + 
+  geom_segment(arrow = arrow(length=unit(0.10,"cm"), ends = "last")) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~geneset) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  xlab("Zscore H3K4me3") + ylab("Zscore H3K27me3")  + ggtitle("Mouse Bone Marrow") + 
+  scale_color_manual(values = cbPalette2.shift)
+
+ggplot(zscore.cspec.WKM.wide, aes(x = HSPCs_H3K4me3, xend = Ctype_H3K4me3, y = HSPCs_H3K27me3, yend = Ctype_H3K27me3, color = ref.ctype)) + 
+  geom_segment(arrow = arrow(length=unit(0.10,"cm"), ends = "last")) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~geneset) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  xlab("Zscore H3K4me3") + ylab("Zscore H3K27me3")  + ggtitle("ZF WKM") + 
+  scale_color_manual(values = cbPalette2.shift)
+  
+
+if (make.plots){
+  dev.off()
+}
+
+
+
