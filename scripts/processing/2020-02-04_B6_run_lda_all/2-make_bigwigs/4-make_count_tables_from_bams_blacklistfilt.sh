@@ -20,7 +20,7 @@ blfile="/hpc/hub_oudenaarden/jyeung/data/databases/blacklists/mm10.blacklist.cop
 for inbam in `ls -d $indir/*.bam`; do
     bname=$(basename $inbam)
     bname=${bname%.*}
-    outf=$outdir/bname.csv
+    outf=${outdir}/${bname}.csv
 
     BNAME=$outdir/$bname.qsub
     DBASE=$(dirname "${BNAME}")
