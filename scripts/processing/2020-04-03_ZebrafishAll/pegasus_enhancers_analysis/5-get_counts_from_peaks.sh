@@ -8,7 +8,8 @@ jmem='32G'
 jtime='6:00:00'
 
 mapq=40
-dist=10000
+# dist=10000
+dist=20000
 ps="/home/hub_oudenaarden/jyeung/projects/SingleCellMultiOmics.ForDev/singlecellmultiomics/bamProcessing/bamToCountTable.test.py"
 [[ ! -e $ps ]] && echo "$ps not found, exiting" && exit 1
 
