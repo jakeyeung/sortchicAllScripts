@@ -1,7 +1,8 @@
 # Jake Yeung
-# Date of Creation: 2020-04-11
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/ZF_all_merged/1-explore_LDA_ZF_with_celltypes.R
+# Date of Creation: 2020-04-27
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/ZF_all_merged/1-explore_LDA_ZF_with_celltypes.stringent.imputevarfilt.EnsemblDownsample.R
 # 
+
 
 rm(list=ls())
 
@@ -32,6 +33,28 @@ jsettings$n_neighbors <- 30
 jsettings$min_dist <- 0.1
 jsettings$random_state <- 123
 
+
+AssignHash2 <- function(x, jhash, null.fill = NA){
+  if (x == ""){
+    # hashes dont handle "" well
+    return(null.fill)
+  }
+  # assign hash key to hash value, handle NULLs
+  # null.fill = "original", returns original value x into jhash
+  x.mapped <- jhash[[as.character(x)]]
+  if (is.null(x.mapped)){
+    if (is.na(null.fill)){
+      x.mapped <- null.fill
+    } else if (as.character(null.fill) == "original"){
+      x.mapped <- x
+    } else {
+      x.mapped <- null.fill
+    }
+  }
+  return(x.mapped)
+}
+
+
 ProcessLDA <- function(out.lda, jmark){
   print(jmark)
   tm.result <- posterior(out.lda)
@@ -60,7 +83,7 @@ ProcessLDA <- function(out.lda, jmark){
   # load bins
   terms.mat.tmp <- tm.result$terms
   # rownames(terms.mat.tmp) <- rownames(terms.mat.tmp)
-  annot.out <- AnnotateBins2.ZF(terms.mat = tm.result$terms, top.thres = 0.995, inf.tss = inf.annot, txdb = TxDb.Drerio.UCSC.danRer11.refGene, annodb = "org.Dr.eg.db", chromos.keep = jchromos, skip.split = TRUE)
+  annot.out <- AnnotateBins3(terms.mat = tm.result$terms, top.thres = 0.995, inf.tss = inf.annot, txdb = TxDb.Drerio.UCSC.danRer11.refGene, annodb = "org.Dr.eg.db", chromos.keep = jchromos, skip.split = TRUE)
   annot.out$terms.annot <- annot.out$terms.annot %>%
     rowwise() %>%
     mutate(termgene = ifelse(is.na(termgene), "", termgene))
@@ -98,19 +121,14 @@ cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 jwin <- 50000L
 jprefix <- "/home/jyeung/hub_oudenaarden/jyeung"
 
-# jsuffix <- ""
 jsuffix <- ".imputevarfilt.lessstringent"
-# jsuffix2 <- ".lessstringent"
-# jsuffix <- ".lessstringent"
 indir <- file.path(jprefix, paste0("data/zebrafish_scchic/LDA_outputs/ldaAnalysisBins_ZF_AllMerged.winsize_", jwin, jsuffix))
 assertthat::assert_that(dir.exists(indir))
 
 outmain <- file.path(jprefix, paste0("data/zebrafish_scchic/from_rstudio/LDA_downstream"))
-# outdir <- file.path(jprefix, paste0("data/scChiC/from_rstudioserver/LDA_downstream_ZF.", Sys.Date(), jsuffix))
-outdir <- file.path(outmain, paste0("LDA_downstream_ZF.", Sys.Date(), jsuffix))
+outdir <- file.path(outmain, paste0("LDA_downstream_ZF.EnsPseudobulkDownsampledAllGenes.", Sys.Date(), jsuffix))
 dir.create(outdir)
 
-# outrdata <- file.path(outdir, paste0("dat_across_marks_outputs.RData"))
 
 zscore.cutoff <- "top_500"
 
@@ -120,24 +138,34 @@ inf.annot <- file.path(jprefix, paste0("data/databases/gene_tss/gene_tss.winsize
 assertthat::assert_that(file.exists(inf.annot))
 
 
-normtype <- "_cpmnorm"
-normtype2 <- "_removethrombo"
-jdate <- "2019-12-10"
 
-inf.WKM <- file.path(jprefix, paste0("data/scChiC/public_data/Baron_et_al_2019_Zebrafish_WKM/from_macbook/Baron_et_al_pseudobulk_Zebrafish_WKM", normtype, ".", jdate, ".rds"))
-assertthat::assert_that(file.exists(inf.WKM))
+# Load  -------------------------------------------------------------------
 
-inf.WKMnothrombo <- file.path(jprefix, paste0("data/scChiC/public_data/Baron_et_al_2019_Zebrafish_WKM/from_macbook/Baron_et_al_pseudobulk_Zebrafish_WKM", normtype, ".", jdate, ".rds"))
-assertthat::assert_that(file.exists(inf.WKMnothrombo))
 
-# load tx data ------------------------------------------------------------
+# inf.exprs.pbulk <- paste0(jprefix, "/data/zebrafish_scchic/from_rstudio/rdata_robjs/WKM_pseudobulk_scrnaseq_downsampled.2020-04-26.EosinophilsKeep.RData")
+# inf.exprs.pbulk <- paste0(jprefix, "/data/zebrafish_scchic/from_rstudio/from_data/zebrafish.poisson.2020-04-26/diff_exprs_Chloe_seurat.full.ctypefilt.rds")
+inf.exprs.pbulk <- paste0(jprefix, "/data/zebrafish_scchic/from_rstudio/rdata_robjs/WKM_pseudobulk_scrnaseq_downsampled.2020-04-27.EosinophilsKeep.AllGenes.RData")
 
-# from make_tx_dataset_zebrafish_WKM.R
-dat.bulk <- readRDS(inf.WKM)
-dat.bulk$celltype <- as.factor(dat.bulk$celltype)
+assertthat::assert_that(file.exists(inf.exprs.pbulk))
 
-dat.bulk.nothrombo <- readRDS(inf.WKMnothrombo)
-dat.bulk.nothrombo$celltype <- as.factor(dat.bulk.nothrombo$celltype)
+if (endsWith(inf.exprs.pbulk, ".RData")){
+  load(inf.exprs.pbulk, v=T)
+  dat.bulk <- pbulk.ctypefilt.long %>%
+    dplyr::rename(celltype = pbulk)
+  dat.bulk$gene <- as.character(dat.bulk$gene)
+  dat.bulk$ens <- sapply(as.character(dat.bulk$gene), function(x) strsplit(x, "_")[[1]][[1]])
+} else {
+  dat.bulk <- readRDS(inf.exprs.pbulk) %>%
+    rowwise() %>%
+    mutate(zscore = avg_logFC) %>%
+    mutate(ens = sapply(as.character(gene), function(x) strsplit(x, "-")[[1]][[1]])) %>%
+    dplyr::rename(celltype = cluster)
+  
+ggplot(dat.bulk, aes(x = avg_logFC)) + geom_density() + facet_wrap(~celltype, ncol = 1) + 
+  theme_bw() + theme(aspect.ratio=0.25, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0)
+
+}
 
 
 # Process -----------------------------------------------------------------
@@ -172,9 +200,12 @@ out.lst <- lapply(infs, function(inf){
 # write clustering table
 
 
+keepn <- 250
+jmark <- "H3K4me1"
  
  for (keepn in keepnvec){
    for (jmark in jmarks){
+     
      print(jmark)
      
      out.lda <- out.lst[[jmark]]$out.lda
@@ -183,10 +214,10 @@ out.lst <- lapply(infs, function(inf){
      outf <- paste0("ZF_LDA_output.", jmark, ".keepn_", keepn, ".final.pdf")
      outtxt <- paste0("ZF_LDA_output.", jmark, ".keepn_", keepn, ".final.ClusterTables.txt")
      outpdf <- file.path(outdir, outf)
-     if (file.exists(outpdf)){
-       print(paste(outpdf, "exists, skipping"))
-       next
-     }
+     # if (file.exists(outpdf)){
+     #   print(paste(outpdf, "exists, skipping"))
+     #   next
+     # }
      
      tm.result <- posterior(out.lda)
      topics.mat <- tm.result$topics
@@ -275,6 +306,15 @@ out.lst <- lapply(infs, function(inf){
          return("")
        }
      })
+     # add ensembl
+     annot.sub <- subset(annot.out$regions.annotated, !is.na(ENSEMBL) & !is.na(SYMBOL))
+     
+     # ens.vec <- sapply(annot.out$regions.annotated$ENSEMBL, function(x) ifelse(!is.na(x), x, "Unknown"))
+     # genes.vec <- sapply(annot.out$regions.annotated$SYMBOL, function(x) ifelse(!is.na(x), x, "Unknown"))
+     
+     g2e.annot <- hash(annot.sub$SYMBOL, annot.sub$ENSEMBL)
+     
+     annot.out$terms.annot$ens <- sapply(annot.out$terms.annot$gene, AssignHash2, g2e.annot, null.fill = NA)
      
      topics.sum <- OrderTopicsByEntropy(tm.result, jquantile = 0.99)
      topics.sum$topic <- gsub("^X", "topic_", topics.sum$topic)
@@ -297,6 +337,7 @@ out.lst <- lapply(infs, function(inf){
      print(m.louv.plate)
      
      for (i in seq(nrow(topics.sum))){
+       
        jtop <- topics.sum$topic[[i]]
        print(jtop)
        # plot UMAP
@@ -319,13 +360,25 @@ out.lst <- lapply(infs, function(inf){
        
        # check gene expression across genes
        gfilt <- unique(jsub.terms$gene)
-       # m.ctype <- subset(dat.bulk, gene %in% gfilt) %>%
        
-       dat.bulk.sub <- subset(dat.bulk, gene %in% gfilt)
-       ngenes.kept <- length(unique(dat.bulk.sub$gene))
-       m.ctype <- dat.bulk.sub %>%
-         # mutate(celltype = ) %>%
-         ggplot(., aes(x = forcats::fct_reorder(celltype, dplyr::desc(zscore), .fun = median), y = zscore)) + geom_boxplot() + 
+       efilt <- sapply(gfilt, AssignHash2, g2e.annot, null.fill = NA)
+       # m.ctype <- subset(dat.bulk, ens %in% efilt) %>%
+       
+       # dat.bulk.sub <- subset(dat.bulk, gene %in% gfilt)
+       dat.bulk.sub <- subset(dat.bulk, ens %in% efilt)
+       ngenes.kept <- length(unique(dat.bulk.sub$ens))
+       ngenes.notmatched <- setdiff(efilt, unique(dat.bulk.sub$ens))
+       
+       # m.ctype <- dat.bulk.sub %>%
+       #   # mutate(celltype = ) %>%
+       #   ggplot(., aes(x = forcats::fct_reorder(celltype, dplyr::desc(zscore), .fun = median), y = zscore)) + geom_boxplot() + 
+       #   geom_jitter(width = 0.2) + 
+       #   theme_bw(24) + 
+       #   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+       #   ggtitle(jtop, paste("Ngenes:", ngenes.kept))
+       # 
+       m.ctype <- ggplot(dat.bulk.sub, aes(x = forcats::fct_reorder(celltype, dplyr::desc(zscore), .fun = median, na.rm = TRUE), y = zscore)) + 
+         geom_boxplot() + 
          geom_jitter(width = 0.2) + 
          theme_bw(24) + 
          theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
@@ -338,8 +391,6 @@ out.lst <- lapply(infs, function(inf){
      }
      dev.off()
    }  
-   
-   
  }
  
 

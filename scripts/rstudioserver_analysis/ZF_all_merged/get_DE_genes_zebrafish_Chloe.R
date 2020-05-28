@@ -51,7 +51,7 @@ indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/Baron_et_a
 jlogfc.threshold <- 0
 jmin.pct <- 0
 # outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/public_data/Baron_et_al_2019_Zebrafish_WKM/from_rstudio"
-outdir <- "/home/jyeung/data/from_rstudioserver/zebrafish"  # run over night
+outdir <- paste0("/home/jyeung/data/from_rstudioserver/zebrafish.", Sys.Date())  # run over night
 dir.create(outdir)
 outrds <- file.path(outdir, paste0("diff_exprs_Chloe_seurat.full.rds"))
 outpdf <- file.path(outdir, paste0("diff_exprs_Chloe_seurat.full.pdf"))

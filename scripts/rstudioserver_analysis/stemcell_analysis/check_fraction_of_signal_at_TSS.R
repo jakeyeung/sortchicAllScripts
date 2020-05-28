@@ -11,6 +11,7 @@ library(ggplot2)
 library(data.table)
 library(Matrix)
 library(scchicFuncs)
+library(topicmodels)
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 jdist <- "10000"
@@ -41,6 +42,15 @@ for (jmark in jmarks){
   
   
   # Load LDA  ---------------------------------------------------------------
+  jexperi <- "AllMerged"
+  inf.lda <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-02-11.var_filt.UnenrichedAndAllMerged.KeepBestPlates2/lda_outputs.BM_", jmark, "_varfilt_countmat.2020-02-11.", jexperi, ".K-30.binarize.FALSE/ldaOut.BM_", jmark, "_varfilt_countmat.2020-02-11.", jexperi, ".K-30.Robj")
+  assertthat::assert_that(file.exists(inf.lda))
+  load(inf.lda, v=T)
+  tm.result <- posterior(out.lda)
+  jchromos <- paste("chr", c(seq(19), "X", "Y"), sep = "")
+  dat.impute.log <- log2(t(tm.result$topics %*% tm.result$terms))
+  dat.var <- CalculateVarAll(dat.impute.log, jchromos)
+  
   
   inf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawData_B6_All_MergedByMarks_final.count_tables_TSS.first_transcript/", jmark, ".countTableTSS.mapq_40.TSS_", jdist, ".blfiltered.csv")
   assertthat::assert_that(file.exists(inf))
@@ -61,6 +71,7 @@ for (jmark in jmarks){
   dat.merge <- left_join(dat.tss, dat.size)
   dat.merge <- left_join(dat.merge, dat.umap.glm.fillNAs)
   dat.merge <- left_join(dat.merge, dat.tss.ngenes)
+  dat.merge <- left_join(dat.merge, dat.var)
   
   m <- ggplot(dat.merge, aes(x = umap1, y = umap2, color = tss.cuts / total.cuts)) + geom_point() + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
@@ -91,6 +102,8 @@ for (jmark in jmarks){
   
 
   # Density of TSS signal across different conditions ---------------------
+  
+  
   m.dens <- ggplot(dat.merge, aes(x = tss.cuts / total.cuts, group = cond, fill = cond)) + geom_density(alpha = 0.33) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     scale_color_viridis_c(direction = 1) + ggtitle(paste(jmark, jdist, "around TSS")) + 
@@ -104,6 +117,8 @@ for (jmark in jmarks){
   m.scatter <- ggplot(dat.merge, mapping = aes(x = tss.cuts / total.cuts, y = ncuts.var, color = cond)) + geom_point() + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   
+  m.scatter.impute <- ggplot(dat.merge, mapping = aes(x = tss.cuts / total.cuts, y = cell.var.within.sum.norm, color = cond)) + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   
   # plot outputs
   
@@ -118,6 +133,7 @@ for (jmark in jmarks){
     print(m.ngenes.rev)
     print(m.ngenes.frac.rev)
     print(m.scatter)
+    print(m.scatter.impute)
   dev.off()
   # save objs for easier loading llater
   if (!file.exists(outrdata)){
