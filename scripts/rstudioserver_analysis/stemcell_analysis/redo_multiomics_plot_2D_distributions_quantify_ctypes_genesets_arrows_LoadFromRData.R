@@ -36,7 +36,7 @@ CalculateGeometricMedian <- function(x1, x2, x3, cname.out, cnames = c("H3K4me1"
 
 # Constants ---------------------------------------------------------------
 
-make.plots <- TRUE
+make.plots <- FALSE
 
 jmeth <- "GeometricMedian"
 # jmeth <- "MarginalMedian"
@@ -85,8 +85,17 @@ jmerged.s2n.fc <- reshape2::dcast(as.data.frame(jlong.thres.lst %>% bind_rows())
 jmerged.s2n.sqrt <- reshape2::dcast(as.data.frame(jlong.thres.lst %>% bind_rows()), formula = "bin + cluster ~ mark", value.var = "s2n.diffsqrt")
 jmerged.s2n.lin <- reshape2::dcast(as.data.frame(jlong.thres.lst %>% bind_rows()), formula = "bin + cluster ~ mark", value.var = "s2n.diff")
 jmerged.s2n.zscore <- reshape2::dcast(as.data.frame(jlong.thres.lst %>% bind_rows()), formula = "bin + cluster ~ mark", value.var = "zscore.by.pbulk")
-
 jmerged.counts <- reshape2::dcast(as.data.frame(jlong.thres.lst %>% bind_rows()), formula = "bin + cluster ~ mark", value.var = "counts")
+
+# make into list make things easier downstream
+jmerged.lst <- list(jmerged.s2n.fc, jmerged.s2n.sqrt, jmerged.s2n.lin, jmerged.s2n.zscore)
+names(jmerged.lst) <- c("LogFcOverBg", "DiffSqrt", "DiffLinear", "CountsZscore")
+
+
+# Plot hox ----------------------------------------------------------------
+
+ggplot(subset(jlong.thres.lst$H3K27me3, grepl("Hox", bin)), aes(x = cluster, y = s2n.fc)) + geom_boxplot() + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 
 # Analyze "flow" in different gene sets -------------------------------------

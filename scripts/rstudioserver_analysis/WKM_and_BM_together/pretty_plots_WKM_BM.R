@@ -38,6 +38,8 @@ RenameClusterBM <- function(clstr.orig, bm.rename){
 
 pdfout <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/WKM_BM_together.", Sys.Date(), ".pdf")
 
+
+
 pdf(pdfout, useDingbats = FALSE)
 
 # Load UMAPs for BM and WKM  ----------------------------------------------
@@ -118,6 +120,16 @@ jlong.diff.genesets.BM$mark <- factor(jlong.diff.genesets.BM$mark, jmarks)
 jlong.diff.genesets.BM$geneset <- factor(jlong.diff.genesets.BM$geneset, c("HSCs", "Neutrophil", "Bcell", "Erythroblast", "HighExprs", "LowExprs", "zOther"))
 gsetfilt.BM <- c("HSCs", "Neutrophil", "Bcell", "Erythroblast")
 
+
+# Plot hox ----------------------------------------------------------------
+
+ggplot(subset(jlong.diff.genesets.BM, grepl("Hox", bin)), aes(x = cluster, y = zscore)) + 
+  geom_boxplot() + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+ggplot(subset(jlong.diff.genesets.WKM, grepl("Hox", bin, ignore.case = TRUE)), aes(x = cluster, y = zscore)) + 
+  geom_boxplot() + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 # Plot UMAPs --------------------------------------------------------------
 

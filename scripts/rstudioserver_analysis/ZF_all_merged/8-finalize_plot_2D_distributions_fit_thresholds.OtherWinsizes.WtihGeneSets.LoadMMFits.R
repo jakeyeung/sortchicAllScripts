@@ -159,6 +159,47 @@ print(m.2d.plots.all.h3k4me1)
 print(m.2d.plots.all.h3k4me3)
 
 
+# Plot marginals ----------------------------------------------------------
+
+
+m.densities.h3k4me1 <- lapply(jnames, function(jname){
+  m <- ggplot(jmerged.lst[[jname]], aes(x = H3K4me1, fill = cluster)) + 
+    # ggrastr::geom_point_rast(size = jdotsize, alpha = jalpha) + 
+    geom_density() + 
+    facet_wrap(~cluster, ncol = 2) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_vline(xintercept = 0) + 
+    ggtitle(jname)
+  return(m)
+})
+
+m.densities.h3k4me3 <- lapply(jnames, function(jname){
+  m <- ggplot(jmerged.lst[[jname]], aes(x = H3K4me3, fill = cluster)) + 
+    # ggrastr::geom_point_rast(size = jdotsize, alpha = jalpha) + 
+    geom_density() + 
+    facet_wrap(~cluster, ncol = 2) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_vline(xintercept = 0) + 
+    ggtitle(jname)
+  return(m)
+})
+
+
+m.densities.h3k27me3 <- lapply(jnames, function(jname){
+  m <- ggplot(jmerged.lst[[jname]], aes(x = H3K27me3, fill = cluster)) + 
+    # ggrastr::geom_point_rast(size = jdotsize, alpha = jalpha) + 
+    geom_density() + 
+    facet_wrap(~cluster, ncol = 2) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_vline(xintercept = 0) + 
+    ggtitle(jname)
+  return(m)
+})
+
+print(m.densities.h3k4me1)
+print(m.densities.h3k4me3)
+print(m.densities.h3k27me3)
+
 # Mark gene sets  ---------------------------------------------------------
 
 m.2d.plots.all.h3k4me1.geneset <- lapply(jnames, function(jname){
@@ -216,6 +257,17 @@ jmerged.sum.lst <- lapply(jmerged.lst, function(jmerged){
   }
 })
 
+m.2d.witharrows.h3k4me3.contour <- lapply(jnames, function(jname){
+  m <- ggplot(mapping = aes(x = H3K4me3, y = H3K27me3, color = geneset)) + 
+    geom_density2d(color = "grey85") + 
+    geom_point(data = jmerged.lst[[jname]], mapping = aes(x = H3K4me3, y = H3K27me3), alpha = 0.1) + 
+    geom_segment(data = jmerged.sum.lst[[jname]], mapping = aes(xend = H3K4me3.start, yend = H3K27me3.start), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+    geom_vline(xintercept = 0, linetype = "dotted") + geom_hline(yintercept = 0, linetype = "dotted") +  
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    facet_grid(geneset ~ cluster) + ggtitle(paste(jname, "arrow points to:", jmeth, "WithContour"))
+  return(m)
+})
+
 # make 2D plot with arrows
 m.2d.witharrows.h3k4me3 <- lapply(jnames, function(jname){
   m <- ggplot(mapping = aes(x = H3K4me3, y = H3K27me3, color = geneset)) + 
@@ -233,6 +285,17 @@ m.2d.witharrows.h3k4me3 <- lapply(jnames, function(jname){
 
 # jmerged.sum.lst$`Counts Zscore`
 
+m.2d.witharrows.h3k4me1.contour <- lapply(jnames, function(jname){
+  m <- ggplot(mapping = aes(x = H3K4me1, y = H3K27me3, color = geneset)) + 
+    geom_density2d(color = "grey85") +
+    geom_point(data = jmerged.lst[[jname]], mapping = aes(x = H3K4me3, y = H3K27me3), alpha = 0.1) + 
+    geom_segment(data = jmerged.sum.lst[[jname]], mapping = aes(xend = H3K4me3.start, yend = H3K27me3.start), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+    geom_vline(xintercept = 0, linetype = "dotted") + geom_hline(yintercept = 0, linetype = "dotted") +  
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    facet_grid(geneset ~ cluster) + ggtitle(paste(jname, jmeth))
+  return(m)
+})
+
 m.2d.witharrows.h3k4me1 <- lapply(jnames, function(jname){
   m <- ggplot(mapping = aes(x = H3K4me1, y = H3K27me3, color = geneset)) + 
     geom_point(data = jmerged.lst[[jname]], mapping = aes(x = H3K4me3, y = H3K27me3), alpha = 0.1) + 
@@ -245,7 +308,9 @@ m.2d.witharrows.h3k4me1 <- lapply(jnames, function(jname){
 # m.2d.witharrows.h3k4me1$`Signal2Noise log2FoldChange`
 # m.2d.witharrows.h3k4me1$`Counts Zscore`
 
+print(m.2d.witharrows.h3k4me3.contour)
 print(m.2d.witharrows.h3k4me3)
+print(m.2d.witharrows.h3k4me1.contour)
 print(m.2d.witharrows.h3k4me1)
 
 

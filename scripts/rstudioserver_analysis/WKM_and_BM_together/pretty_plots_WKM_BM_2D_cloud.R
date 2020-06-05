@@ -54,6 +54,19 @@ CalculateGeometricMedian <- function(x1, x2, x3, cname.out, cnames = c("H3K4me1"
   return(gmed.out[[cname.out]])
 }
 
+ReannotateGeneset <- function(geneset, genesets.ctype, genesets.other, na.fill = NA){
+  genesets.ctype.str <- paste(genesets.ctype, collapse = "&")
+  genesets.other.str <- paste(genesets.other, collapse = "&")
+  if (geneset %in% genesets.ctype){
+    gset <- paste0(genesets.ctype.str, "-specificGenes")
+  } else if (geneset %in% genesets.other){
+    gset <- paste0("z", genesets.other.str, "-specificGenes")
+  } else {
+    gset <- na.fill
+  }
+  return(gset)
+}
+
 
 # Constants ---------------------------------------------------------------
 
@@ -469,6 +482,139 @@ ggplot(zscore.cspec.WKM.wide, aes(x = HSPCs_H3K4me3, xend = Ctype_H3K4me3, y = H
 if (make.plots){
   dev.off()
 }
+
+
+# Show flows --------------------------------------------------------------
+
+# show BM active-repressed plane 
+
+logcounts.bm.mat <- reshape2::dcast(data = jlong.diff.genesets.BM, formula = bin + ens + geneset + cluster ~ mark, value.var = "log2p1counts")
+logcounts.wkm.mat <- reshape2::dcast(data = jlong.diff.genesets.WKM, formula = bin + ens + geneset + cluster ~ mark, value.var = "log2p1counts")
+
+
+counts.bm.mat <- reshape2::dcast(data = jlong.diff.genesets.BM, formula = bin + ens + geneset + cluster ~ mark, value.var = "counts")
+counts.wkm.mat <- reshape2::dcast(data = jlong.diff.genesets.WKM, formula = bin + ens + geneset + cluster ~ mark, value.var = "counts")
+
+ggplot(logcounts.bm.mat, aes(x = H3K4me3, y = H3K27me3)) + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+ggplot(counts.bm.mat, aes(x = H3K4me3, y = H3K27me3)) + 
+  geom_point(alpha = 0.1) + 
+  geom_density_2d() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~cluster)
+
+# show the flows
+cbPalette <- c("#696969", "#32CD32", "#56B4E9", "#FFB6C1", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+jscale <- 5
+jctype.init <- "HSPCs"
+
+# do it in a loop
+
+print(unique(as.character(counts.bm.mat$cluster)))
+print(unique(as.character(counts.bm.mat$geneset)))
+
+jctype <- "Granulocytes"
+genesets.ctype <- "Neutrophil"
+genesets.other <- c("Bcell", "Erythroblast")
+
+jctype.vec <- list("Granulocytes", "Bcells", "Erythroblasts")
+genesets.ctype.vec <- list("Neutrophil", "Bcell", "Erythroblast")
+genesets.other.vec <- list(c("Bcell", "Erythroblast"), c("Neutrophil", "Erythroblast"), c("Neutrophil", "Bcell"))
+names(jctype.vec) <- jctype.vec
+names(genesets.ctype.vec) <- jctype.vec
+names(genesets.other.vec) <- jctype.vec
+
+
+pdfout <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/gene_flows/celltype_specific_gene_flows_HSC_to_celltype.", Sys.Date(), ".with_boxplot.pdf")
+pdf(pdfout, width = 1020/72, height = 815/72, useDingbats = FALSE)
+for (jctype in jctype.vec){
+  
+  print(jctype)
+  
+  genesets.ctype <- genesets.ctype.vec[[jctype]]
+  genesets.other <- genesets.other.vec[[jctype]]
+  # genesets.other <- c("Bcell", "Erythroblast")
+  
+  
+  jtitle <- paste0(jctype.init, '->', jctype)
+  
+  # make endspoints granulocytes
+  
+  init.mat <- subset(counts.bm.mat, cluster == jctype.init)
+  final.mat <- subset(counts.bm.mat, cluster %in% c(jctype)) %>%
+    dplyr::rename(H3K4me1_end = H3K4me1, H3K4me3_end = H3K4me3, H3K27me3_end = H3K27me3)
+  final.mat$cluster <- NULL
+  init_final.mat <- left_join(init.mat, final.mat, by = c("bin", "ens", "geneset"))
+  
+  # reannotate geneset
+  # init_final.mat <- subset(init_final.mat, geneset %in% c(genesets.ctype, genesets.other))
+  
+  # check genesets
+  # get magnitude in log2fc or zscore
+  log2fc.hsc_to_ctype.long <- jlong.diff.genesets.BM %>%
+    filter(cluster %in% c(jctype.init, jctype)) %>%
+    group_by(bin, gene, ens, geneset, mark) %>%
+    summarise(log2fc = log2p1counts[[1]] - log2p1counts[[2]])
+  
+  log2fc.hsc_to_ctype.wide <- log2fc.hsc_to_ctype.long %>%
+    reshape2::dcast(data = ., formula = "bin + ens + geneset ~ mark", value.var = "log2fc") %>%
+    dplyr::rename(H3K4me1_log2fc = H3K4me1, H3K4me3_log2fc = H3K4me3, H3K27me3_log2fc = H3K27me3)
+  
+  init_final.log2fc.mat <- left_join(init_final.mat, log2fc.hsc_to_ctype.wide, by = c("bin", "ens", "geneset")) %>%
+    rowwise() %>%
+    mutate(gset = ReannotateGeneset(geneset, genesets.ctype, genesets.other, na.fill = NA))
+  
+  init_final.log2fc.mat <- subset(init_final.log2fc.mat, !is.na(gset))
+  
+  
+  m.density_log2fc.active <- ggplot(init_final.log2fc.mat, aes(x = H3K4me3_log2fc, fill = gset)) + 
+    geom_density(alpha = 0.3) + 
+    # facet_wrap(~gset) + 
+    geom_vline(xintercept = 0) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    ggtitle(jtitle, "across different celltype-specific genes")
+  
+  m.density_log2fc.repress <- ggplot(init_final.log2fc.mat, aes(x = H3K27me3_log2fc, fill = gset)) + 
+    geom_density(alpha = 0.3) + 
+    # facet_wrap(~gset) + 
+    geom_vline(xintercept = 0) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    ggtitle(jtitle, "across different celltype-specific genes")
+  
+  
+  
+  m.phase.log2fc.full <- ggplot(data = init_final.log2fc.mat, aes(x = H3K4me3, y = H3K27me3, color = gset)) + 
+    geom_point(alpha = 0.1, size = 0.1, color = 'black') +  
+    geom_segment(mapping = aes(xend = H3K4me3 + jscale*H3K4me3_log2fc, yend = H3K27me3 + jscale*H3K27me3_log2fc),
+                 arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.8, size = 0.1) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")  + 
+    ggtitle(jtitle)
+  
+  
+  m.phase.log2fc.zoom <- ggplot(data = init_final.log2fc.mat, aes(x = H3K4me3, y = H3K27me3, color = gset)) + 
+    geom_point(alpha = 0.1, size = 0.1, color = 'black') +  
+    geom_segment(mapping = aes(xend = H3K4me3 + jscale*H3K4me3_log2fc, yend = H3K27me3 + jscale*H3K27me3_log2fc),
+                 arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.8, size = 0.1) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")  + 
+    coord_cartesian(ylim=c(0, 50), xlim = c(0, 100)) + facet_wrap(~gset) + 
+    ggtitle(jtitle, "zoomed in")
+  
+  
+  print(m.phase.log2fc.full)
+  print(m.phase.log2fc.zoom)
+  print(m.density_log2fc.active)
+  print(m.density_log2fc.repress)
+}
+dev.off()
+
+
+
+
+
+
 
 
 
