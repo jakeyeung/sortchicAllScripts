@@ -41,8 +41,8 @@ assertthat::assert_that(dir.exists(indir))
 jprefix <- file.path(indir, paste0("integrated_analysis_3_marks.stringentDE.WithHighLowExprs.singlecells.fewerk27me3_", fewer.k27me3, ".forPoissonRegression.CountR1only.", jdate))
 
 outfits <- file.path(indir, paste0("fit_poisson_model_on_TSS.", jdate, ".RData"))
-outfits.wrangled <- file.path(indir, paste0("fit_poisson_model_on_TSS.DownstreamWrangled.", Sys.Date(), ".RData"))
-outpdf <- file.path(indir, paste0("fit_poisson_model_on_TSS.DownstreamWrangled.", Sys.Date(), ".pdf"))
+outfits.wrangled <- file.path(indir, paste0("fit_poisson_model_on_TSS.DownstreamWrangled.", Sys.Date(), ".RefitAgain.RData"))
+outpdf <- file.path(indir, paste0("fit_poisson_model_on_TSS.DownstreamWrangled.", Sys.Date(), ".RefitAgain.pdf"))
 
 infrdata <- paste0(jprefix, ".smaller.RData")
 
@@ -237,7 +237,7 @@ for (jmark in jmarks){
     cnames <- colnames(tss.mats.filt.fromref.cellfilt[[jmark]])
     dat.annots.filt.mark <- dat.annots.filt.forfit[[jmark]]
     ncuts.cells.mark <- ncuts.cells[[jmark]]
-    refit <- RefitPoissonForPlot(jrow = jrow, cnames = cnames, datannots.filt.mark = dat.annot.filt.mark, ncuts.cell.mark = ncuts.cells.mark)
+    refit <- RefitPoissonForPlot(jrow = jrow, cnames = cnames, dat.annots.filt.mark = dat.annots.filt.mark, ncuts.cell.mark = ncuts.cells.mark)
     
     m.raw.log <- ggplot(refit$input.dat, aes(x = Cluster, y = logLambda)) + 
       geom_errorbar(mapping = aes(ymin = logLambdaLower, ymax = logLambdaUpper), data = refit$params.mean.dat, width = 0.1, color = 'white') + 
@@ -306,7 +306,7 @@ m2 <- ggplot(gdat.all, aes(y = gene.cv ^ 2, x = gene.mean)) +
   scale_x_log10() + scale_y_log10() + 
   geom_point_rast(alpha = 0.2) + 
   facet_wrap(~mark) + 
-  xlab("Mean Across Cells") + ylab("CV^2")
+  xlab("Mean Across Cells") + ylab("CV^2") + 
   theme_bw(24) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 
 print(m1)

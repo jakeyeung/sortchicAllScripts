@@ -380,7 +380,7 @@ m.bm.act <- ggplot(subset(zscore.bm.mat, geneset %in% gsetfilt.BM), aes(x = H3K4
   # facet_grid(cluster ~ geneset) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
-  geom_segment(data = subset(zscore.bm.arrows, geneset %in% gsetfilt.BM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  geom_segment(data = subset(zscore.bm.arrows, geneset %in% gsetfilt.BM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black", alpha = 0.5) + 
   ggtitle("Mouse Bone Marrow: active vs active")
 print(m.bm.act)
 
@@ -388,7 +388,7 @@ m.bm.rep <- ggplot(subset(zscore.bm.mat, geneset %in% gsetfilt.BM), aes(x = H3K4
   facet_grid(geneset ~ cluster) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
-  geom_segment(data = subset(zscore.bm.arrows, geneset %in% gsetfilt.BM), mapping = aes(xend = H3K4me3.start, yend = H3K27me3.start), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  geom_segment(data = subset(zscore.bm.arrows, geneset %in% gsetfilt.BM), mapping = aes(xend = H3K4me3.start, yend = H3K27me3.start), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black", alpha = 0.5) + 
   ggtitle("Mouse Bone Marrow: active vs repressive")
 print(m.bm.rep)
 
@@ -396,7 +396,7 @@ m.bm.rep2 <- ggplot(subset(zscore.bm.mat, geneset %in% gsetfilt.BM), aes(x = H3K
   facet_grid(geneset ~ cluster) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
-  geom_segment(data = subset(zscore.bm.arrows, geneset %in% gsetfilt.BM), mapping = aes(xend = H3K4me1.start, yend = H3K27me3.start), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  geom_segment(data = subset(zscore.bm.arrows, geneset %in% gsetfilt.BM), mapping = aes(xend = H3K4me1.start, yend = H3K27me3.start), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black", alpha = 0.5) + 
   ggtitle("Mouse Bone Marrow: active vs repressive 2")
 print(m.bm.rep2)
 
@@ -407,7 +407,7 @@ m.wkm.act <- ggplot(subset(zscore.wkm.mat, geneset %in% gsetfilt.WKM), aes(x = H
   # facet_grid(cluster ~ geneset) + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
-  geom_segment(data = subset(zscore.wkm.arrows, geneset %in% gsetfilt.WKM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  geom_segment(data = subset(zscore.wkm.arrows, geneset %in% gsetfilt.WKM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black", alpha = 0.5) + 
   ggtitle("WKM: active vs active")
 print(m.wkm.act)
 
@@ -415,7 +415,7 @@ m.wkm.rep <- ggplot(subset(zscore.wkm.mat, geneset %in% gsetfilt.WKM), aes(x = H
   facet_grid(geneset ~ cluster) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
-  geom_segment(data = subset(zscore.wkm.arrows, geneset %in% gsetfilt.WKM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  geom_segment(data = subset(zscore.wkm.arrows, geneset %in% gsetfilt.WKM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black", alpha = 0.5) + 
   ggtitle("WKM: active vs rep")
 print(m.wkm.rep)
 
@@ -423,7 +423,7 @@ m.wkm.rep2 <- ggplot(subset(zscore.wkm.mat, geneset %in% gsetfilt.WKM), aes(x = 
   facet_grid(geneset ~ cluster) +
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   geom_vline(xintercept = 0) + geom_hline(yintercept = 0) + 
-  geom_segment(data = subset(zscore.wkm.arrows, geneset %in% gsetfilt.WKM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black") + 
+  geom_segment(data = subset(zscore.wkm.arrows, geneset %in% gsetfilt.WKM), mapping = aes(xend = 0, yend = 0), arrow = arrow(length=unit(0.10,"cm"), ends = "first"), color = "black", alpha = 0.5) + 
   ggtitle("WKM: active vs rep")
 print(m.wkm.rep2)
 
