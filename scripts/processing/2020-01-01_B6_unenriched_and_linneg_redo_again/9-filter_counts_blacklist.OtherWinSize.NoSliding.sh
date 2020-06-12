@@ -23,7 +23,8 @@ outmain=${dircounts}/qc_filt
 [[ ! -d $outmain ]] && mkdir $outmain
 blfile="/hpc/hub_oudenaarden/jyeung/data/databases/blacklists/mm10.blacklist.copy.bed.gz"
 
-binsizes="20000 50000"
+# binsizes="20000 50000"
+binsizes="10000"
 
 for binsize in $binsizes; do
     # stepsize=$(expr $binsize / 2)

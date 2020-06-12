@@ -4,7 +4,8 @@
 # bam files have no chr so remove it from bed
 # 2020-04-15
 
-dist=10000
+# dist=10000
+dist=20000
 inbed="/hpc/hub_oudenaarden/jyeung/data/databases/PEGASUS/danRer7/danRer11_CNEs_PEGASUS.forliftover.${dist}.bed"
 outbed="/hpc/hub_oudenaarden/jyeung/data/databases/PEGASUS/danRer7/danRer11_CNEs_PEGASUS.forliftover.${dist}.nochr.bed"
 

@@ -22,11 +22,12 @@ jsuffix="imputevarfilt.lessstringent.mapq_40"
 
 mapq=40
 # binsize=10000  # try other binsizes?
-binsize=10000  # try other binsizes?
+binsize=20000  # try other binsizes?
 stepsize=${binsize}
 ps="/home/hub_oudenaarden/jyeung/projects/SingleCellMultiOmics.ForDev/singlecellmultiomics/bamProcessing/bamToCountTable.test.py"
 
-inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/zebrafish/gene_tss.CodingOnly.winsize_${binsize}.species_drerio.withchr.asinteger.bed"
+# inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/zebrafish/gene_tss.CodingOnly.winsize_${binsize}.species_drerio.withchr.asinteger.bed"
+inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/zebrafish/gene_tss.CodingOnly.winsize_${binsize}.species_drerio.bed"
 inmain="/hpc/hub_oudenaarden/jyeung/data/zebrafish_scchic/bams_tagged_merged_by_marks.split_by_clusters.${jsuffix}.remerged_by_marks"
 outdir="/hpc/hub_oudenaarden/jyeung/data/zebrafish_scchic/count_tables_all/count_tables.TSS.CodingOnly.${jsuffix}.winsize_${binsize}"
 [[ ! -d $outdir ]] && mkdir $outdir
