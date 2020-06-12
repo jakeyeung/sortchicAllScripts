@@ -20,13 +20,13 @@ library(scchicFuncs)
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 
-jdate <- "2020-06-08"
+jdate <- "2020-06-09"
 
-indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/setup_matrix_for_poisson_regression.likeBM"
+indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/setup_matrix_for_poisson_regression.likeBM.redo_count_tables"
 assertthat::assert_that(dir.exists(indir))
 
 # dir.create(indir, showWarnings = TRUE)
-jprefix <- file.path(indir, paste0("integrated_analysis.", jdate, ".UseTSSfromH3K4me3.likeBM."))
+jprefix <- file.path(indir, paste0("integrated_analysis.", jdate, ".UseTSSfromH3K4me3.likeBM"))
 
 outdir <- indir
 outfits <- file.path(outdir, paste0("fit_poisson_model_on_TSS_ZF.", Sys.Date(), ".RData"))

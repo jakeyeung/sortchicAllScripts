@@ -13,6 +13,7 @@ library(Matrix)
 library(scchicFuncs)
 
 jdate <- "2020-06-06"
+jdate2 <- "2020-06-08"
 
 fewer.k27me3 <- TRUE
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
@@ -21,7 +22,7 @@ indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/rda
 jprefix <- file.path(indir, paste0("integrated_analysis_3_marks.stringentDE.WithHighLowExprs.singlecells.fewerk27me3_", fewer.k27me3, ".forPoissonRegression.CountR1only.", jdate))
 
 # outfits <- file.path(indir, paste0("fit_poisson_model_on_TSS.", jdate, ".RData"))
-infit.wrangled <- file.path(indir, paste0("fit_poisson_model_on_TSS.DownstreamWrangled.", Sys.Date(), ".RData"))
+infit.wrangled <- file.path(indir, paste0("fit_poisson_model_on_TSS.DownstreamWrangled.", jdate, ".RData"))
 pdfout <- file.path(indir, paste0("fit_poisson_model_on_TSS.Downstream2DClouds.", Sys.Date(), ".pdf"))
 
 load(infit.wrangled, v=T)
@@ -56,6 +57,8 @@ lapply(ctypes.end, function(ctype.end){
   
   gset.spec <- gset.specs[[ctype.end]]
   gset.other <- gset.others[[ctype.end]]
+  
+  
   jtitle <- paste0("HSCs -> ", ctype.end)
 
   jfits.mat.ints <- reshape2::dcast(data = jfits.long %>% filter(cluster == ctype.end), 
@@ -144,6 +147,8 @@ lapply(ctypes.end, function(ctype.end){
 
   # loop across end points --------------------------------------------------
 
+  gset.spec.str <- paste0(gset.spec, "-specGenes")
+  gset.other.str <- paste0(paste(gset.other, collapse = "&"), "-specGenes")
 
   jbins.spec <- subset(fits.bygenesets.long, geneset %in% gset.spec)$bin
   jbins.other <- subset(fits.bygenesets.long, geneset %in% gset.other)$bin
@@ -157,15 +162,22 @@ lapply(ctypes.end, function(ctype.end){
   jints.sub <- subset(jfits.mat.ints, bin %in% c(jbins.spec.filt, jbins.other.filt)) %>%
     rowwise() %>%
     mutate(gset = ifelse(bin %in% jbins.spec.filt, 
-                         paste0(gset.spec, "-specGenes"), 
-                         paste0(paste(gset.other, collapse = "&"), "-specGenes")))
+                         gset.spec.str, 
+                         gset.other.str))
+                         # paste0(gset.spec, "-specGenes"), 
+                         # paste0(paste(gset.other, collapse = "&"), "-specGenes")))
+  jints.sub$gset <- factor(jints.sub$gset, levels = c(gset.spec.str, gset.other.str))
+  
   
   jfcs.sub <- subset(jfits.mat.logfcs, bin %in% c(jbins.spec.filt, jbins.other.filt)) %>%
     rowwise() %>%
     mutate(gset = ifelse(bin %in% jbins.spec.filt, 
-                         paste0(gset.spec, "-specGenes"), 
-                         paste0(paste(gset.other, collapse = "&"), "-specGenes"))) %>%
+                         # paste0(gset.spec, "-specGenes"), 
+                         # paste0(paste(gset.other, collapse = "&"), "-specGenes"))) %>%
+                         gset.spec.str, 
+                         gset.other.str)) %>%
     left_join(., subset(jints.sub, select = c(bin, H3K4me1, H3K4me3, H3K27me3)), by = "bin")
+  jfcs.sub$gset <- factor(jfcs.sub$gset, levels = c(gset.spec.str, gset.other.str))
   
   
   m.cloud <- ggplot(jints.sub, aes(x = exp(H3K4me3), y = exp(H3K27me3), color = gset)) + 
@@ -227,6 +239,17 @@ lapply(ctypes.end, function(ctype.end){
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     ggtitle(jtitle)
   print(m.fc.h3k27me3)
+  
+  # show h3k4me3 vs h3k27me3
+  m.fc.k4me3_vs_k27me3 <- ggplot(jfcs.sub, aes(x = H3K4me3.fc, y = H3K27me3.fc, color = gset)) + 
+    geom_point(alpha = 0.4) + 
+    geom_density_2d(alpha = 0.8, color = "black") + 
+    geom_vline(xintercept = 0) + 
+    geom_hline(yintercept = 0) + 
+    facet_wrap(~gset) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    ggtitle(jtitle)
+  print(m.fc.k4me3_vs_k27me3)
   
 })
 

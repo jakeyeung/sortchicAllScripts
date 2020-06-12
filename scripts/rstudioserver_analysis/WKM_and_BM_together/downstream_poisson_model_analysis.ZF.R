@@ -31,26 +31,35 @@ save.objs <- TRUE
 jdate <- "2020-06-08"
 jdate2 <- "2020-06-09"
 
-gsets.filt <- c("lymphocytes", "erythrocytes", "HSPCs", "granulocytes")
-jgenes <- c("meis1b", "tal1", "pax5", "s100z")
+# gset.names.new[which(gset.names.new == "lymphocytes")] <- "Bcell"
+# gset.names.new[which(gset.names.new == "granulocytes")] <- "Neutrophil"
+# gset.names.new[which(gset.names.new == "erythrocytes")] <- "Erythro"
+
+# gsets.filt <- c("lymphocytes", "erythrocytes", "HSPCs", "granulocytes")
+gsets.filt <- c("Bcell", "Erythro", "Neutrophil")
+# jgenes <- c("meis1b", "tal1", "pax5", "s100z")
+jgenes <- c("meis1b;", "myb;", "pmp22b;", "tal1;", "gata1a;", "pax5;", "cd79a;", "lyz;")
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 
-indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/setup_matrix_for_poisson_regression.likeBM"
+indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/setup_matrix_for_poisson_regression.likeBM.redo_count_tables"
 assertthat::assert_that(dir.exists(indir))
 
-infrdata <- file.path(indir, paste0("integrated_analysis.", jdate, ".UseTSSfromH3K4me3.likeBM..RData"))
+infrdata <- file.path(indir, paste0("integrated_analysis.", jdate2, ".UseTSSfromH3K4me3.likeBM.RData"))
 
-outfits <- file.path(indir, paste0("fit_poisson_model_on_TSS_ZF.", jdate2, ".RData"))
-outfits.wrangled <- file.path(indir, paste0("fit_poisson_model_on_TSS_ZF.DownstreamWrangled.", Sys.Date(), ".RData"))
-outpdf <- file.path(indir, paste0("fit_poisson_model_on_TSS_ZF.DownstreamWrangled.", Sys.Date(), ".pdf"))
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/integrated_analysis_poisson_and_2D_clouds"
+assertthat::assert_that(dir.exists(outdir))
+
+infits <- file.path(indir, paste0("fit_poisson_model_on_TSS_ZF.", jdate2, ".RData"))
+outfits.wrangled <- file.path(outdir, paste0("fit_poisson_model_on_TSS_ZF.DownstreamWrangled.", Sys.Date(), ".ClusterRenamed.RData"))
+outpdf <- file.path(outdir, paste0("fit_poisson_model_on_TSS_ZF.DownstreamWrangled.", Sys.Date(), ".ClusterRenamed.pdf"))
 
 # infrdata <- paste0(jprefix, ".smaller.RData")
 
 assertthat::assert_that(file.exists(infrdata))
 
 load(infrdata, v=T)
-load(outfits, v=T)
+load(infits, v=T)
 
 if (make.plots){
   pdf(outpdf, width = 1020/72, height = 815/72, useDingbats = FALSE)
@@ -87,8 +96,41 @@ jfits.long.lst <- lapply(jmarks, function(jmark){
     dplyr::rename(logintercept = logLambda) %>%
     dplyr::select(bin, logintercept, mark)
   jlong.merge <- left_join(jlong.noint, jlong.int)
+  jlong.merge$cluster <- as.character(jlong.merge$cluster)
   return(jlong.merge)
 })
+
+
+# Rename clusters to match BM ---------------------------------------------
+
+unique(jfits.long.lst$H3K4me1$cluster)
+
+cnames.orig <- c("Clustereryth", "Clustergranu", "Clusterlymph")
+cnames.new <- c("ClusterErythroblasts", "ClusterGranulocytes", "ClusterBcells")
+cnames.hash <- hash::hash(cnames.orig, cnames.new)
+
+jfits.long.lst <- lapply(jfits.long.lst, function(jfits){
+  jfits$cluster <- sapply(jfits$cluster, AssignHash, cnames.hash)
+  return(jfits)
+})
+ 
+# unique(jfits.long.test.lst$H3K4me1$cluster) 
+
+
+# Rename genesets ---------------------------------------------------------
+
+gset.names.old <- names(genesets)
+gset.names.new <- gset.names.old
+gset.names.new[which(gset.names.new == "lymphocytes")] <- "Bcell"
+gset.names.new[which(gset.names.new == "granulocytes")] <- "Neutrophil"
+gset.names.new[which(gset.names.new == "erythrocytes")] <- "Erythro"
+gset.names.hash <- hash::hash(gset.names.old, gset.names.new)
+
+de.ens.sorted.stringent <- genesets
+gset.names <- names(de.ens.sorted.stringent)
+names(gset.names) <- gset.names.new
+names(de.ens.sorted.stringent) <- gset.names.new
+gset.names <- gset.names.new
 
 
 # Summarize genoemwide ----------------------------------------------------
@@ -195,9 +237,8 @@ jfits.long$mark <- factor(jfits.long$mark, levels = c("H3K4me1", "H3K4me3", "H3K
 
 # Summarize by gene sets --------------------------------------------------
 
-de.ens.sorted.stringent <- genesets
-gset.names <- names(de.ens.sorted.stringent)
-names(gset.names) <- gset.names
+
+
 
 fits.bygenesets.long <- lapply(gset.names, function(gset){
   ens.keep <- as.character(de.ens.sorted.stringent[[gset]])
@@ -279,7 +320,7 @@ for (jmark in jmarks){
     cnames <- colnames(tss.mats.sc.filt.zf[[jmark]])
     dat.annots.filt.mark <- dat.annots.filt.forfit[[jmark]]
     ncuts.cells.mark <- ncuts.cells[[jmark]]
-    refit <- RefitPoissonForPlot(jrow = jrow, cnames = cnames, dat.annots.filt.mark = dat.annots.filt.mark, ncuts.cell.mark = ncuts.cells.mark)
+    refit <- RefitPoissonForPlot(jrow = jrow, cnames = cnames, dat.annots.filt.mark = dat.annots.filt.mark, ncuts.cells.mark = ncuts.cells.mark)
     
     m.raw.log <- ggplot(refit$input.dat, aes(x = Cluster, y = logLambda)) + 
       geom_errorbar(mapping = aes(ymin = logLambdaLower, ymax = logLambdaUpper), data = refit$params.mean.dat, width = 0.1, color = 'white') + 
@@ -358,10 +399,11 @@ if (make.plots){
   dev.off()
 }
 
+
 if (save.objs){
-  if (!file.exists(outfits.wrangled)){
+  # if (!file.exists(outfits.wrangled)){
     save(jfits.long, fits.bygenesets.long, file = outfits.wrangled)
-  }
+  # }
 }
 
 

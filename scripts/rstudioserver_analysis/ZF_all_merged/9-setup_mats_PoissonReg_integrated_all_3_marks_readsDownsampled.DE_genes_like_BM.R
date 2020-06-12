@@ -54,10 +54,10 @@ jchromos <- paste("chr", seq(25), sep = "")
 jsize <- 4
 cbPalette <- c("grey85", "#32CD32", "#56B4E9", "#CC79A7", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
 
-outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/setup_matrix_for_poisson_regression.likeBM"
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/zebrafish_scchic/from_rstudio/pseudobulk_analysis_all/setup_matrix_for_poisson_regression.likeBM.redo_count_tables"
 dir.create(outdir)
 
-outprefix <- paste0("integrated_analysis.", Sys.Date(), ".UseTSSfromH3K4me3.likeBM.")
+outprefix <- paste0("integrated_analysis.", Sys.Date(), ".UseTSSfromH3K4me3.likeBM")
 outname <- paste0(outprefix, ".pdf")
 outname.rdata <- paste0(outprefix, ".RData")
 
@@ -206,6 +206,13 @@ tss.mats.sc.filt.zf <- lapply(jmarks, function(jmark){
   return(jmat.filt)
 })
 
+# count mat bug: round up to nearest even, then divide by 2. Must be all integers
+tss.mats.sc.filt.zf <- lapply(tss.mats.sc.filt.zf, function(jmat){
+  jmat.fixed <- 2 * ceiling(jmat / 2)
+  jmat.fixed <- jmat.fixed / 2
+  return(jmat.fixed)
+})
+
 
 ncuts.cells <- lapply(tss.mats.singlecell, function(jmat){
   ncuts.dat <- data.frame(cell = colnames(jmat), ncuts.total = colSums(jmat), stringsAsFactors = FALSE)
@@ -238,3 +245,8 @@ print(Sys.time() - jstart)
 save(tss.mats.sc.filt.zf, ncuts.cells, genesets, genesets.dat, dat.annot.lst.WKM, file = outrdata)
 
 
+
+# Check mat ---------------------------------------------------------------
+
+# jcell <- tss.mats.sc.filt.zf$H3K27me3[, 3]
+# table(jcell)
