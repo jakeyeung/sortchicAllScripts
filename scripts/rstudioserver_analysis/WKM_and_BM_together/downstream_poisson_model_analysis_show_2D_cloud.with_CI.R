@@ -163,35 +163,56 @@ lapply(ctypes.end, function(ctype.end){
       left_join(., subset(jfits.mat.ints, select = c(bin, H3K4me1, H3K4me3, H3K27me3)), by = "bin")
     
     jscale2 <- 0.2
-    m.cloud.arrows <- ggplot(jfcs.all %>% filter(H3K4me3 >= -11 & H3K27me3 >= -11), aes(x = H3K4me3, y = H3K27me3)) + 
-      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-      geom_segment(mapping = aes(xend = H3K4me3 + jscale2 * H3K4me3.fc, yend = H3K27me3 + jscale2 * H3K27me3.fc),
-                   arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.4, size = 0.1) + 
-      ggtitle(jtitle)
-    print(m.cloud.arrows)
+    low.cutoff <- -11
     
     # take top 5% 
     jprob <- 0.8
     jfcs.mixed <- subset(jfcs.all, H3K4me3 >= quantile(H3K4me3, probs = jprob, na.rm = TRUE) & H3K27me3 >= quantile(H3K27me3, prob = jprob, na.rm = TRUE))
     nbins.mixed <- nrow(jfcs.mixed)
     
-    m.cloud.arrows.mixed <- ggplot(jfcs.mixed, aes(x = H3K4me3, y = H3K27me3)) + 
+    jfcs.all.mixed_vs_all <- jfcs.all %>% filter(H3K4me3 >= low.cutoff & H3K27me3 >= low.cutoff) %>%
+      rowwise() %>%
+      mutate(gset = ifelse(bin %in% jfcs.mixed$bin, "Mixed", "zNotMixed"))
+    
+    m.cloud.arrows <- ggplot(jfcs.all.mixed_vs_all, aes(x = H3K4me3, y = H3K27me3, color = gset)) + 
       theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
       geom_segment(mapping = aes(xend = H3K4me3 + jscale2 * H3K4me3.fc, yend = H3K27me3 + jscale2 * H3K27me3.fc),
-                   arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.4, size = 0.1) + 
-      ggtitle(jtitle, paste("mixed states log, N:", nbins.mixed))
+                   arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.8, size = 0.1) + 
+      ggtitle(jtitle, paste("genes levels greater than", low.cutoff))
+    print(m.cloud.arrows)
+    
+    xrange.cloud.log <- ggplot_build(m.cloud.arrows)$layout$panel_scales_x[[1]]$range$range
+    yrange.cloud.log <- ggplot_build(m.cloud.arrows)$layout$panel_scales_y[[1]]$range$range
+    
+    m.cloud.arrows.mixed <- ggplot(jfcs.all.mixed_vs_all %>% filter(gset == "Mixed"), aes(x = H3K4me3, y = H3K27me3, color = gset)) + 
+      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+      geom_segment(mapping = aes(xend = H3K4me3 + jscale2 * H3K4me3.fc, yend = H3K27me3 + jscale2 * H3K27me3.fc),
+                   arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.8, size = 0.1) + 
+      ggtitle(jtitle, paste("mixed states log, N:", nbins.mixed)) + 
+      coord_cartesian(xlim = xrange.cloud.log, ylim = yrange.cloud.log)
     print(m.cloud.arrows.mixed)
     
-    m.cloud.arrows.mixed.linear <- ggplot(jfcs.mixed, aes(x = exp(H3K4me3), y = exp(H3K27me3))) + 
+    m.cloud.arrows.linear <- ggplot(jfcs.all.mixed_vs_all, aes(x = exp(H3K4me3), y = exp(H3K27me3), color = gset)) + 
       theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
       geom_segment(mapping = aes(xend = exp(H3K4me3 + H3K4me3.fc), yend = exp(H3K27me3 + H3K27me3.fc)),
                    arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.4, size = 0.1) + 
       ggtitle(jtitle, paste("mixed states linear, N:", nbins.mixed))
+    print(m.cloud.arrows.linear)
+    
+    xrange.cloud.linear <- ggplot_build(m.cloud.arrows.linear)$layout$panel_scales_x[[1]]$range$range
+    yrange.cloud.linear <- ggplot_build(m.cloud.arrows.linear)$layout$panel_scales_y[[1]]$range$range
+    
+    m.cloud.arrows.mixed.linear <- ggplot(jfcs.all.mixed_vs_all %>% filter(gset == "Mixed"), aes(x = exp(H3K4me3), y = exp(H3K27me3), color = gset)) + 
+      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+      geom_segment(mapping = aes(xend = exp(H3K4me3 + H3K4me3.fc), yend = exp(H3K27me3 + H3K27me3.fc)),
+                   arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.4, size = 0.1) + 
+      ggtitle(jtitle, paste("mixed states linear, N:", nbins.mixed)) + 
+      coord_cartesian(xlim = xrange.cloud.linear, ylim = yrange.cloud.linear)
     print(m.cloud.arrows.mixed.linear)
     
     # show h3k4me3 vs h3k27me3
     m.fc.k4me3_vs_k27me3.mixed <- ggplot(jfcs.mixed, aes(x = H3K4me3.fc, y = H3K27me3.fc)) + 
-      geom_point(alpha = 0.4) + 
+      geom_point(alpha = 0.4, color = 'red') + 
       geom_density_2d(alpha = 0.8, color = "black") + 
       geom_vline(xintercept = 0) + 
       geom_hline(yintercept = 0) + 
@@ -209,7 +230,7 @@ lapply(ctypes.end, function(ctype.end){
     m.fc.k4me3_vs_k27me3.ci.mixed <- ggplot(jfcs.mixed.merge %>% filter(!is.na(H3K4me3.fc) & !is.na(H3K27me3.fc)), aes(x = H3K4me3.fc, y = H3K27me3.fc)) + 
       geom_errorbar(mapping = aes(ymin = H3K27me3.fc.lower, ymax = H3K27me3.fc.upper), alpha = 0.1, width = 0) + 
       geom_errorbarh(mapping = aes(xmin = H3K4me3.fc.lower, xmax = H3K4me3.fc.upper), alpha = 0.1, height = 0) + 
-      geom_point(alpha = 0.4) + 
+      geom_point(alpha = 0.4, color = 'red') + 
       geom_density_2d(alpha = 0.5, color = "black") + 
       geom_vline(xintercept = 0) + 
       geom_hline(yintercept = 0) + 
