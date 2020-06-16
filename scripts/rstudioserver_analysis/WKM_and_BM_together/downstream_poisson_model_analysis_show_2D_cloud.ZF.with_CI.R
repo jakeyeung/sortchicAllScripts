@@ -30,6 +30,7 @@ gset.specs <- list("Neutrophil", "Bcell", "Erythro"); names(gset.specs) <- ctype
 # gset.others <- list(c("lymphocytes", "erythrocytes"), c("erythrocytes", "granulocytes"), c("lymphocytes", "granulocytes")); names(gset.others) <- ctypes.end
 gset.others <- list(c("Bcell", "Erythro"), c("Erythro", "Neutrophil"), c("Bcell", "Neutrophil")); names(gset.others) <- ctypes.end
 gsets.differentiated <- c("Neutrophil", "Bcell", "Erythro")
+gset.hsc <- "HSPCs"
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 
@@ -44,7 +45,7 @@ assertthat::assert_that(dir.exists(outdir))
 inf.ci <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/poisson_fits/fit_poisson_model_on_TSS.ZF.DownstreamWrangled.2020-06-10.ConfidenceIntervals.smaller.Wrangled.RData"
 
 pdfout <- file.path(outdir, paste0("fit_poisson_model_on_TSS.Downstream2DClouds.ZF.", Sys.Date(), ".ClusterRenamed.WithCI.pdf"))
-mixedbinsout <- file.path(outdir, paste0("fit_poisson_model_on_TSS.Downstream2DClouds.ZF.", Sys.Date(), ".ClusterRenamed.WithCI.MixedBin.pdf"))
+mixedbinsout <- file.path(outdir, paste0("fit_poisson_model_on_TSS.Downstream2DClouds.ZF.", Sys.Date(), ".ClusterRenamed.WithCI.MixedBin.txt"))
 
 load(infits.wrangled, v=T)
 load(inf.ci, v=T)
@@ -84,6 +85,12 @@ low.cutoff <- -11
 # take top 5% 
 jprob <- 0.8
 
+
+
+
+bins.in.gset <- unique(subset(fits.bygenesets.long, geneset %in% gsets.differentiated)$bin)
+
+
 lapply(ctypes.end, function(ctype.end){
   
 
@@ -103,10 +110,108 @@ lapply(ctypes.end, function(ctype.end){
   jfcs.all <- jfits.mat.logfcs %>%
       rowwise() %>%
       left_join(., subset(jfits.mat.ints, select = c(bin, H3K4me1, H3K4me3, H3K27me3)), by = "bin")
+  
+  
+  # plot mixed
+  jfcs.mixed <- subset(jfcs.all, H3K4me3 >= quantile(H3K4me3, probs = jprob, na.rm = TRUE) & H3K27me3 >= quantile(H3K27me3, prob = jprob, na.rm = TRUE))
+  nbins.mixed <- nrow(jfcs.mixed)
+  
+  jfcs.all.mixed_vs_all <- jfcs.all %>% filter(H3K4me3 >= low.cutoff & H3K27me3 >= low.cutoff) %>%
+    rowwise() %>%
+    mutate(gset = ifelse(bin %in% jfcs.mixed$bin, "Mixed", "zNotMixed"))
+  
+  m.cloud.arrows <- ggplot(jfcs.all.mixed_vs_all, aes(x = H3K4me3, y = H3K27me3, color = gset)) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_segment(mapping = aes(xend = H3K4me3 + jscale2 * H3K4me3.fc, yend = H3K27me3 + jscale2 * H3K27me3.fc),
+                 arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.8, size = 0.1) + 
+    ggtitle(jtitle, paste("genes levels greater than", low.cutoff))
+  print(m.cloud.arrows)
+  
+  xrange.cloud.log <- ggplot_build(m.cloud.arrows)$layout$panel_scales_x[[1]]$range$range
+  yrange.cloud.log <- ggplot_build(m.cloud.arrows)$layout$panel_scales_y[[1]]$range$range
+  
+  m.cloud.arrows.mixed <- ggplot(jfcs.all.mixed_vs_all %>% filter(gset == "Mixed"), aes(x = H3K4me3, y = H3K27me3, color = gset)) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_segment(mapping = aes(xend = H3K4me3 + jscale2 * H3K4me3.fc, yend = H3K27me3 + jscale2 * H3K27me3.fc),
+                 arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.8, size = 0.1) + 
+    ggtitle(jtitle, paste("mixed states log, N:", nbins.mixed)) + 
+    coord_cartesian(xlim = xrange.cloud.log, ylim = yrange.cloud.log)
+  print(m.cloud.arrows.mixed)
+  
+  m.cloud.arrows.linear <- ggplot(jfcs.all.mixed_vs_all, aes(x = exp(H3K4me3), y = exp(H3K27me3), color = gset)) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_segment(mapping = aes(xend = exp(H3K4me3 + H3K4me3.fc), yend = exp(H3K27me3 + H3K27me3.fc)),
+                 arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.4, size = 0.1) + 
+    ggtitle(jtitle, paste("mixed states linear, N:", nbins.mixed))
+  print(m.cloud.arrows.linear)
+  
+  xrange.cloud.linear <- ggplot_build(m.cloud.arrows.linear)$layout$panel_scales_x[[1]]$range$range
+  yrange.cloud.linear <- ggplot_build(m.cloud.arrows.linear)$layout$panel_scales_y[[1]]$range$range
+  
+  m.cloud.arrows.mixed.linear <- ggplot(jfcs.all.mixed_vs_all %>% filter(gset == "Mixed"), aes(x = exp(H3K4me3), y = exp(H3K27me3), color = gset)) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_segment(mapping = aes(xend = exp(H3K4me3 + H3K4me3.fc), yend = exp(H3K27me3 + H3K27me3.fc)),
+                 arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.4, size = 0.1) + 
+    ggtitle(jtitle, paste("mixed states linear, N:", nbins.mixed)) + 
+    coord_cartesian(xlim = xrange.cloud.linear, ylim = yrange.cloud.linear)
+  print(m.cloud.arrows.mixed.linear)
+  
+  # show h3k4me3 vs h3k27me3
+  m.fc.k4me3_vs_k27me3.mixed <- ggplot(jfcs.mixed, aes(x = H3K4me3.fc, y = H3K27me3.fc)) + 
+    geom_point(alpha = 0.4, color = 'red') + 
+    geom_density_2d(alpha = 0.8, color = "black") + 
+    geom_vline(xintercept = 0) + 
+    geom_hline(yintercept = 0) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    ggtitle(jtitle, paste("mixed states", nbins.mixed))
+  print(m.fc.k4me3_vs_k27me3.mixed)
+  
+  xrange.fc <- ggplot_build(m.fc.k4me3_vs_k27me3.mixed)$layout$panel_scales_x[[1]]$range$range
+  yrange.fc <- ggplot_build(m.fc.k4me3_vs_k27me3.mixed)$layout$panel_scales_y[[1]]$range$range
+  
+  # add CI
+  jfcs.mixed.merge <- left_join(jfcs.mixed, jmat.fc.ci.lst[[ctype.end]], by = "bin")
+  nbins2.mixed <- nrow(jfcs.mixed.merge)
+  
+  m.fc.k4me3_vs_k27me3.ci.mixed <- ggplot(jfcs.mixed.merge %>% filter(!is.na(H3K4me3.fc) & !is.na(H3K27me3.fc)), aes(x = H3K4me3.fc, y = H3K27me3.fc)) + 
+    geom_errorbar(mapping = aes(ymin = H3K27me3.fc.lower, ymax = H3K27me3.fc.upper), alpha = 0.1, width = 0) + 
+    geom_errorbarh(mapping = aes(xmin = H3K4me3.fc.lower, xmax = H3K4me3.fc.upper), alpha = 0.1, height = 0) + 
+    geom_point(alpha = 0.4, color = 'red') + 
+    geom_density_2d(alpha = 0.5, color = "black") + 
+    geom_vline(xintercept = 0) + 
+    geom_hline(yintercept = 0) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    ggtitle(jtitle, paste("Nbins:", nbins2.mixed)) + 
+    coord_cartesian(xlim = xrange.fc, ylim = yrange.fc)
+  print(m.fc.k4me3_vs_k27me3.ci.mixed)
+  
     
     
   if (ctype.end == ctypes.end[[1]]){
     
+    hsc.bins <- unique(subset(fits.bygenesets.long, geneset == gset.hsc)$bin)
+    assertthat::assert_that(length(hsc.bins) > 0)
+    # show expression of HSPC-specific genes
+    jfits.mat.ints.hsc <- jfits.mat.ints %>%
+      mutate(hspc.spec.gene = bin %in% hsc.bins) %>%
+      ungroup() %>%
+      # arrange(desc(hspc.spec.gene)) %>%
+      arrange(hspc.spec.gene) %>%
+      filter(H3K4me3 >= low.cutoff & H3K27me3 >= low.cutoff)
+    
+    m.hsc <- ggplot(jfits.mat.ints.hsc, aes(x = H3K4me3, y = H3K27me3, color = hspc.spec.gene)) + 
+      geom_point(alpha = 0.4) + 
+      # facet_wrap(~hspc.spec.gene) + 
+      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+      ggtitle("HSCs lambda, label by HSPC-specific or not")
+    print(m.hsc)
+    
+    m.hsc.lin <- ggplot(jfits.mat.ints.hsc, aes(x = exp(H3K4me3), y = exp(H3K27me3), color = hspc.spec.gene)) + 
+      geom_point(alpha = 0.4) + 
+      # facet_wrap(~hspc.spec.gene) + 
+      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+      ggtitle("HSCs lambda, label by HSPC-specific or not")
+    print(m.hsc.lin)
     
     m <- ggplot(jfits.mat.ints, aes(x = H3K4me3, y = H3K27me3)) + 
       geom_point(alpha = 0.1) + 
@@ -178,77 +283,6 @@ lapply(ctypes.end, function(ctype.end){
     # show arrows genomewide
     
     
-    jfcs.mixed <- subset(jfcs.all, H3K4me3 >= quantile(H3K4me3, probs = jprob, na.rm = TRUE) & H3K27me3 >= quantile(H3K27me3, prob = jprob, na.rm = TRUE))
-    nbins.mixed <- nrow(jfcs.mixed)
-    
-    jfcs.all.mixed_vs_all <- jfcs.all %>% filter(H3K4me3 >= low.cutoff & H3K27me3 >= low.cutoff) %>%
-      rowwise() %>%
-      mutate(gset = ifelse(bin %in% jfcs.mixed$bin, "Mixed", "zNotMixed"))
-    
-    m.cloud.arrows <- ggplot(jfcs.all.mixed_vs_all, aes(x = H3K4me3, y = H3K27me3, color = gset)) + 
-      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-      geom_segment(mapping = aes(xend = H3K4me3 + jscale2 * H3K4me3.fc, yend = H3K27me3 + jscale2 * H3K27me3.fc),
-                   arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.8, size = 0.1) + 
-      ggtitle(jtitle, paste("genes levels greater than", low.cutoff))
-    print(m.cloud.arrows)
-    
-    xrange.cloud.log <- ggplot_build(m.cloud.arrows)$layout$panel_scales_x[[1]]$range$range
-    yrange.cloud.log <- ggplot_build(m.cloud.arrows)$layout$panel_scales_y[[1]]$range$range
-    
-    m.cloud.arrows.mixed <- ggplot(jfcs.all.mixed_vs_all %>% filter(gset == "Mixed"), aes(x = H3K4me3, y = H3K27me3, color = gset)) + 
-      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-      geom_segment(mapping = aes(xend = H3K4me3 + jscale2 * H3K4me3.fc, yend = H3K27me3 + jscale2 * H3K27me3.fc),
-                   arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.8, size = 0.1) + 
-      ggtitle(jtitle, paste("mixed states log, N:", nbins.mixed)) + 
-      coord_cartesian(xlim = xrange.cloud.log, ylim = yrange.cloud.log)
-    print(m.cloud.arrows.mixed)
-    
-    m.cloud.arrows.linear <- ggplot(jfcs.all.mixed_vs_all, aes(x = exp(H3K4me3), y = exp(H3K27me3), color = gset)) + 
-      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-      geom_segment(mapping = aes(xend = exp(H3K4me3 + H3K4me3.fc), yend = exp(H3K27me3 + H3K27me3.fc)),
-                   arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.4, size = 0.1) + 
-      ggtitle(jtitle, paste("mixed states linear, N:", nbins.mixed))
-    print(m.cloud.arrows.linear)
-    
-    xrange.cloud.linear <- ggplot_build(m.cloud.arrows.linear)$layout$panel_scales_x[[1]]$range$range
-    yrange.cloud.linear <- ggplot_build(m.cloud.arrows.linear)$layout$panel_scales_y[[1]]$range$range
-    
-    m.cloud.arrows.mixed.linear <- ggplot(jfcs.all.mixed_vs_all %>% filter(gset == "Mixed"), aes(x = exp(H3K4me3), y = exp(H3K27me3), color = gset)) + 
-      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-      geom_segment(mapping = aes(xend = exp(H3K4me3 + H3K4me3.fc), yend = exp(H3K27me3 + H3K27me3.fc)),
-                   arrow = arrow(length=unit(0.25,"cm"), ends = "last"), alpha = 0.4, size = 0.1) + 
-      ggtitle(jtitle, paste("mixed states linear, N:", nbins.mixed)) + 
-      coord_cartesian(xlim = xrange.cloud.linear, ylim = yrange.cloud.linear)
-    print(m.cloud.arrows.mixed.linear)
-    
-    # show h3k4me3 vs h3k27me3
-    m.fc.k4me3_vs_k27me3.mixed <- ggplot(jfcs.mixed, aes(x = H3K4me3.fc, y = H3K27me3.fc)) + 
-      geom_point(alpha = 0.4, color = 'red') + 
-      geom_density_2d(alpha = 0.8, color = "black") + 
-      geom_vline(xintercept = 0) + 
-      geom_hline(yintercept = 0) + 
-      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-      ggtitle(jtitle, paste("mixed states", nbins.mixed))
-    print(m.fc.k4me3_vs_k27me3.mixed)
-    
-    xrange.fc <- ggplot_build(m.fc.k4me3_vs_k27me3.mixed)$layout$panel_scales_x[[1]]$range$range
-    yrange.fc <- ggplot_build(m.fc.k4me3_vs_k27me3.mixed)$layout$panel_scales_y[[1]]$range$range
-    
-    # add CI
-    jfcs.mixed.merge <- left_join(jfcs.mixed, jmat.fc.ci.lst[[ctype.end]], by = "bin")
-    nbins2.mixed <- nrow(jfcs.mixed.merge)
-    
-    m.fc.k4me3_vs_k27me3.ci.mixed <- ggplot(jfcs.mixed.merge %>% filter(!is.na(H3K4me3.fc) & !is.na(H3K27me3.fc)), aes(x = H3K4me3.fc, y = H3K27me3.fc)) + 
-      geom_errorbar(mapping = aes(ymin = H3K27me3.fc.lower, ymax = H3K27me3.fc.upper), alpha = 0.1, width = 0) + 
-      geom_errorbarh(mapping = aes(xmin = H3K4me3.fc.lower, xmax = H3K4me3.fc.upper), alpha = 0.1, height = 0) + 
-      geom_point(alpha = 0.4, color = 'red') + 
-      geom_density_2d(alpha = 0.5, color = "black") + 
-      geom_vline(xintercept = 0) + 
-      geom_hline(yintercept = 0) + 
-      theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-      ggtitle(jtitle, paste("Nbins:", nbins2.mixed)) + 
-      coord_cartesian(xlim = xrange.fc, ylim = yrange.fc)
-    print(m.fc.k4me3_vs_k27me3.ci.mixed)
     
     
     
@@ -334,8 +368,6 @@ lapply(ctypes.end, function(ctype.end){
     
     # show levels of differentiated gene sets compared to overall 
     
-    bins.in.gset <- unique(subset(fits.bygenesets.long, geneset %in% gsets.differentiated)$bin)
-    
     jfcs.all.annot <- jfcs.all %>%
       rowwise() %>%
       mutate(gset = ifelse(bin %in% bins.in.gset, "WillBeActivated", "zOther")) %>%
@@ -378,8 +410,11 @@ lapply(ctypes.end, function(ctype.end){
     print(m.all.gset.dens.repress.lin)
     
     
+    
+    
+    
   }
- 
+  
   
   
 
