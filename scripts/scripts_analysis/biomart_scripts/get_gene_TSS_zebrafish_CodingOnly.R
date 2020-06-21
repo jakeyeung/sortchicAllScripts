@@ -14,7 +14,8 @@ library(GenomicRanges)
 # Constants ---------------------------------------------------------------
 
 # winsizes <- c(10000L, 20000L, 50000L, 100000L)
-winsizes <- c(500L, 1000L, 5000L)
+# winsizes <- c(500L, 1000L, 5000L)
+winsizes <- c(50000L)
 
 species <- "drerio"
 for (winsize in winsizes){

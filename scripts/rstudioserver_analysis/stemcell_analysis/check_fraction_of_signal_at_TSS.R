@@ -120,6 +120,34 @@ for (jmark in jmarks){
   m.scatter.impute <- ggplot(dat.merge, mapping = aes(x = tss.cuts / total.cuts, y = cell.var.within.sum.norm, color = cond)) + geom_point() + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   
+  # check var 
+  head(dat.var)
+  
+  dat.var.merge <- left_join(dat.merge, dat.var)
+  
+  p1 <- ggplot(dat.var.merge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_viridis_c()
+  
+  p2 <- ggplot(dat.var.merge, aes(x = umap1, y = umap2, color = ncuts.var)) + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_color_viridis_c()
+  
+  p3 <- ggplot(dat.var.merge, aes(x = cell.var.within.sum.norm, y = tss.cuts)) + geom_point()  + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
+  p4 <- ggplot(dat.var.merge, aes(x = cell.var.within.sum.norm, y = tss.cuts / total.cuts, color = cluster)) + geom_point()  + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
+  p5 <- ggplot(dat.var.merge, aes(x = cell.var.within.sum.norm, y = tss.cuts / total.cuts, color = cluster)) + geom_point()  + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
+  p6 <- ggplot(dat.var.merge, aes(x = cluster, y = tss.cuts / total.cuts, fill = cluster)) + geom_boxplot()  + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+  
+  p7 <- ggplot(dat.var.merge, aes(x = cluster, y = cell.var.within.sum.norm, fill = cluster)) + geom_boxplot()  + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+  
   # plot outputs
   
   pdf(outpdf, useDingbats = FALSE)
@@ -134,6 +162,13 @@ for (jmark in jmarks){
     print(m.ngenes.frac.rev)
     print(m.scatter)
     print(m.scatter.impute)
+    print(p1)
+    print(p2)
+    print(p3)
+    print(p4)
+    print(p5)
+    print(p6)
+    print(p7)
   dev.off()
   # save objs for easier loading llater
   if (!file.exists(outrdata)){

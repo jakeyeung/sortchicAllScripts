@@ -47,6 +47,9 @@ jfits.long <- jfits.long %>%
 print(unique(fits.bygenesets.long$geneset))
 print(unique(fits.bygenesets.long$cluster))
 
+ggplot(jfits.long, aes(x = logLambda, fill = cluster)) + geom_density(alpha = 0.25) + facet_wrap(~mark) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_vline(xintercept = 0, linetype = "dotted")
 
 
 # Make into matrix and plot 2D matrix  ------------------------------------

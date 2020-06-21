@@ -17,8 +17,12 @@ hubprefix <- "/home/jyeung/hub_oudenaarden"
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/offsets_hetero_and_totalcuts"
-outf <- file.path(outdir, paste0("MouseBM_HeteroTotalCounts_50kb_bins.", Sys.Date(), ".RData"))
-pdfout <- file.path(outdir, paste0("MouseBM_HeteroTotalCounts_50kb_bins.", Sys.Date(), ".pdf"))
+outf <- file.path(outdir, paste0("MouseBM_HeteroTotalCounts_50kb_bins.", Sys.Date(), ".chrfilt.RData"))
+pdfout <- file.path(outdir, paste0("MouseBM_HeteroTotalCounts_50kb_bins.", Sys.Date(), ".chrfilt.pdf"))
+bedout <- file.path(outdir, paste0("MouseBM_HeteroTotalCounts_50kb_bins.", Sys.Date(), ".chrfilt.bed"))
+
+jchromos <- paste("chr", c(seq(19), "X", "Y"), sep = "")
+
 
 pdf(pdfout, useDingbats = FALSE)
 
@@ -95,6 +99,16 @@ ggplot(merged.exprs.filt,
 
 k9.bins <- merged.exprs.filt$bin
 
+# filter out chromosomes
+k9.chrs <- sapply(k9.bins, function(x) GetChromo(x))
+
+k9.bins.keep <- which(k9.chrs %in% jchromos)
+
+print(paste("Nbins before:", length(k9.bins)))
+k9.bins <- k9.bins[k9.bins.keep]
+print(paste("Nbins after:", length(k9.bins)))
+
+
 ggplot(merged.exprs.highcut %>% mutate(is.heterochromatin = bin %in% k9.bins), 
        aes(x = K27me3.cuts, y = K9me3.cuts, color = is.heterochromatin)) + geom_point(alpha = 0.1) +  
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +  
@@ -169,4 +183,19 @@ print(mlst.total.hetero.log)
 dev.off()
 
 save(dat.ncuts.hetero.total, k9.bins, rows.common, cells.keep, file = outf)
+
+
+# Wriite bins to output ---------------------------------------------------
+
+# as bed
+
+datbed <- data.frame(chromo = sapply(k9.bins, GetChromo), 
+                     Start = sapply(k9.bins, GetStart), 
+                     End = sapply(k9.bins, GetEnd),
+                     stringsAsFactors = FALSE)
+
+fwrite(datbed, file = bedout, sep = "\t", col.names = FALSE, na="NA", quote = FALSE)
+
+
+
 
