@@ -27,9 +27,15 @@ FitClstVar <- function(jrow, jmeta){
   return(jfit)
 }
 
+FitClst <- function(jrow, jmeta){
+  fit.input <- data.frame(exprs = jrow, xvar = jmeta$xvar, clst = jmeta$clst, stringsAsFactors = TRUE)
+  jfit <- lm(exprs ~ 1 + clst, fit.input)
+  return(jfit)
+}
+
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/var_slope_estimates"
-fname <- paste0("MouseBM_log_lm_fits.", Sys.Date(), ".RData")
-fnamepdf <- paste0("MouseBM_log_lm_fits.", Sys.Date(), ".pdf")
+fname <- paste0("MouseBM_log_lm_fits_no_var.", Sys.Date(), ".RData")
+fnamepdf <- paste0("MouseBM_log_lm_fits_no_var.", Sys.Date(), ".pdf")
 outf <- file.path(outdir, fname)
 
 pdf(file = fnamepdf, useDingbats = FALSE)
@@ -452,7 +458,8 @@ jmeta.ordered$clst <- factor(jmeta.ordered$clst, levels = clsts.keep)
 
 system.time(
   jfits.rows <- apply(jmat.filt, 1, function(jrow, jmeta){
-    FitClstVar(jrow, jmeta)
+    # FitClstVar(jrow, jmeta)
+    FitClst(jrow, jmeta)
   }, jmeta = jmeta.ordered)
 )
 
@@ -495,23 +502,24 @@ dat.params <- lapply(rnames.vec, function(rname){
   jfit <- jfits.rows[[rname]]
   jint <- coefficients(jfit)[["(Intercept)"]]  # HSPC intercept
   jmeans <- jint + coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "clst"))]
-  jslopes <- coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "xvar"))]
-  dat.params <- data.frame(params.mean = c("HSC", names(jmeans)), jmean = c(jint, jmeans), params.slope = names(jslopes), jslope = jslopes, stringsAsFactors = FALSE)
+  # jslopes <- coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "xvar"))]
+  # dat.params <- data.frame(params.mean = c("HSC", names(jmeans)), jmean = c(jint, jmeans), params.slope = names(jslopes), jslope = jslopes, stringsAsFactors = FALSE)
+  dat.params <- data.frame(params.mean = c("HSC", names(jmeans)), jmean = c(jint, jmeans), stringsAsFactors = FALSE)
   dat.params$rname <- rname
   return(dat.params)
 }) %>%
   bind_rows()
 
-ggplot(dat.params, aes(x = jmean, fill = params.mean)) + geom_density(alpha = 0.25) + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
-ggplot(dat.params, aes(x = jslope, fill = params.mean)) + geom_density(alpha = 0.25) + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
-ggplot(dat.params, aes(x = jmean, y = jslope, color = params.mean)) + geom_point(alpha = 0.25) + 
-  facet_wrap(~params.mean) +
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
+# ggplot(dat.params, aes(x = jmean, fill = params.mean)) + geom_density(alpha = 0.25) + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
+# ggplot(dat.params, aes(x = jslope, fill = params.mean)) + geom_density(alpha = 0.25) + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
+# ggplot(dat.params, aes(x = jmean, y = jslope, color = params.mean)) + geom_point(alpha = 0.25) + 
+#   facet_wrap(~params.mean) +
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
 
 # Collect all parameters --------------------------------------------------
 
@@ -521,22 +529,23 @@ dat.params.all <- lapply(jnames, function(jname){
   jfit <- jfits.rows[[jname]]
   jint <- coefficients(jfit)[["(Intercept)"]]  # HSPC intercept
   jmeans <- jint + coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "clst"))]
-  jslopes <- coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "xvar"))]
-  dat.params <- data.frame(params.mean = c("clstHSC", names(jmeans)), jmean = c(jint, jmeans), params.slope = names(jslopes), jslope = jslopes, stringsAsFactors = FALSE)
+  # jslopes <- coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "xvar"))]
+  # dat.params <- data.frame(params.mean = c("clstHSC", names(jmeans)), jmean = c(jint, jmeans), params.slope = names(jslopes), jslope = jslopes, stringsAsFactors = FALSE)
+  dat.params <- data.frame(params.mean = c("clstHSC", names(jmeans)), jmean = c(jint, jmeans), stringsAsFactors = FALSE)
   dat.params$rname <- jname
   return(dat.params)
 }) %>%
   bind_rows()
 
-# Plot when slopes turn positive or negative  -----------------------------
-
-ggplot(dat.params.all, aes(x = jmean, y = jslope, color = params.mean)) + geom_point(alpha = 0.1)  + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  facet_wrap(~params.mean)
-
-ggplot(dat.params.all, aes(x = jmean, y = jslope, color = params.mean)) + geom_point(alpha = 0.1)  + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
+# # Plot when slopes turn positive or negative  -----------------------------
+# 
+# ggplot(dat.params.all, aes(x = jmean, y = jslope, color = params.mean)) + geom_point(alpha = 0.1)  + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+#   facet_wrap(~params.mean)
+# 
+# ggplot(dat.params.all, aes(x = jmean, y = jslope, color = params.mean)) + geom_point(alpha = 0.1)  + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
 
 
 
@@ -562,7 +571,8 @@ system.time(
     jmeta.ordered$clst <- factor(jmeta.ordered$clst, levels = clsts.keep)
     
     jfits.rows <- apply(jmat.filt, 1, function(jrow, jmeta){
-      FitClstVar(jrow, jmeta)
+      # FitClstVar(jrow, jmeta)
+      FitClst(jrow, jmeta)
     }, jmeta = jmeta.ordered)
   })
 )
@@ -575,8 +585,9 @@ dat.params.all.lst <- lapply(jfits.rows.lst, function(jfits.rows){
     jfit <- jfits.rows[[jname]]
     jint <- coefficients(jfit)[["(Intercept)"]]  # HSPC intercept
     jmeans <- jint + coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "clst"))]
-    jslopes <- coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "xvar"))]
-    dat.params <- data.frame(params.mean = c("clstHSC", names(jmeans)), jmean = c(jint, jmeans), params.slope = names(jslopes), jslope = jslopes, stringsAsFactors = FALSE)
+    # jslopes <- coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "xvar"))]
+    # dat.params <- data.frame(params.mean = c("clstHSC", names(jmeans)), jmean = c(jint, jmeans), params.slope = names(jslopes), jslope = jslopes, stringsAsFactors = FALSE)
+    dat.params <- data.frame(params.mean = c("clstHSC", names(jmeans)), jmean = c(jint, jmeans), stringsAsFactors = FALSE)
     dat.params$rname <- jname
     return(dat.params)
   }) %>%
@@ -584,8 +595,7 @@ dat.params.all.lst <- lapply(jfits.rows.lst, function(jfits.rows){
   return(dat.params.all)
 })
 
-
 save(dat.params.all.lst, dat.imputed.lst, metadat.lst, file = outf)
 
-
 dev.off()
+

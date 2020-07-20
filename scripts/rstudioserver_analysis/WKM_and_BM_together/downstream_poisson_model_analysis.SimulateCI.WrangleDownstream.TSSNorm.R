@@ -19,9 +19,9 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 # jnorm <- "ncuts.inbins"
 jnorm <- "ncuts.alltss"
 bsize <- 10000L
-inf.ci <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/poisson_fits.OtherNorm.DiffDists/fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".CI.bsize_", bsize, ".RData")
+inf.ci <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/poisson_fits.OtherNorm.DiffDists/fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".CI.bsize_", bsize, ".CleanUpErythss.RData")
 load(inf.ci, v=T)
-outf.ci <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/poisson_fits.OtherNorm.DiffDists/fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".CI.bsize_", bsize, ".DownstreamWrangled.RData")
+outf.ci <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/poisson_fits.OtherNorm.DiffDists/fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".CI.bsize_", bsize, ".CleanUpErythss.DownstreamWrangled.RData")
 
 
 

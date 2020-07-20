@@ -20,6 +20,9 @@ library(umap)
 library(scchicFuncs)
 library(topicmodels)
 
+outf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/var_slope_estimates/MouseBM_poisson_raw_fits.", Sys.Date(), ".RData")
+assertthat::assert_that(!file.exists(outf))
+
 # compare with lm? 
 inf.lm <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/var_slope_estimates/MouseBM_log_lm_fits.2020-06-25.RData"
 load(inf.lm, v=T)
@@ -182,9 +185,6 @@ jrow <- jmat.filt[jrow.i, ]
 jrow.raw <- jmat.raw.filt[jrow.i, ]
 
 fit.input <- data.frame(cell = jmeta.ordered$cell, ncuts = jrow.raw, exprs.imputed = exp(jrow), xvar = jmeta.ordered$xvar, clst = jmeta.ordered$clst, totalcuts = jmeta.ordered$ncuts.intss, stringsAsFactors = TRUE)
-
-
-
 fit.input.wide <- reshape2::melt(fit.input, id.vars = c("xvar", "clst"), measure.vars = c("ncuts", "exprs.imputed"), variable.name = "jtype", value.name = "jexprs")
 
 m.var <- ggplot(fit.input, aes(x = clst, y = xvar, fill = clst)) + geom_boxplot() + 
@@ -209,6 +209,12 @@ head(fit.input)
 
 jfit.pois.raw <- glm(formula = ncuts ~ 1 + clst + xvar:clst + offset(log(totalcuts)), data = fit.input)
 
+# collect params
+jcoefs <- jfit.pois.raw$coefficients
+pdat <- data.frame(logfc = jcoefs[grepl("^clst|(Intercept)", names(jcoefs))], 
+                   jslopes = jcoefs[grepl(":xvar$", names(jcoefs))], 
+                   int = jcoefs[grepl("(Intercept)", names(jcoefs))], stringsAsFactors = FALSE)
+
 jparams <- subset(dat.params.all.lst[[jmark]], rname == jrow.i) %>%
   rowwise() %>%
   mutate(clst = strsplit(params.mean, "clst")[[1]][[2]]) %>%
@@ -228,6 +234,74 @@ jfit.pois.raw.clstonly.orig <- glm(formula = ncuts ~ 1 + clst + offset(log(total
 jfit.pois.raw.clstonly <- glm(formula = ncuts ~ 1 + clst + offset(joffset), data = fit.input.wlm)
 
 
+# Fit raw counts ----------------------------------------------------------
 
+system.time(
+  jfits.pois.raw <- lapply(jmarks, function(jmark){
+    print(jmark)
+    
+    jmat <- dat.imputed.lst[[jmark]]
+    jmat.raw <- count.mat.lst[[jmark]]
+    
+    cnames.keep <- metadat.lst[[jmark]]$cell
+    jmat.filt <- jmat[, cnames.keep]
+    jmat.raw.filt <- jmat.raw[, cnames.keep]
+    
+    jmeta <- metadat.lst[[jmark]] %>%
+      dplyr::rename(xvar = cell.var.within.sum.norm, clst = cluster) %>%
+      dplyr::select(cell, xvar, clst, ncuts.intss) %>%
+      group_by(clst) %>%
+      mutate(xvar.orig = xvar,
+             xvar = max(xvar) - xvar)
+    
+    jmeta.ordered <- jmeta[match(colnames(jmat.filt), jmeta$cell), ]
+    assertthat::assert_that(identical(jmeta.ordered$cell, colnames(jmat.filt)))
+    assertthat::assert_that(identical(jmeta.ordered$cell, colnames(jmat.raw.filt)))
+    jmeta.ordered$clst <- factor(jmeta.ordered$clst, levels = clsts.keep)
+    
+    # fit
+    jrow.names <- rownames(jmat.raw)
+    names(jrow.names) <- jrow.names
+    
+    lapply(jrow.names, function(jrow.name){
+      jrow <- jmat.filt[jrow.name, ]
+      jrow.raw <- jmat.raw.filt[jrow.name, ]
+      fit.input <- data.frame(cell = jmeta.ordered$cell, ncuts = jrow.raw, exprs.imputed = exp(jrow), xvar = jmeta.ordered$xvar, clst = jmeta.ordered$clst, totalcuts = jmeta.ordered$ncuts.intss, stringsAsFactors = TRUE)
+      jfit.pois.raw <- glm(formula = ncuts ~ 1 + clst + xvar:clst + offset(log(totalcuts)), data = fit.input)
+      
+      jcoefs <- jfit.pois.raw$coefficients
+      # pdat <- data.frame(logfc = jcoefs[grepl("^clst|(Intercept)", names(jcoefs))], 
+      #                    jslopes = jcoefs[grepl(":xvar$", names(jcoefs))], 
+      #                    int = jcoefs[grepl("(Intercept)", names(jcoefs))], stringsAsFactors = FALSE)
+      pdat <- jcoefs
+      return(pdat)
+      # return(list(jfit.pois.raw = jfit.pois.raw, fit.input = fit.input))
+    })
+  })
+  
+)
+
+
+save(jfits.pois.raw, metadat.lst, count.mat.lst, dat.imputed.lst, file = outf)
+
+save.image(file = "/home/jyeung/data/rsessions/fit_poisson_model_gene_by_gene.BM_WithVarianceSlope.RData")
+
+# 
+# 
+# # Analyze outputs? --------------------------------------------------------
+# 
+# 
+# jfits.pois.raw.bymark <- lapply(jfits.pois.raw, function(jfits){
+#   jnames <- names(jfits)
+#   names(jnames) <- jnames
+#   lapply(jnames, function(jname){
+#     jdat <- jfits[[jname]]
+#     jdat$rname <- jname
+#     jdat$params <- rownames(jdat)
+#     return(jdat)
+#   }) %>%
+#     bind_rows()
+# })
+# 
 
 

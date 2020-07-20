@@ -13,11 +13,13 @@ library(data.table)
 library(Matrix)
 library(scchicFuncs)
 library(ggrepel)
+library(scchicFuncs)
+library(JFuncs)
 
 make.plots <- TRUE
 
-jnorm <- "ncuts.inbins"
-# jnorm <- "ncuts.alltss"
+# jnorm <- "ncuts.inbins"
+jnorm <- "ncuts.alltss"
 bsize <- 10000
 
 jdate <- "2020-06-06"
@@ -31,20 +33,25 @@ jprefix <- file.path(indir, paste0("integrated_analysis_3_marks.stringentDE.With
 
 # outfits <- file.path(indir, paste0("fit_poisson_model_on_TSS.", jdate, ".RData"))
 fitsdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/poisson_fits.OtherNorm.DiffDists"
-jprefix <- paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".bsize_", bsize)
+# jprefix <- paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".bsize_", bsize)
+jprefix <- paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".bsize_", bsize, ".CleanUpErythss")
 fitprefix <- file.path(fitsdir, jprefix)
 infit <- paste0(fitprefix, ".RData")
 infit.wrangled <- paste0(fitprefix, ".DownstreamWrangled.RData")
-infit.ci <- file.path(fitsdir, paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".CI.bsize_", bsize, ".DownstreamWrangled.RData"))
+# infit.ci <- file.path(fitsdir, paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".CI.bsize_", bsize, ".DownstreamWrangled.RData"))
+infit.ci <- file.path(fitsdir, paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".CI.bsize_", bsize, ".CleanUpErythss.DownstreamWrangled.RData"))
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/integrated_analysis_poisson_and_2D_clouds"
 assertthat::assert_that(dir.exists(outdir))
 
-pdfout <- file.path(outdir, paste0(jprefix, ".Downstream2DClouds.", Sys.Date(), ".WithCI.pdf"))
-mixedbinsout <- file.path(outdir, paste0(jprefix, ".Downstream2DClouds.", Sys.Date(), ".WithCI.MixedBins.txt"))
+# pdfout <- file.path(outdir, paste0(jprefix, ".Downstream2DClouds.", Sys.Date(), ".WithCI.pdf"))
+# mixedbinsout <- file.path(outdir, paste0(jprefix, ".Downstream2DClouds.", Sys.Date(), ".WithCI.MixedBins.txt"))
 
-assertthat::assert_that(!file.exists(pdfout))
-assertthat::assert_that(!file.exists(mixedbinsout))
+pdfout <- file.path(outdir, paste0(jprefix, ".Downstream2DClouds.", Sys.Date(), ".WithCI.CleanUpErythss.pdf"))
+mixedbinsout <- file.path(outdir, paste0(jprefix, ".Downstream2DClouds.", Sys.Date(), ".WithCI.MixedBins.CleanUpErythss.txt"))
+
+# assertthat::assert_that(!file.exists(pdfout))
+# assertthat::assert_that(!file.exists(mixedbinsout))
 
 load(infit.wrangled, v=T)
 load(infit.ci, v=T)
@@ -84,10 +91,51 @@ jprob <- 0.8
 
 # fc.max <- 20
 if (make.plots){
-  pdf(pdfout, width = 1020/72, height = 815/72, useDingbats = FALSE)
+  # pdf(pdfout, width = 1020/72, height = 815/72, useDingbats = FALSE)
+  pdf(pdfout, useDingbats = FALSE)
 }
 
 bins.in.gset <- unique(subset(fits.bygenesets.long, geneset %in% gsets.differentiated)$bin)
+
+# plot genomewide 
+
+jfits.long.tmp <- jfits.long %>%
+  ungroup() %>%
+  mutate(mark = factor(mark, levels = c("H3K27me3", "H3K4me1", "H3K4me3")),
+         cluster = factor(as.character(cluster), levels = c("ClusterErythroblasts", "ClusterGranulocytes", "ClusterBcells")))
+
+ggplot(jfits.long.tmp, aes(x = logLambda, fill = mark)) + geom_density() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~mark) + 
+  geom_vline(xintercept = 0, linetype = "dotted")
+
+ggplot(jfits.long.tmp, aes(x = logLambda, fill = cluster)) + geom_density(alpha = 0.33) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~mark) + 
+  geom_vline(xintercept = 0, linetype = "dotted")
+
+ggplot(jfits.long.tmp, aes(x = logLambda, fill = cluster)) + geom_density(alpha = 0.33) + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_grid(cluster~mark) + 
+  geom_vline(xintercept = 0, linetype = "dotted")
+
+
+
+# plot against all genesets 
+cbPalette <- c("#696969", "#32CD32", "#56B4E9", "#FFB6C1", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+
+fits.bygenesets.long.tmp <- fits.bygenesets.long %>%
+  ungroup() %>%
+  mutate(cluster = factor(cluster, levels = c("ClusterErythroblasts", "ClusterGranulocytes", "ClusterBcells")))
+for (jmark in jmarks){
+  m.gset <- ggplot(fits.bygenesets.long.tmp %>% filter(abs(logLambda) < 5 & mark == jmark), aes(x = logLambda, fill = geneset)) + geom_density(alpha = 0.5) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_fill_manual(values = cbPalette) + 
+    facet_grid(geneset ~ cluster) + geom_vline(xintercept = 0, linetype = "dotted") + 
+    ggtitle(jmark)
+  print(m.gset)
+}
+  
 
 lapply(ctypes.end, function(ctype.end){
  
@@ -499,6 +547,13 @@ lapply(ctypes.end, function(ctype.end){
   
   # plot densities to show they are different directions
   
+  m.fc.h3k4me1 <- ggplot(jfcs.sub, aes(x = H3K4me1.fc, fill = gset)) + 
+    geom_density(alpha = 0.4) + 
+    geom_vline(xintercept = 0) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    ggtitle(jtitle)
+  print(m.fc.h3k4me1)
+  
   m.fc.h3k4me3 <- ggplot(jfcs.sub, aes(x = H3K4me3.fc, fill = gset)) + 
     geom_density(alpha = 0.4) + 
     geom_vline(xintercept = 0) + 
@@ -624,6 +679,76 @@ lapply(ctypes.end, function(ctype.end){
   # print(as.data.frame(head(subset(jfcs.sub.merge, gset == "Neutrophil-specGenes" & !is.na(H3K4me3.fc)) %>% arrange(H3K27me3.fc))))
   
 })
+
+
+
+fewer.k27me3 <- TRUE
+jdate <- "2020-06-05"
+indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/rdata_robjs/integrated_analysis_3_marks.setup_for_poisson_regression"
+assertthat::assert_that(dir.exists(indir))
+jprefix <- file.path(indir, paste0("integrated_analysis_3_marks.stringentDE.WithHighLowExprs.singlecells.fewerk27me3_", fewer.k27me3, ".forPoissonRegression.CountR1only.", jdate))
+infrdata <- paste0(jprefix, ".smaller.RData")
+load(infrdata, v=T)
+
+
+fitsdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/poisson_fits.OtherNorm.DiffDists"
+fitprefix <- file.path(fitsdir, paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".bsize_", bsize))
+infits <- paste0(fitprefix, ".RData")
+load(infits, v=T)
+
+
+# jgenes <- c("Hlf", "Hbb-bh2", "Pax5", "S100a7a", "Irf4", "Meis1", "Hoxa4")
+jgenes <- c("Hlf", "Tead1", "Hoxa9", "Meis1", "Hoxb9", "Hoxb3", "Hoxd4", "Adgrg1", "S100a7a", "S100a8", "Ltf", "Hdac4", "Hbb-bs", "Hbb-y", "Sox6", "Ebf1", "Irf4", "Pax5", "Cd180", "Cd38", "Iglv3", "Bach2")
+for (jgene in jgenes){
+  for (jmark in jmarks){
+    (jbin <- rownames(tss.mats.filt.fromref.cellfilt[[jmark]])[grepl(jgene, rownames(tss.mats.filt.fromref.cellfilt[[jmark]]))])
+    jrow <- tss.mats.filt.fromref.cellfilt[[jmark]][jbin, ]
+    cnames <- colnames(tss.mats.filt.fromref.cellfilt[[jmark]])
+    dat.annots.filt.mark <- dat.annots.filt.forfit[[jmark]]
+    ncuts.cells.mark <- ncuts.cells[[jmark]]
+    refit <- RefitPoissonForPlot(jrow = jrow, cnames = cnames, dat.annots.filt.mark = dat.annots.filt.mark, ncuts.cells.mark = ncuts.cells.mark)
+    
+    m.raw.log <- ggplot(refit$input.dat, aes(x = Cluster, y = logLambda)) + 
+      geom_errorbar(mapping = aes(ymin = logLambdaLower, ymax = logLambdaUpper), data = refit$params.mean.dat, width = 0.1, color = 'white') + 
+      geom_jitter(width = 0.1, height = 0, alpha = 0.1) + 
+      # geom_hline(yintercept = refit$params.int.dat$logLambda, linetype = "dotted") + 
+      theme_bw(24) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+      xlab("" ) + ylab("log(ncuts) - log(total cuts)") + 
+      ggtitle(paste(jgene, jbin, jmark)) 
+    print(m.raw.log)
+    
+    
+    m.fit <- ggplot(refit$input.dat, aes(x = Cluster, y = logLambda)) + 
+      geom_jitter(width = 0.1, height = 0, alpha = 0.1) + 
+      geom_errorbar(mapping = aes(ymin = logLambdaLower, ymax = logLambdaUpper), data = refit$params.mean.dat, width = 0.1) + 
+      geom_hline(yintercept = refit$params.int.dat$logLambda, linetype = "dotted") + 
+      theme_bw(24) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+      xlab("" ) + ylab("log(ncuts) - log(total cuts)") + 
+      ggtitle(paste(jgene, jbin, jmark)) 
+    print(m.fit)
+    
+    # fit in linear scale
+    
+    m.raw.linear <- ggplot(refit$input.dat, aes(x = Cluster, y = exp(logLambda))) + 
+      geom_jitter(width = 0.1, height = 0, alpha = 0.1) + 
+      # geom_hline(yintercept = exp(refit$params.int.dat$logLambda), linetype = "dotted") + 
+      theme_bw(24) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+      xlab("" ) + ylab("ncuts / totalcuts") + 
+      ggtitle(paste(jgene, jbin, jmark)) 
+    print(m.raw.linear)
+    
+    m.fit.linear <- ggplot(refit$input.dat, aes(x = Cluster, y = exp(logLambda))) + 
+      geom_jitter(width = 0.1, height = 0, alpha = 0.1) + 
+      geom_errorbar(mapping = aes(ymin = exp(logLambdaLower), ymax = exp(logLambdaUpper)), 
+                    data = refit$params.mean.dat, width = 0.1) + 
+      geom_hline(yintercept = exp(refit$params.int.dat$logLambda), linetype = "dotted") + 
+      theme_bw(24) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+      xlab("" ) + ylab("ncuts / totalcuts") + 
+      ggtitle(paste(jgene, jbin, jmark)) 
+    print(m.fit.linear)
+  }
+}
+
 
 if (make.plots){
   dev.off()

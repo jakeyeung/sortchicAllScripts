@@ -27,12 +27,24 @@ FitClstVar <- function(jrow, jmeta){
   return(jfit)
 }
 
-outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/var_slope_estimates"
-fname <- paste0("MouseBM_log_lm_fits.", Sys.Date(), ".RData")
-fnamepdf <- paste0("MouseBM_log_lm_fits.", Sys.Date(), ".pdf")
-outf <- file.path(outdir, fname)
+FitClstVar.null <- function(jrow, jmeta){
+  fit.input <- data.frame(exprs = jrow, xvar = jmeta$xvar, clst = jmeta$clst, stringsAsFactors = TRUE)
+  jfit <- lm(exprs ~ xvar:clst + 1, fit.input)
+  return(jfit)
+}
 
-pdf(file = fnamepdf, useDingbats = FALSE)
+make.plots <- FALSE
+
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/var_slope_estimates"
+fname <- paste0("MouseBM_log_lm_fits.", Sys.Date(), ".WithNull.RedoPvalRData")
+# fname.full <- paste0("MouseBM_log_lm_fits.", Sys.Date(), ".WithNull.AllFits.RData")
+fnamepdf <- paste0("MouseBM_log_lm_fits.", Sys.Date(), ".WithNull.pdf")
+outf <- file.path(outdir, fname)
+# outf.full <- file.path(outdir, fname.full)
+
+if (make.plots){
+  pdf(file = fnamepdf, useDingbats = FALSE)
+}
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 
@@ -537,14 +549,16 @@ ggplot(dat.params.all, aes(x = jmean, y = jslope, color = params.mean)) + geom_p
 ggplot(dat.params.all, aes(x = jmean, y = jslope, color = params.mean)) + geom_point(alpha = 0.1)  + 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-
-
+if (make.plots){
+  dev.off()
+}
 
 # Fit all 3 marks and save ------------------------------------------------
 
+# jmarks.tmp <- jmarks[1]
 # for H3K4me1 first as sanity check 
 system.time(
-  jfits.rows.lst <- lapply(jmarks, function(jmark){
+  jfits.rows.all.lst <- lapply(jmarks, function(jmark){
     print(jmark)
     jmat <- dat.imputed.lst[[jmark]]
     cnames.keep <- metadat.lst[[jmark]]$cell
@@ -562,22 +576,37 @@ system.time(
     jmeta.ordered$clst <- factor(jmeta.ordered$clst, levels = clsts.keep)
     
     jfits.rows <- apply(jmat.filt, 1, function(jrow, jmeta){
-      FitClstVar(jrow, jmeta)
+      jfit.row <- FitClstVar(jrow, jmeta)
+      # jfit.row.null <- FitClstVar.null(jrow, jmeta)
+      # jpval <- anova(jfit.row.null, jfit.row)[["Pr(>F)"]][[2]]
+      return(list(jfit.row = jfit.row))
     }, jmeta = jmeta.ordered)
   })
 )
 
 
-
-dat.params.all.lst <- lapply(jfits.rows.lst, function(jfits.rows){
+dat.params.all.lst <- lapply(jfits.rows.all.lst, function(jfits.rows){
   jnames <- names(jfits.rows); names(jnames) <- jnames
   dat.params.all <- lapply(jnames, function(jname){
-    jfit <- jfits.rows[[jname]]
+    # jfit <- jfits.rows[[jname]]$jfit.row
+    # jint <- coefficients(jfit)[["(Intercept)"]]  # HSPC intercept
+    # jmeans <- jint + coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "clst"))]
+    # jslopes <- coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "xvar"))]
+    # dat.params <- data.frame(params.mean = c("clstHSC", names(jmeans)), jmean = c(jint, jmeans), params.slope = names(jslopes), jslope = jslopes, stringsAsFactors = FALSE)
+    # dat.params$rname <- jname
+    # dat.params$pval <- jfits.rows[[jname]]$pval
+    
+    jfit <- jfits.rows[[jname]]$jfit.row
     jint <- coefficients(jfit)[["(Intercept)"]]  # HSPC intercept
-    jmeans <- jint + coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "clst"))]
+    rnames.keep <- names(coefficients(jfit))[which(startsWith(x = names(coefficients(jfit)), prefix = "clst"))]
+    jmeans <- jint + coefficients(jfit)[rnames.keep]
     jslopes <- coefficients(jfit)[which(startsWith(x = names(coefficients(jfit)), prefix = "xvar"))]
     dat.params <- data.frame(params.mean = c("clstHSC", names(jmeans)), jmean = c(jint, jmeans), params.slope = names(jslopes), jslope = jslopes, stringsAsFactors = FALSE)
     dat.params$rname <- jname
+    pval.vec.all <- summary(jfit)$coefficients[, "Pr(>|t|)"]
+    pval.dat.keep <- data.frame(params.mean = c("clstHSC", rnames.keep), pval = c(NA, pval.vec.all[rnames.keep]), stringsAsFactors = FALSE)
+    dat.params <- left_join(dat.params, pval.dat.keep, by = "params.mean")
+    
     return(dat.params)
   }) %>%
     bind_rows()
@@ -586,6 +615,5 @@ dat.params.all.lst <- lapply(jfits.rows.lst, function(jfits.rows){
 
 
 save(dat.params.all.lst, dat.imputed.lst, metadat.lst, file = outf)
+# save(jfits.rows.all.lst, file = outf.full)
 
-
-dev.off()

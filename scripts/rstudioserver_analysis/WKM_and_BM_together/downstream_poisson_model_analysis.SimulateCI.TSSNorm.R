@@ -1,8 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2020-06-16
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/WKM_and_BM_together/downstream_poisson_model_analysis.SimulateCI.HeteroTotalNorm.R
-# 
-
+# Date of Creation: 2020-06-27
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/WKM_and_BM_together/downstream_poisson_model_analysis.SimulateCI.TSSNorm.R
+# description
 
 rm(list=ls())
 
@@ -46,8 +45,8 @@ for (jnorm in jnorms){
   # datdir <- "/home/jyeung/data/from_rstudioserver/poisson_fits"
   datdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/poisson_fits.OtherNorm.DiffDists"
   
-  outfits <- file.path(datdir, paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".bsize_", bsize, ".RData"))
-  outfits.wrangled <- file.path(datdir, paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".CI.bsize_", bsize, ".RData"))
+  outfits <- file.path(datdir, paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".bsize_", bsize, ".CleanUpErythss.RData"))
+  outfits.wrangled <- file.path(datdir, paste0("fit_poisson_model_on_TSS.MouseBM.NormMeth_", jnorm, ".CI.bsize_", bsize, ".CleanUpErythss.RData"))
   
   
   assertthat::assert_that(file.exists(outfits))
