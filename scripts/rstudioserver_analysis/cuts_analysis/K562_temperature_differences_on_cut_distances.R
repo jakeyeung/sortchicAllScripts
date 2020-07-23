@@ -22,9 +22,19 @@ jmeth <- "sap"
 # inf.counts <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/temperature_exp/raw_data/tagged_bams.scmo3/CutDistances/PZ-K562-", jmeth, "-H3K4me3-", jtemp, "-1.scmo3.again_contigfixed.tagged/counts.csv")
 inf.counts <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/spikein/fastqs/tagged_bams.scmo3.contigfixed/CutDistances/PZ-K562-H3K4me3-spikein-75U.scmo3.again_contigfixed.tagged/counts.csv"
 assertthat::assert_that(file.exists(inf.counts))
-
 jcounts <- fread(inf.counts)
 jcounts$V1 <- NULL
+
+
+jmark <- "H3K27me3"
+jctype <- "HSPCs"
+hubprefix <- "/home/jyeung/hub_oudenaarden"
+inf.fits <- file.path(hubprefix, paste0("jyeung/data/scChiC/cut_distances/", jmark, "-BM_AllMerged.", jctype, ".sorted/fit.csv"))
+jfits <- fread(inf.fits)
+inf.counts <- file.path(hubprefix, paste0("jyeung/data/scChiC/cut_distances/", jmark, "-BM_AllMerged.", jctype, ".sorted/counts.csv"))
+jcounts <- fread(inf.counts)
+jcounts$V1 <- NULL
+
 jcell <- which(colSums(jcounts) == max(colSums(jcounts)))
 x <- jcounts[xstart:nrow(jcounts), ..jcell]
 
