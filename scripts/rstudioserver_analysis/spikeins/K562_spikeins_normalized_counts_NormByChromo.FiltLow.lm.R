@@ -1,7 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2020-07-21
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/K562_spikeins_normalized_counts.R
-# Look at normalized counts
+# Date of Creation: 2020-07-24
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/K562_spikeins_normalized_counts_NormByChromo.FiltLow.lm.R
+# 
 
 rm(list=ls())
 
@@ -12,8 +12,9 @@ library(data.table)
 library(Matrix)
 library(scchicFuncs)
 
-outrds <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".NormByChromo.logncells.rds")
-outpdf <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".NormByChromo.logncells.pdf")
+mincounts <- 800
+outrds <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".NormByChromo.logncells.LowFilt_", mincounts, ".LM.rds")
+outpdf <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".NormByChromo.logncells.LowFilt_", mincounts, ".LM.pdf")
 
 # Functions ---------------------------------------------------------------
 
@@ -23,6 +24,8 @@ outpdf <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits
 inf.meta <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/spikeins/GenomeWideFits.2020-07-22.rds"
 
 jsub.sum <- readRDS(inf.meta)
+
+jsub.sum <- subset(jsub.sum, chromocounts > mincounts)
 dat.meta <- subset(jsub.sum, select = c(samp, conc, spikeincounts, chromocounts, spikeinconc, ncells))
 
 
@@ -153,7 +156,7 @@ system.time(
             rowwise() %>%
             mutate(ncells = log(ncells))
           # fit.dat <- FitGlmRowSpikeins(input.dat, return.fit.obj = FALSE)
-          fit.dat <- FitGlmRowChromocounts(input.dat, return.fit.obj = FALSE)
+          fit.dat <- FitLmRowChromocounts(input.dat, return.fit.obj = FALSE)
           fit.dat$mark <- jmark
           fit.dat$prep <- jprep
           fit.dat$spikeinconc <- jspikeinconc

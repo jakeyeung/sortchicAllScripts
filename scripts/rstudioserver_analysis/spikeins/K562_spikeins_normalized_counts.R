@@ -11,40 +11,12 @@ library(ggplot2)
 library(data.table)
 library(Matrix)
 library(scchicFuncs)
+library(JFuncs)
 
 outrds <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".logncells.rds")
 outpdf <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".logncells.pdf")
 
 # Functions ---------------------------------------------------------------
-
-
-FitGlmRowSpikeins <- function(input.dat, return.fit.obj = FALSE){
-  jfit.glm <- glm(formula = genecounts ~ ncells + offset(log(spikeincounts)), data = input.dat, family = poisson)
-  if (return.fit.obj){
-    return(jfit.glm)
-  }
-  jslope.glm.ln <- coefficients(jfit.glm)[["ncells"]]
-  jslope.pval.glm <- summary(jfit.glm)$coefficients[, "Pr(>|z|)"][["ncells"]]
-  jslope.se.glm <- summary(jfit.glm)$coefficients[, "Std. Error"][["ncells"]]
-  jfit.dat <- data.frame(slope.ln = jslope.glm.ln, slope = jslope.glm.ln / log(2), pval = jslope.pval.glm, slope.se.ln = jslope.se.glm, slope.se = jslope.se.glm / log(2), stringsAsFactors = FALSE)
-  if (!return.fit.obj){
-    return(jfit.dat)
-  }
-}
-
-FitGlmRowChromocounts <- function(input.dat, return.fit.obj = FALSE){
-  jfit.glm <- glm(formula = genecounts ~ ncells + offset(log(chromocounts)), data = input.dat, family = poisson)
-  if (return.fit.obj){
-    return(jfit.glm)
-  }
-  jslope.glm.ln <- coefficients(jfit.glm)[["ncells"]]
-  jslope.pval.glm <- summary(jfit.glm)$coefficients[, "Pr(>|z|)"][["ncells"]]
-  jslope.se.glm <- summary(jfit.glm)$coefficients[, "Std. Error"][["ncells"]]
-  jfit.dat <- data.frame(slope.ln = jslope.glm.ln, slope = jslope.glm.ln / log(2), pval = jslope.pval.glm, slope.se.ln = jslope.se.glm, slope.se = jslope.se.glm / log(2), stringsAsFactors = FALSE)
-  if (!return.fit.obj){
-    return(jfit.dat)
-  }
-}
 
 
 # Load genomeiwde summaries -----------------------------------------------
@@ -143,6 +115,8 @@ dev.off()
 # jconc <- "37U"
 # gene.input <- mat.bins.lst.lst[[jmark]][[jconc]]
 
+make.test <- FALSE
+
 print("Beginning fits...")
 system.time(
   fits.out <- lapply(jmarks.vec, function(jmark){
@@ -157,28 +131,55 @@ system.time(
         jrows <- rownames(mat.filt); names(jrows) <- jrows
         # jrows <- jrows[1:100]
         
-        # jrow <- jrows[[888]]
+        if (make.test){
+          
+          jrow <- jrows[[888]]
+          input.dat <- data.frame(cell = colnames(mat.filt), genecounts = mat.filt[jrow, ], stringsAsFactors = FALSE) %>%
+            left_join(., dat.meta, by = c("cell" = "samp")) %>%
+            rowwise() %>%
+            mutate(ncells = log(ncells))
+          
+          jfit <- FitGlmRowSpikeins(input.dat, return.fit.obj = TRUE)
+          jfit.dat <- FitGlmRowSpikeins(input.dat, return.fit.obj = FALSE)
+          jpred <- data.frame(ypred.unadj = predict(jfit, input.dat, se.fit = FALSE), ncells = input.dat$ncells, chromocounts = input.dat$chromocounts, spikeinconc = input.dat$spikeinconc, spikeincounts = input.dat$spikeincounts, stringsAsFactors = FALSE) %>%
+            mutate(ypred = ypred.unadj - log(spikeincounts))
+          
+          ggplot(input.dat, aes(x = ncells, y = log(genecounts/ spikeincounts))) + geom_point() + 
+            theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+            geom_line(data = jpred, mapping = aes(x = ncells, y = ypred)) + 
+            xlab("log(ncells)") + 
+            ggtitle(paste(jmark, jprep, jspikeinconc, jrow))
+          
+          ggplot(input.dat, aes(x = ncells, y = genecounts/ spikeincounts)) + geom_point() + 
+            theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+            geom_smooth(method = "lm", se = FALSE) + 
+            ggtitle(paste(jmark, jprep, jspikeinconc, jrow))
+          
+          ggplot(input.dat, aes(x = ncells, y = genecounts/ chromocounts)) + geom_point() + 
+            theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+            geom_smooth(method = "lm", se = FALSE) + 
+            ggtitle(paste(jmark, jprep, jspikeinconc, jrow))
+          
+          jfit <- FitGlmRowChromocounts(input.dat, return.fit.obj = TRUE)
+          jfit.dat <- FitGlmRowChromocounts(input.dat, return.fit.obj = FALSE)
+          jpred <- data.frame(ypred.unadj = predict(jfit, input.dat, se.fit = FALSE), ncells = input.dat$ncells, chromocounts = input.dat$chromocounts, spikeinconc = input.dat$spikeinconc, spikeincounts = input.dat$spikeincounts, stringsAsFactors = FALSE) %>%
+            mutate(ypred = ypred.unadj - log(chromocounts))
+          ggplot(input.dat, aes(x = ncells, y = log(genecounts / chromocounts))) + geom_point() + 
+            theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+            geom_line(data = jpred, mapping = aes(x = ncells, y = ypred)) + 
+            xlab("log(ncells)") + 
+            ggtitle(paste(jmark, jprep, jspikeinconc, jrow))
+          
+        }
         
-        # jfit <- FitGlmRowSpikeins(input.dat, return.fit.obj = TRUE)
-        # jfit.dat <- FitGlmRowSpikeins(input.dat, return.fit.obj = FALSE)
-        # jpred <- data.frame(ypred.unadj = predict(jfit, input.dat, se.fit = FALSE), ncells = input.dat$ncells, chromocounts = input.dat$chromocounts, spikeinconc = input.dat$spikeinconc, spikeincounts = input.dat$spikeincounts, stringsAsFactors = FALSE) %>%
-        #   mutate(ypred = ypred.unadj - log(spikeincounts))
-        # ggplot(input.dat, aes(x = ncells, y = log(genecounts/ spikeincounts))) + geom_point() + 
-        #   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-        #   geom_line(data = jpred, mapping = aes(x = ncells, y = ypred))
         
-        # jfit <- FitGlmRowChromocounts(input.dat, return.fit.obj = TRUE)
-        # jfit.dat <- FitGlmRowChromocounts(input.dat, return.fit.obj = FALSE)
-        # jpred <- data.frame(ypred.unadj = predict(jfit, input.dat, se.fit = FALSE), ncells = input.dat$ncells, chromocounts = input.dat$chromocounts, spikeinconc = input.dat$spikeinconc, spikeincounts = input.dat$spikeincounts, stringsAsFactors = FALSE) %>%
-        #   mutate(ypred = ypred.unadj - log(chromocounts))
-        # ggplot(input.dat, aes(x = ncells, y = log(genecounts / chromocounts))) + geom_point() + 
-        #   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-        #   geom_line(data = jpred, mapping = aes(x = ncells, y = ypred))
         
         # fit row
         lapply(jrows, function(jrow){
           input.dat <- data.frame(cell = colnames(mat.filt), genecounts = mat.filt[jrow, ], stringsAsFactors = FALSE) %>%
-            left_join(., dat.meta, by = c("cell" = "samp"))
+            left_join(., dat.meta, by = c("cell" = "samp")) %>%
+            rowwise() %>%
+            mutate(ncells = log(ncells))
           fit.dat <- FitGlmRowSpikeins(input.dat, return.fit.obj = FALSE)
           fit.dat$mark <- jmark
           fit.dat$prep <- jprep

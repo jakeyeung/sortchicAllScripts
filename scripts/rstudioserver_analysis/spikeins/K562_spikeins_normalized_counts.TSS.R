@@ -18,34 +18,6 @@ outpdf <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits
 # Functions ---------------------------------------------------------------
 
 
-FitGlmRowSpikeins <- function(input.dat, return.fit.obj = FALSE){
-  jfit.glm <- glm(formula = genecounts ~ ncells + offset(log(spikeincounts)), data = input.dat, family = poisson)
-  if (return.fit.obj){
-    return(jfit.glm)
-  }
-  jslope.glm.ln <- coefficients(jfit.glm)[["ncells"]]
-  jslope.pval.glm <- summary(jfit.glm)$coefficients[, "Pr(>|z|)"][["ncells"]]
-  jslope.se.glm <- summary(jfit.glm)$coefficients[, "Std. Error"][["ncells"]]
-  jfit.dat <- data.frame(slope.ln = jslope.glm.ln, slope = jslope.glm.ln / log(2), pval = jslope.pval.glm, slope.se.ln = jslope.se.glm, slope.se = jslope.se.glm / log(2), stringsAsFactors = FALSE)
-  if (!return.fit.obj){
-    return(jfit.dat)
-  }
-}
-
-FitGlmRowChromocounts <- function(input.dat, return.fit.obj = FALSE){
-  jfit.glm <- glm(formula = genecounts ~ ncells + offset(log(chromocounts)), data = input.dat, family = poisson)
-  if (return.fit.obj){
-    return(jfit.glm)
-  }
-  jslope.glm.ln <- coefficients(jfit.glm)[["ncells"]]
-  jslope.pval.glm <- summary(jfit.glm)$coefficients[, "Pr(>|z|)"][["ncells"]]
-  jslope.se.glm <- summary(jfit.glm)$coefficients[, "Std. Error"][["ncells"]]
-  jfit.dat <- data.frame(slope.ln = jslope.glm.ln, slope = jslope.glm.ln / log(2), pval = jslope.pval.glm, slope.se.ln = jslope.se.glm, slope.se = jslope.se.glm / log(2), stringsAsFactors = FALSE)
-  if (!return.fit.obj){
-    return(jfit.dat)
-  }
-}
-
 
 # Load genomeiwde summaries -----------------------------------------------
 

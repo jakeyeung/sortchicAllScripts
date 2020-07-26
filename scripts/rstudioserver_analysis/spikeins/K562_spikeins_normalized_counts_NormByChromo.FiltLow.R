@@ -12,8 +12,9 @@ library(data.table)
 library(Matrix)
 library(scchicFuncs)
 
-outrds <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".NormByChromo.logncells.rds")
-outpdf <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".NormByChromo.logncells.pdf")
+mincounts <- 800
+outrds <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".NormByChromo.logncells.LowFilt_", mincounts, ".WithRnames.rds")
+outpdf <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits_bins.", Sys.Date(), ".NormByChromo.logncells.LowFilt_", mincounts, ".WithRanmes.pdf")
 
 # Functions ---------------------------------------------------------------
 
@@ -23,6 +24,8 @@ outpdf <- paste0("/home/jyeung/data/from_rstudioserver/spikein_fits/spikein_fits
 inf.meta <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/spikeins/GenomeWideFits.2020-07-22.rds"
 
 jsub.sum <- readRDS(inf.meta)
+
+jsub.sum <- subset(jsub.sum, chromocounts > mincounts)
 dat.meta <- subset(jsub.sum, select = c(samp, conc, spikeincounts, chromocounts, spikeinconc, ncells))
 
 
@@ -157,6 +160,7 @@ system.time(
           fit.dat$mark <- jmark
           fit.dat$prep <- jprep
           fit.dat$spikeinconc <- jspikeinconc
+          fit.dat$rname <- jrow
           return(fit.dat)
         })
       })

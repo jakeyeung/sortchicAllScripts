@@ -10,12 +10,13 @@ library(data.table)
 library(Matrix)
 
 library(scchicFuncs)
+library(JFuncs)
 
 
 # Functions ---------------------------------------------------------------
 
 outrds <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/spikeins/GenomeWideFits.", Sys.Date(), ".logncells.rds")
-outpdf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/spikeins/GenomeWideFits.", Sys.Date(), ".loncells.pdf")
+outpdf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/spikeins/GenomeWideFits.", Sys.Date(), ".logncells.pdf")
 
 
 # Load different spikeins measure counts in each chromosome ------------------------------------------------
@@ -46,7 +47,6 @@ assertthat::assert_that(file.exists(inf))
 
 
 
-
 dat.filt.long <- lapply(jmarks.lst, function(jmark){
   print(jmark)
   lapply(jconcs.lst, function(jconc){
@@ -54,6 +54,21 @@ dat.filt.long <- lapply(jmarks.lst, function(jmark){
     inf <- file.path(hubpath, paste0("jyeung/data/scChiC/spikein/fastqs/tagged_bams.scmo3.contigfixed/countTablesAndRZr1only_ByChromo/PZ-K562-", jmark, "-spikein-", jconc, ".scmo3.again_contigfixed.tagged.countTable.ByChromo.csv"))
     print(inf)
     dat.filt.long <- GetChromoCounts(inf)
+    dat.filt.long$mark <- jmark
+    dat.filt.long$conc <- jconc
+    return(dat.filt.long)
+  })  %>%
+    bind_rows()
+}) %>%
+  bind_rows()
+
+dat.rz <- lapply(jmarks.lst, function(jmark){
+  print(jmark)
+  lapply(jconcs.lst, function(jconc){
+    print(jconc)
+    inf.rz <- file.path(hubpath, paste0("jyeung/data/scChiC/spikein/fastqs/tagged_bams.scmo3.contigfixed//RZcounts/PZ-K562-", jmark, "-spikein-", jconc, ".scmo3.again_contigfixed.tagged.LH_counts.demuxbugfixed_mergeplates.csv"))
+    print(inf.rz)
+    dat.filt.long <- ReadLH.SummarizeTA(inf.rz)
     dat.filt.long$mark <- jmark
     dat.filt.long$conc <- jconc
     return(dat.filt.long)
@@ -76,11 +91,15 @@ jtitle <- paste("Cells with Autosome Counts > 1000")
 
 jsub <- dat.filt.long %>% filter(samp %in% cellsfilt)
 
+# get ratio of chromocounts / spikeincounts
+
+
 ggplot(jsub, aes(x = chromo, y = counts)) + geom_boxplot(outlier.size = 0.1, outlier.alpha = 0.1)  + 
   theme_bw() +  
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   scale_y_log10() + facet_wrap(~experi, nrow = 1) + 
   ggtitle(jtitle)
+
 
 ggplot(jsub %>% filter(chromo %in% spikeinchromo), aes(x = chromo, y = counts, fill = experi)) + geom_boxplot(outlier.size = 0.1, outlier.alpha = 0.1)  + 
   theme_bw() +  
@@ -183,6 +202,7 @@ jsub.exp <- subset(dat.filt.long, experi == jexp) %>%
   summarise(totalcounts = unique(totalcounts),
          spikeincounts = unique(spikeincounts),
          chromocounts = unique(chromocounts))
+
 
 # jsub.exp <- jsub.sum
 
@@ -299,7 +319,55 @@ jsub.sum <- jsub.sum %>%
   rowwise() %>%
   mutate(spikeinconc = row2conc[[as.character(rowcoord)]],
          ncells = col2ncells[[as.character(colcoord)]])
+
+jsub.sum$spikeinconcFactor <- factor(jsub.sum$spikeinconc, levels = unique(sort(jsub.sum$spikeinconc)))
+
+# plot ratio of chromocount and spikein counts
+ggplot(jsub.sum, aes(x = spikeinconcFactor, y = chromocounts / spikeincounts)) + 
+  geom_boxplot() + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+
+mincounts <- 800
+for (jprep in jconcs.lst){
   
+  m0 <- ggplot(jsub.sum %>% filter(conc == jprep), aes(x = spikeinconcFactor, y = chromocounts / spikeincounts)) + 
+    geom_boxplot() + geom_point() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+    facet_grid(mark ~ ncells)  + ggtitle(paste("Preparation:", jprep))
+  
+  m1 <- ggplot(jsub.sum %>% filter(conc == jprep), aes(x = spikeinconcFactor, y = log2(chromocounts / spikeincounts))) + 
+    geom_boxplot() + geom_point() + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+    facet_grid(mark ~ ncells) + ggtitle(paste("Preparation:", jprep))
+  
+  m1.filt <- ggplot(jsub.sum %>% filter(conc == jprep & chromocounts > mincounts), aes(x = spikeinconcFactor, y = log2(chromocounts / spikeincounts))) + 
+    geom_boxplot() + geom_point() + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+    facet_grid(mark ~ ncells) + ggtitle(paste("Preparation:", jprep, "MinChromoCount >", mincounts))
+  
+  m2 <- ggplot(jsub.sum %>% filter(ncells > 0 & conc == jprep), aes(x = spikeinconcFactor, y = log2(chromocounts / spikeincounts))) + 
+    geom_boxplot() + geom_point() + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+    facet_grid(mark ~ ncells) + ggtitle(paste("Preparation:", jprep))
+  
+  m2.filt <- ggplot(jsub.sum %>% filter(ncells > 0 & chromocounts > mincounts & conc == jprep), aes(x = spikeinconcFactor, y = log2(chromocounts / spikeincounts))) + 
+    geom_boxplot() + geom_point() + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+    facet_grid(mark ~ ncells) + ggtitle(paste("Preparation:", jprep, "MinChromoCount >", mincounts))
+  
+  
+  print(m0)
+  print(m1)
+  print(m1.filt)
+  print(m2)
+  print(m2.filt)
+}
+
 
 ggplot(jsub.sum, aes(y = rowcoord, x = colcoord, color = ncells, size = ncells)) + geom_point()  + 
   theme_bw() + theme(aspect.ratio=2/3, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
@@ -336,7 +404,8 @@ for (jspikeinconc in spikeinconc.vec){
     for (jmark in jmarks.vec){
       input.dat <- subset(jsub.sum, spikeinconc == jspikeinconc & conc == jconc & mark == jmark & ncells > 0) %>%
         rowwise() %>%
-        mutate(ncells = log(ncells))  # makes things linear
+        mutate(ncells.lin = ncells,
+               ncells = log(ncells))  # makes fits linear
       # plot fits
       f1 <- FitNormCountsToNcells.lm(input.dat, return.fit.obj = TRUE)
       f2 <- FitNormCountsToNcells.glm(input.dat, return.fit.obj = TRUE)
@@ -349,13 +418,27 @@ for (jspikeinconc in spikeinconc.vec){
              aes(x = ncells, y = log(chromocounts / spikeincounts))) + geom_point()  + 
         theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
         geom_line(data = jpred1, mapping = aes(x = ncells, y = ypred)) + 
-        ggtitle(paste("Lm fit: SpikeInMole:", jspikeinconc, jconc, jmark))
+        ggtitle(paste("Lm fit: SpikeInMole:", jspikeinconc, jconc, jmark)) + 
+        xlab("log(ncells)")
       print(m.check1)
       m.check2 <- ggplot(input.dat, 
              aes(x = ncells, y = log(chromocounts / spikeincounts))) + geom_point()  + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
         geom_line(data = jpred2, mapping = aes(x = ncells, y = ypred)) + 
-        ggtitle(paste("GLM fit: SpikeInMole:", jspikeinconc, jconc, jmark))
+        ggtitle(paste("GLM fit: SpikeInMole:", jspikeinconc, jconc, jmark)) + 
+        xlab("log(ncells)")
       print(m.check2)
+      # plot linear
+      
+      # jfit.l1 <- lm(formula = chromocounts ~ ncells.lin, data = input.dat)
+      # jfit.l2 <- lm(formula = chromocounts / spikeincounts ~ ncells.lin, data = input.dat)
+      m.l1 <- ggplot(input.dat, aes(x = ncells.lin, y = chromocounts)) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        ggtitle(paste("Linear fit on linear scale SpikeInMole:", jspikeinconc, jconc, jmark)) + 
+        geom_smooth(method = "lm", se = FALSE) 
+      m.l2 <- ggplot(input.dat, aes(x = ncells.lin, y = chromocounts / spikeincounts)) + 
+        geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+        ggtitle(paste("Linear fit on linear scale SpikeInMole:", jspikeinconc, jconc, jmark)) + 
+        geom_smooth(method = "lm", se = FALSE) 
     }
   }
 }
@@ -410,12 +493,102 @@ ggplot(input.dat2, aes(x = log2(spikeinconc), y = log2(spikeincounts))) +
   geom_point(alpha = 0.25)  + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   facet_wrap(~ncells) + geom_smooth(method = "lm", se = FALSE)
 
+
+
+dat.rz.merge <- left_join(dat.rz, jsub.sum)
+
+ggplot(dat.rz.merge, aes(x = chromocounts, y = TA.frac, color = log10(spikeinconc))) + 
+  geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_x_log10() +
+  scale_color_viridis_c() + 
+  facet_grid(mark ~ conc) + 
+  geom_vline(xintercept = mincounts)
+
+
 dev.off()
 
 # Save objects  -----------------------------------------------------------
 
 saveRDS(jsub.sum, file = outrds)
 
+# 
+# 
+# # More downstream achecks -------------------------------------------------
+# 
+# 
+# m0 <- ggplot(jsub.sum %>% filter(conc == "37U"), aes(x = spikeinconcFactor, y = chromocounts / spikeincounts)) + 
+#   geom_boxplot() + geom_point() + 
+#   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())  + 
+#   facet_grid(mark ~ ncells)  + ggtitle(paste("Preparation:", jprep))
+# 
+# m1 <- ggplot(jsub.sum %>% filter(conc == "37U"), aes(x = spikeinconcFactor, y = log2(chromocounts / spikeincounts))) + 
+#   geom_boxplot() + geom_point() + 
+#   theme_bw() + 
+#   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+#   facet_grid(mark ~ ncells) + ggtitle(paste("Preparation:", jprep))
+# 
+# m2 <- ggplot(jsub.sum %>% filter(ncells > 0 & conc == "37U"), aes(x = spikeinconcFactor, y = log2(chromocounts / spikeincounts))) + 
+#   geom_boxplot() + geom_point() + 
+#   theme_bw() + 
+#   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+#   facet_grid(mark ~ ncells) + ggtitle(paste("Preparation:", jprep))
+# 
+# print(m0)
+# print(m1)
+# print(m2)
 
 
+# what causes variability?  -----------------------------------------------
+
+jprep <- "75U"
+m1 <- ggplot(jsub.sum %>% filter(conc == jprep), aes(x = spikeinconcFactor, y = log2(chromocounts / spikeincounts))) + 
+  geom_boxplot() + geom_point() + 
+  theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+  facet_grid(mark ~ ncells) + ggtitle(paste("Preparation:", jprep))
+
+m1.top <- ggplot(jsub.sum %>% filter(conc == jprep), aes(x = spikeinconcFactor, y = log2(chromocounts))) + 
+  geom_boxplot() + geom_point() + 
+  theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+  facet_grid(mark ~ ncells) + ggtitle(paste("Preparation:", jprep))
+
+m1.bottom <- ggplot(jsub.sum %>% filter(conc == jprep), aes(x = spikeinconcFactor, y = log2(spikeincounts))) + 
+  geom_boxplot() + geom_point() + 
+  theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+  facet_grid(mark ~ ncells) + ggtitle(paste("Preparation:", jprep))
+
+print(m1)
+
+multiplot(m1.top, m1.bottom, cols = 1)
+
+
+# Those bad chromocounts are just bad samples? ----------------------------
+
+dat.rz.merge <- left_join(dat.rz, jsub.sum)
+
+ggplot(dat.rz.merge, aes(x = chromocounts, y = TA.frac, color = log10(spikeinconc))) + 
+  geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  scale_x_log10() +
+  scale_color_viridis_c() + 
+  facet_grid(mark ~ conc) + 
+  geom_vline(xintercept = mincounts)
+
+
+# x <- rep(seq(5), each = 3)
+# y <- 100 * x 
+# y.noisy <- y + rnorm(n = length(y), mean = 0, sd = 2)
+# 
+# plot(x, y.noisy)
+# plot(log(x), log(y.noisy))
+# 
+# jdat <- data.frame(x = x, y.noisy = y.noisy, stringsAsFactors = FALSE)
+# lm(formula = y.noisy ~ x, data = jdat)
+# lm(formula = log(y.noisy) ~ log(x), data = jdat)
+# lm(formula = log2(y.noisy) ~ log2(x), data = jdat)
+# lm(formula = log(y.noisy) ~ x, data = jdat)
+  
 
