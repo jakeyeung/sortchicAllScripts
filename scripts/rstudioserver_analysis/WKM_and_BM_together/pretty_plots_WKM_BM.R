@@ -18,6 +18,7 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 
 
 cbPalette <- c("#696969", "#32CD32", "#56B4E9", "#FFB6C1", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+cbPalette2 <- c("#56B4E9", "#32CD32", "#FFB6C1", "#696969", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
 # rename some clusters
 wkm.rename <- hash(c("eryth1", "eryth2", "HSC1", "HSC2", "monocyte"), c("eryth", "eryth", "HSPCs", "HSPCs", "granu"))
 bm.rename <- as.list(hash(c("Bcells", "Eryth", "HSCs", "Neutrophils"), c("lymph", "eryth", "HSPCs", "granu")))
@@ -36,6 +37,8 @@ RenameClusterBM <- function(clstr.orig, bm.rename){
 
 
 pdfout <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/WKM_BM_merged/from_rstudioserver/WKM_BM_together.", Sys.Date(), ".pdf")
+
+
 
 pdf(pdfout, useDingbats = FALSE)
 
@@ -118,6 +121,16 @@ jlong.diff.genesets.BM$geneset <- factor(jlong.diff.genesets.BM$geneset, c("HSCs
 gsetfilt.BM <- c("HSCs", "Neutrophil", "Bcell", "Erythroblast")
 
 
+# Plot hox ----------------------------------------------------------------
+
+ggplot(subset(jlong.diff.genesets.BM, grepl("Hox", bin)), aes(x = cluster, y = zscore)) + 
+  geom_boxplot() + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+ggplot(subset(jlong.diff.genesets.WKM, grepl("Hox", bin, ignore.case = TRUE)), aes(x = cluster, y = zscore)) + 
+  geom_boxplot() + geom_point() + 
+  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
 # Plot UMAPs --------------------------------------------------------------
 
 print(lapply(dat.annot.lst.BM, function(x) sort(unique(x$cluster))))
@@ -131,6 +144,11 @@ m.umaps.wkm <- lapply(jmarks, function(jmark){
 })
 multiplot(m.umaps.wkm[[1]], m.umaps.wkm[[2]], m.umaps.wkm[[3]], cols = 3)
 
+lapply(m.umaps.wkm, function(m){
+  mnew <- m + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "right")
+  return(mnew)
+})
+
 m.umaps.bm <- lapply(jmarks, function(jmark){
   jdat <- dat.annot.lst.BM[[jmark]]
   ggplot(jdat, aes(x = umap1, y = umap2, color = cluster)) + 
@@ -139,6 +157,11 @@ m.umaps.bm <- lapply(jmarks, function(jmark){
 })
 multiplot(m.umaps.bm[[1]], m.umaps.bm[[2]], m.umaps.bm[[3]], cols = 3)
 
+lapply(m.umaps.bm, function(m){
+  mnew <- m + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "right")
+  return(mnew)
+})
+
 
 # Plot boxplots -----------------------------------------------------------
 
@@ -146,28 +169,28 @@ m.box.zscore.wkm <- ggplot(jlong.diff.genesets.WKM, aes(x = mark, y = zscore, fi
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Zebrafish WKM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Zebrafish WKM")
 print(m.box.zscore.wkm)
 
 m.box.log2fc.wkm <- ggplot(jlong.diff.genesets.WKM, aes(x = mark, y = log2fc, fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Zebrafish WKM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Zebrafish WKM")
 print(m.box.log2fc.wkm)
 
 m.box.logcounts.wkm <- ggplot(jlong.diff.genesets.WKM, aes(x = mark, y = log2p1counts, fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Zebrafish WKM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Zebrafish WKM")
 print(m.box.logcounts.wkm)
 
 m.box.counts.wkm <- ggplot(jlong.diff.genesets.WKM, aes(x = mark, y = sqrt(counts), fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Zebrafish WKM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Zebrafish WKM")
 print(m.box.counts.wkm)
 
 
@@ -175,28 +198,28 @@ m.box.zscore.filt.wkm <- ggplot(subset(jlong.diff.genesets.WKM, geneset %in% gse
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Zebrafish WKM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Zebrafish WKM")
 print(m.box.zscore.filt.wkm)
 
 m.box.log2fc.filt.wkm <- ggplot(subset(jlong.diff.genesets.WKM, geneset %in% gsetfilt.WKM), aes(x = mark, y = log2fc, fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Zebrafish WKM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Zebrafish WKM")
 print(m.box.log2fc.filt.wkm)
 
 m.box.logcounts.filt.wkm <- ggplot(subset(jlong.diff.genesets.WKM, geneset %in% gsetfilt.WKM), aes(x = mark, y = log2p1counts, fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Zebrafish WKM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Zebrafish WKM")
 print(m.box.logcounts.filt.wkm)
 
 m.box.counts.filt.wkm <- ggplot(subset(jlong.diff.genesets.WKM, geneset %in% gsetfilt.WKM), aes(x = mark, y = sqrt(counts), fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Zebrafish WKM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Zebrafish WKM")
 print(m.box.counts.filt.wkm)
 
 
@@ -206,28 +229,28 @@ m.box.zscore.bm <- ggplot(jlong.diff.genesets.BM, aes(x = mark, y = zscore, fill
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Mouse BM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Mouse BM")
 print(m.box.zscore.bm)
 
 m.box.log2fc.bm <- ggplot(jlong.diff.genesets.BM, aes(x = mark, y = log2fc, fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Mouse BM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Mouse BM")
 print(m.box.log2fc.bm)
 
 m.box.logcounts.bm <- ggplot(jlong.diff.genesets.BM, aes(x = mark, y = log2p1counts, fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Mouse BM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Mouse BM")
 print(m.box.logcounts.bm)
 
 m.box.counts.bm <- ggplot(jlong.diff.genesets.BM, aes(x = mark, y = sqrt(counts), fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Mouse BM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Mouse BM")
 print(m.box.counts.bm)
 
 
@@ -240,28 +263,28 @@ m.box.zscore.filt.bm <- ggplot(subset(jlong.diff.genesets.BM, geneset %in% gsetf
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Mouse BM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Mouse BM")
 print(m.box.zscore.filt.bm)
 
 m.box.log2fc.filt.bm <- ggplot(subset(jlong.diff.genesets.BM, geneset %in% gsetfilt.BM), aes(x = mark, y = log2fc, fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Mouse BM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Mouse BM")
 print(m.box.log2fc.filt.bm)
 
 m.box.logcounts.filt.bm <- ggplot(subset(jlong.diff.genesets.BM, geneset %in% gsetfilt.BM), aes(x = mark, y = log2p1counts, fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Mouse BM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Mouse BM")
 print(m.box.logcounts.filt.bm)
 
 m.box.counts.filt.bm <- ggplot(subset(jlong.diff.genesets.BM, geneset %in% gsetfilt.BM), aes(x = mark, y = sqrt(counts), fill = cluster)) + geom_boxplot() + 
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   facet_wrap(~geneset, ncol = 4) + geom_hline(yintercept = 0, linetype = "dotted") + 
-  scale_fill_manual(values = cbPalette) + ggtitle("Mouse BM")
+  scale_fill_manual(values = cbPalette2) + ggtitle("Mouse BM")
 print(m.box.counts.filt.bm)
 
 

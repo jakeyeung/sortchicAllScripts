@@ -14,15 +14,20 @@ library(GenomicRanges)
 # Constants ---------------------------------------------------------------
 
 # winsizes <- c(10000L, 20000L, 50000L, 100000L)
-# winsizes <- c(500L, 1000L, 5000L)
-winsizes <- c(50000L)
+winsizes <- c(500L, 1000L, 5000L)
+# winsizes <- c(50000L)
 
-species <- "drerio"
+species <- "hsapiens"
+hubprefix <- "/home/jyeung/hub_oudenaarden/jyeung"
+outdir <- file.path(hubprefix, paste0("data/databases/gene_tss/", species))
+dir.create(outdir)
+
+chromos <- c(seq(22), "X", "Y")
+chromos.withprefix <- paste("chr", chromos, sep = "")
+  
 for (winsize in winsizes){
   
   # write bedfile to table
-  hubprefix <- "/home/jyeung/hub_oudenaarden/jyeung"
-  outdir <- file.path(hubprefix, paste0("data/databases/gene_tss/zebrafish"))
   outf <- file.path(outdir, paste0("gene_tss.CodingOnly.winsize_", winsize, ".species_", species, ".bed"))
   outf.nochr <- file.path(outdir, paste0("gene_tss.CodingOnly.winsize_", winsize, ".species_", species, ".nochr.bed"))
   
@@ -43,8 +48,6 @@ for (winsize in winsizes){
   # 
   print(unique(gos$chromosome_name))
   
-  chromos <- c(seq(25))
-  chromos.withprefix <- paste("chr", chromos, sep = "")
   
   # Processs ----------------------------------------------------------------
   
