@@ -394,7 +394,6 @@ input.dat <- subset(jsub.sum, spikeinconc == 50000 & conc == "37U" & mark == "H3
 
 
 
-
 spikeinconc.vec <- sort(unique(jsub.sum$spikeinconc))
 conc.vec <- c("37U", "75U")
 jmarks.vec <- c("H3K4me3", "H3K27me3")
