@@ -1,0 +1,303 @@
+# Jake Yeung
+# Date of Creation: 2020-08-26
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/ZF_all_merged_for_MARA/1-correct_LDA_from_peaks_by_variance.MouseBM.poisson_faster.R
+# 
+
+
+rm(list=ls())
+jstart <- Sys.time()
+
+
+library(parallel)
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(data.table)
+library(Matrix)
+
+library(topicmodels)
+
+library(scchicFuncs)
+library(hash)
+library(igraph)
+library(umap)
+
+library(DescTools)
+
+library(glmpca)
+
+# library(devtools)
+# dev_mode(on = TRUE)
+# devtools::install_github("willtownes/glmpca")
+library(glmpca)
+
+# Constants ---------------------------------------------------------------
+
+hubprefix <- "/home/jyeung/hub_oudenaarden"
+
+
+# jcovar.cname <- "ncuts.var.CenteredAndScaled"
+# jcovar.cname <- "ncuts.var.CenteredAndScaled"
+# jcovar.cname <- "ncuts.var.log2.CenteredAndScaled"
+jcovar.cname <- "cell.var.within.sum.norm.log2.CenteredAndScaled"
+winsorize <- FALSE
+
+jconds <- c("AllMerged"); names(jconds) <- jconds
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
+
+jcondsmarks <- as.character(levels(interaction(jconds, jmarks, sep = "_")))
+names(jcondsmarks) <- jcondsmarks
+ncores <- length(jcondsmarks)
+
+bincutoff <- 10000
+
+niter <- 250
+jtol <- 1e-4
+jbins.keep <- 250
+# calculating var raw
+binsize <- 50000
+mergesize <- 100
+bigbinsize <- 50000 * mergesize
+jpenalty <- 1.5
+
+
+# ldadate <- "2020-02-11"
+jdate <- "2020-08-26"
+jsuffix <- "KeepBestPlates2.LDAfromPeaks"
+
+outb <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC"
+# outdir <- paste0("/home/jyeung/data/from_rstudioserver/scchic/rdata_robjs/GLMPCA_outputs.", jsuffix)
+outdir <- file.path(outb, paste0("GLMPCA_outputs.Faster.pois.RemoveSmallPeaks.", jsuffix))
+
+# outdir <- paste0("/home/jyeung/hpc/scChiC/from_rstudioserver/glmpca_analyses/GLMPCA_outputs.", jsuffix)
+dir.create(outdir)
+
+jsettings <- umap.defaults
+jsettings$n_neighbors <- 30
+jsettings$min_dist <- 0.1
+jsettings$random_state <- 123
+
+
+# inmain.bins <- paste0(hubprefix, "/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.", ldadate, ".var_filt.UnenrichedAndAllMerged.", jsuffix)
+inmain.bins <- paste0(hubprefix, "/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_B6BM_All_allmarks.2020-02-11.var_filt.UnenrichedAndAllMerged.KeepBestPlates2")
+assertthat::assert_that(dir.exists(inmain.bins))
+
+inmain.peaks <- paste0(hubprefix, "/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all/ldaAnalysisBins_BMAllMerged.2020-02-15.from_hiddendomains.NewCountFilters")
+assertthat::assert_that(dir.exists(inmain.bins))
+assertthat::assert_that(dir.exists(inmain.peaks))
+
+
+# jcondmark <- "Unenriched_H3K27me3"
+# for (jcondmark in jcondsmarks){
+  mclapply(jcondsmarks, function(jcondmark){
+  
+  jcond <- strsplit(jcondmark, "_")[[1]][[1]]
+  jmark <- strsplit(jcondmark, "_")[[1]][[2]]
+  
+  print(paste("Running for:", jcond, jmark))
+  # lapply(jmarks, function(jmark){
+  
+  # Setup output paths ------------------------------------------------------
+  
+  outbase <- paste0("PZ_", jmark, ".", jcond, ".", jsuffix, ".GLMPCA_var_correction.mergebinsize_", mergesize, ".binskeep_", jbins.keep, ".covar_", jcovar.cname, ".penalty_", jpenalty, ".winsorize_", winsorize, ".", jdate)
+  outname <- paste0(outbase, ".RData")
+  outname.pdf <- paste0(outbase, ".pdf")
+  outf <- file.path(outdir, outname)
+  outf.pdf <- file.path(outdir, outname.pdf)
+  
+  print(file.exists(outf))
+  
+  if (file.exists(outf)){
+    return(NULL)
+  }
+  
+  # Load data  --------------------------------------------------------------
+  
+  infname.bins <- paste0("lda_outputs.BM_", jmark, "_varfilt_countmat.2020-02-11.", jcond, ".K-30.binarize.FALSE/ldaOut.BM_", jmark, "_varfilt_countmat.2020-02-11.", jcond, ".K-30.Robj")
+  # infname.bins <- paste0("lda_outputs.counts_table_var_filt.", jmark, ".imputevar_", jvarcutoff, ".K-30.binarize.FALSE/ldaOut.counts_table_var_filt.", jmark, ".imputevar_", jvarcutoff, ".K-30.Robj")
+  infname.peaks <- paste0("lda_outputs.merged.", jmark, ".minlength_1000.cutoff_analysis.merged.withchr.annotated.NewCountFilters.K-30.binarize.FALSE/ldaOut.merged.", jmark, ".minlength_1000.cutoff_analysis.merged.withchr.annotated.NewCountFilters.K-30.Robj")
+  # infname.peaks <- paste0("lda_outputs.", jmark, ".imputevarfilt.lessstringent.mapq_40.countTable.HiddenDomains.NewCountFilters.K-30.binarize.FALSE/ldaOut.", jmark, ".imputevarfilt.lessstringent.mapq_40.countTable.HiddenDomains.NewCountFilters.K-30.Robj")
+  inf.bins <- file.path(inmain.bins, infname.bins)
+  assertthat::assert_that(file.exists(inf.bins))
+  inf.peaks <- file.path(inmain.peaks, infname.peaks)
+  assertthat::assert_that(file.exists(inf.peaks))
+  
+  
+  # load raw counts from peaks 
+  load(inf.peaks, v=T)
+  count.mat.peaks <- as.matrix(count.mat)
+  tm.result.peaks <- AddTopicToTmResult(posterior(out.lda), jsep = "_")
+  
+  # get distances
+  peaks.all <- colnames(tm.result.peaks$terms)
+  coords.all <- sapply(peaks.all, function(p) strsplit(p, ";")[[1]][[1]])
+  peaks.dist <- data.frame(rname = peaks.all, 
+                           coord = coords.all, 
+                           chromo = sapply(coords.all, GetChromo),
+                           jstart = as.numeric(sapply(coords.all, GetStart)),
+                           jend = as.numeric(sapply(coords.all, GetEnd)), 
+                           stringsAsFactors = FALSE) %>%
+    rowwise() %>%
+    mutate(jdist = jend - jstart)
+  peaks.keep <- subset(peaks.dist, jdist > bincutoff)$rname
+  
+  print("NPeaks before...")
+  print(length(peaks.all))
+  print("NPeaks after...")
+  print(length(peaks.keep))
+  
+  tm.result.peaks$terms <- tm.result.peaks$terms[, peaks.keep]
+  
+  print("dim count.mat.peaks before...")
+  print(dim(count.mat.peaks))
+  
+  count.mat.peaks <- count.mat.peaks[peaks.keep, ]
+  
+  print("dim count.mat.peaks after...")
+  print(dim(count.mat.peaks))
+  
+  topics.mat.peaks <- tm.result.peaks$topics
+  
+  
+  load(inf.bins, v=T)
+  count.mat.bins <- as.matrix(count.mat)
+  tm.result.bins <- posterior(out.lda)
+  tm.result.bins <- AddTopicToTmResult(posterior(out.lda), jsep = "_")
+  # colnames(tm.result.bins$topics) <- paste("topic", colnames(tm.result.bins$topics), sep = "_")
+  # rownames(tm.result.bins$terms) <- paste("topic", rownames(tm.result.bins$terms), sep = "_")
+  # topics.mat.bins <- tm.result.bins$topics
+  
+  
+  
+  
+  # start -----------------
+  pdf(outf.pdf, useDingbats = FALSE)
+  
+  print(jmark)
+  print("Current time elapsed:")
+  print(Sys.time() - jstart)
+  
+  # Plot it all -------------------------------------------------------------
+  
+  umap.out <- umap(topics.mat.peaks, config = jsettings)
+  dat.umap.long <- data.frame(cell = rownames(umap.out[["layout"]]), umap1 = umap.out[["layout"]][, 1], umap2 = umap.out[["layout"]][, 2], stringsAsFactors = FALSE)
+  dat.umap.long <- DoLouvain(topics.mat.peaks, jsettings, dat.umap.long)
+  cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+  ggplot(dat.umap.long, aes(x = umap1, y = umap2, color = louvain)) + geom_point() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + scale_color_manual(values = cbPalette)
+  
+  
+  # Plot variance -----------------------------------------------------------
+  
+  (jchromos <- paste("chr", c(seq(19)), sep = ""))
+  dat.impute.log <- log2(t(tm.result.bins$topics %*% tm.result.bins$terms))
+  
+  dat.var <- CalculateVarAll(dat.impute.log, jchromos) %>%
+    rowwise() %>%
+    mutate(plate = ClipLast(as.character(cell), jsep = "_"))
+  
+  dat.var.merge <- left_join(dat.umap.long, dat.var)
+  
+  m.plates <- ggplot(dat.var.merge, aes(x = umap1, y = umap2, color = plate)) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_point() + scale_color_manual(values = cbPalette)
+  
+  m.var <- ggplot(dat.var.merge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_point() + scale_color_viridis_c(direction = -1)
+  
+  m.var.plates <- ggplot(dat.var.merge, aes(x = umap1, y = umap2, color = cell.var.within.sum.norm)) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_point() + scale_color_viridis_c(direction = -1) + facet_wrap(~plate)
+  
+  # PCA on topics, show variance
+  pca.out <- prcomp(topics.mat.peaks, center = TRUE, scale. = TRUE)
+  dat.pca <- data.frame(cell = rownames(pca.out$x), PC1 = pca.out$x[, 1], PC2 = pca.out$x[, 2], stringsAsFactors = FALSE) %>%
+    left_join(dat.var.merge)
+  
+  m.pca.var <- ggplot(dat.pca, aes(x = PC1, y = PC2, color = cell.var.within.sum.norm)) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_point() + scale_color_viridis_c(direction = -1)
+  
+  m.pca.var.plates <- ggplot(dat.pca, aes(x = PC1, y = PC2, color = cell.var.within.sum.norm)) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    geom_point() + scale_color_viridis_c(direction = -1) + facet_wrap(~plate)
+  
+  print(m.plates)
+  print(m.var)
+  print(m.var.plates)
+  print(m.pca.var)
+  print(m.pca.var.plates)
+  
+  
+  
+  # Calculate raw varaince and compare with imputed variance  ---------------
+  
+  
+  
+  
+  dat.var.raw <- CalculateVarRaw(count.mat, merge.size = mergesize, chromo.exclude.grep = "^chrX|^chrY", jpseudocount = 1, jscale = 10^6, calculate.ncuts = TRUE)
+  # center and scale ncuts.var
+  dat.var.raw$ncuts.var.log2 <- log2(dat.var.raw$ncuts.var)
+  dat.var.raw$ncuts.var.CenteredAndScaled <- (dat.var.raw$ncuts.var - mean(dat.var.raw$ncuts.var)) / sd(dat.var.raw$ncuts.var)
+  dat.var.raw$ncuts.var.log2.CenteredAndScaled <- (dat.var.raw$ncuts.var.log2 - mean(dat.var.raw$ncuts.var.log2)) / sd(dat.var.raw$ncuts.var.log2)
+  
+  dat.merge2 <- left_join(dat.var.merge, dat.var.raw)
+  dat.merge2$cell.var.within.sum.norm.CenteredAndScaled <- (dat.merge2$cell.var.within.sum.norm - mean(dat.merge2$cell.var.within.sum.norm)) / sd(dat.merge2$cell.var.within.sum.norm)
+  dat.merge2$cell.var.within.sum.norm.log2 <- log2(dat.merge2$cell.var.within.sum)
+  
+  dat.merge2$cell.var.within.sum.norm.log2.CenteredAndScaled <- (dat.merge2$cell.var.within.sum.norm.log2 - mean(dat.merge2$cell.var.within.sum.norm.log2)) / sd(dat.merge2$cell.var.within.sum.norm.log2)
+  
+  # winsorize?
+  if (winsorize){
+    dat.merge2[[jcovar.cname]] <- DescTools::Winsorize(dat.merge2[[jcovar.cname]], probs = c(0.01, 0.99))
+  }
+  
+  m1 <- ggplot(dat.merge2, aes(x = ncuts.var, y = cell.var.within.sum.norm)) + geom_point() + 
+    scale_x_log10() + scale_y_log10() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  m2 <- ggplot(dat.merge2, aes(x = ncuts, y = ncuts.var)) + geom_point() + 
+    scale_x_log10() + scale_y_log10() + theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  m3 <- ggplot(dat.merge2, aes_string(x = jcovar.cname, y = "cell.var.within.sum.norm")) + geom_point() + scale_y_log10() + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
+  print(m1)
+  print(m2)
+  print(m3)
+  
+  dev.off()
+  
+  if (file.exists(outf)){
+    print(paste("Outf exists, skipping...", outf))
+    return(NULL)
+  }
+  
+  # set up GLMPCA
+  
+  print("Running GLMPCA")
+  
+  glm.inits <- InitGLMPCAfromLDA(count.mat.peaks, tm.result.peaks, dat.merge2, covar.cname = jcovar.cname, bins.keep = jbins.keep, do.log = FALSE, svd.on.Yinit = TRUE, use.orig.sz = TRUE)
+  
+  
+  system.time(
+    glm.out <- glmpca(Y = glm.inits$Y.filt, L = glm.inits$ntopics, 
+                      fam = "poi", 
+                      ctl = list(maxIters = niter, tol = jtol, penalty = jpenalty, verbose=TRUE), 
+                      init = list(factors = glm.inits$U.init, loadings = glm.inits$V.init), 
+                      # minibatch = "none",
+                      # optimizer = "fisher", 
+                      minibatch = "stochastic",
+                      optimizer = "avagrad", 
+                      X = glm.inits$X.mat, Z = NULL, sz = glm.inits$size.factor)
+  )
+  print(traceback())
+  
+  save(glm.out, glm.inits, dat.merge2, file = outf)
+  
+  
+  print(Sys.time() - jstart)
+  
+  }, mc.cores = ncores)
+  # })
+# }
+
+# dev_mode(on = FALSE)
