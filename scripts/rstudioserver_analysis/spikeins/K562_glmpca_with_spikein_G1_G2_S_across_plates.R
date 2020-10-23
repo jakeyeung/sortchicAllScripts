@@ -31,7 +31,7 @@ jmark <- "H3K4me3"
 
 # jsuffix <- ".penalty_5.by_plate.RData"
 jsuffix <- ".topn_5000.glmpcaout.penalty_5.by_plate.RData"
-jprefix <- ""
+jprefix <- "G1.G2.S"
 
 if (make.plots){
   pdfout <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/spikeins_K562_cellcycle/dim_reduction_summaries_with_spikeins.", jmark, ".", Sys.Date(), jprefix, jsuffix, ".pdf")
@@ -85,6 +85,8 @@ dat.spikeins.mat <- dat.spikeins.mat %>%
   left_join(., totalcounts, by = c("samp" = "cell"))
 
 dat.spikeins.mat$experi <- sapply(dat.spikeins.mat$samp, function(x) ClipLast(x, jsep = "_"))
+
+dat.spikeins.mat <- AddCellCycleLabel.bydat(dat.spikeins.mat)
 
 lsi.out <- RunLSI2(count.mat = as.matrix(mat), tf.method = "spikeins", idf.method = "inverselog", n.components = 30, .log = FALSE, .center = FALSE, .truncated = TRUE, spikeincounts = spikeincounts.vec)
 
@@ -156,7 +158,7 @@ ggplot(dat.umap.lda, aes(x = umap1, y = umap2, color = log10(totalcounts))) +
 load(inf.glmpca, v=T)
 
 dat.umap.glmpca <- DoUmapAndLouvain(glmpcaout$factors, jsettings = jsettings) %>%
-  left_join(., dat.spikeins.mat, by = c("cell" = "samp"))
+  left_join(., dat.spikeins.mat, by = c("cell" = "samp")) 
 
 ggplot(dat.umap.glmpca, aes(x = umap1, y = umap2, color = experi)) + 
   geom_point() +

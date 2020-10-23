@@ -247,9 +247,6 @@ mclapply(jmarks, function(jmark){
   })
   save(jfits, dat.umap, file = outrdata)
   
-  
-  
-  
 }, mc.cores = length(jmarks))
 
 # for (jmark in jmarks){

@@ -15,13 +15,14 @@ library(Matrix)
 library(scchicFuncs)
 
 jmark <- "H3K4me1"
+
 pdfout <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/spikeins_K562_cellcycle/genomewide_summaries_with_spikeins.", Sys.Date(), ".pdf")
 pdf(pdfout, width = 1020/72, height = 815/72, useDingbats = FALSE)
 
 # Load chromos ------------------------------------------------------------
 
 hubprefix <- "/home/jyeung/hub_oudenaarden"
-indir <- file.path(hubprefix, "jyeung/data/scChiC/raw_data_spikeins/VAN6969/K562/tagged_bams/countTablesAndRZr1only_ByChromo.NewFilters")
+indir <- file.path(hubprefix, "jyeung/data/scChiC/raw_data_spikeins/VAN4969/K562/tagged_bams/countTablesAndRZr1only_ByChromo.NewFilters")
 infs.chromo <- list.files(indir, pattern = "K562-EtOH-.*.csv", full.names = TRUE)
 
 jspikeinchromo <- "J02459.1"
@@ -35,10 +36,11 @@ dat.chromos <- lapply(infs.chromo, function(inf){
 
 # Load LH counts ----------------------------------------------------------
 
-indir.lh <- file.path(hubprefix, "jyeung/data/scChiC/raw_data_spikeins/VAN6969/K562/tagged_bams/RZcounts.NewFilters")
+indir.lh <- file.path(hubprefix, "jyeung/data/scChiC/raw_data_spikeins/VAN4969/K562/tagged_bams/RZcounts.NewFilters")
 infs.lh <- list.files(indir.lh, pattern = "K562-EtOH-.*.csv", full.names = TRUE)
 
 dat.lh <- lapply(infs.lh, function(inf){
+  print(inf)
   dat.filt.long.lh <- ReadLH.SummarizeTA(inf)
 }) %>%
   bind_rows() %>%
@@ -128,15 +130,22 @@ ggplot(dat.lh, aes(y = rowcoord, x = colcoord, size = log(chromocounts), color =
 
 # look at G1, G2, S 
 
-ggplot(dat.lh %>% filter(endsWith(experi, suffix = "G1-G2") & mark == "H3K9me3"), 
-       aes(y = rowcoord, x = colcoord, size = log(chromocounts), color = log(chromocounts))) + 
-  geom_point() + 
-  theme_bw() + 
-  scale_color_viridis_c() + 
-  theme(aspect.ratio=16 / 24, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  scale_y_continuous(trans = "reverse", breaks = seq(from = 0, to = 16, by = 4))  + 
-  scale_x_continuous(breaks = seq(from = 0, to = 24, by = 4)) + 
-  facet_wrap(~experi)
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
+
+for (jmark in jmarks){
+  m <- ggplot(dat.lh %>% filter(endsWith(experi, suffix = "G1-G2") & mark == jmark), 
+             aes(y = rowcoord, x = colcoord, size = log2(chromocounts / spikeincounts), color = log2(chromocounts / spikeincounts))) + 
+    geom_point() + 
+    theme_bw() + 
+    scale_color_viridis_c() + 
+    theme(aspect.ratio=16 / 24, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    scale_y_continuous(trans = "reverse", breaks = seq(from = 0, to = 16, by = 4))  + 
+    scale_x_continuous(breaks = seq(from = 0, to = 24, by = 4)) + 
+    facet_wrap(~experi) + 
+    ggtitle(jmark)
+  print(m)
+}
+
 
 
 cellcycle.lst = list("0" = "0_G1", "1" = "1_S", "2" = "2_G2/M")
@@ -154,22 +163,29 @@ ggplot(jsub, aes(y = rowcoord, x = colcoord, color = cellcycle.str)) +
   scale_y_continuous(trans = "reverse", breaks = seq(from = 0, to = 16, by = 4))  + 
   scale_x_continuous(breaks = seq(from = 0, to = 24, by = 4))
 
-ggplot(jsub, aes(x = cellcycle.str, y = log2(chromocounts))) + 
+ggplot(jsub, aes(x = cellcycle.str, y = chromocounts)) + 
   geom_boxplot() + 
   geom_point()  + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  facet_wrap(~mark)
+  theme_bw(18) + 
+  xlab("") + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+  # theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~mark, nrow = 1) + 
+  scale_y_log10()
 
 ggplot(jsub, aes(x = cellcycle.str, y = log2(chromocounts / spikeincounts))) + 
   geom_boxplot() + 
   geom_point()  + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  facet_wrap(~mark)
+  theme_bw(18) + 
+  xlab("") + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+  # theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  facet_wrap(~mark, nrow = 1)
 
 ggplot(jsub, aes(x = log2(chromocounts / spikeincounts), fill = cellcycle.str)) + 
   geom_density(alpha = 0.25) + 
-  theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
-  facet_wrap(~mark)
+  theme_bw(18) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+  facet_wrap(~mark, nrow = 1)
 
 
 jsub.others <- dat.lh %>% filter(!endsWith(experi, suffix = "G1-G2")) %>%
