@@ -3,13 +3,35 @@
 # File: 
 # 
 
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(data.table)
+library(Matrix)
+
+library(hash)
+library(igraph)
+library(umap)
+library(scchicFuncs)
+
+library(topicmodels)
+
+library(ggrepel)
+
+
+jsettings <- umap.defaults
+jsettings$n_neighbors <- 30
+jsettings$min_dist <- 0.1
+jsettings$random_state <- 123
+
 # Do boxplots of chromo to spikeincounts ----------------------------------
 
 
-jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/spikeins_mouse.round2/chromo_spikein_counts"
-pdf(file.path(outdir, "chromo_spikein_counts.pdf"))
+# dir.create(outdir)
+pdf(file.path(outdir, paste0("chromo_spikein_counts.allmark.", Sys.Date(), ".pdf")))
 
 
 
