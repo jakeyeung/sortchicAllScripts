@@ -33,47 +33,6 @@ jsettings$random_state <- 123
 
 # Function ----------------------------------------------------------------
 
-
-FitGlmRowClusterPlate.debug <- function(jrow, cnames, dat.annots.filt.mark, ncuts.cells.mark, jbin = NULL, returnobj=FALSE){
-  # use Offset by size of library
-  # https://stats.stackexchange.com/questions/66791/where-does-the-offset-go-in-poisson-negative-binomial-regression
-  # fit GLM for a row of a sparse matrix, should save some space?
-  
-  # pvalue by deviance goodness of fit: https://thestatsgeek.com/2014/04/26/deviance-goodness-of-fit-test-for-poisson-regression/
-  # offset is in log because the model says the log counts is equal to RHS
-  
-  if (!is.null(nrow(jrow))){
-    # probably a matrix of many rows, sum them up
-    print(paste("Merging", nrow(jrow), "rows"))
-    row <- Matrix::colSums(jrow)
-  }
-  dat <- data.frame(cell = cnames, ncuts = jrow, stringsAsFactors = FALSE) %>%
-    left_join(., dat.annots.filt.mark, by = "cell") %>%
-    left_join(., ncuts.cells.mark, by = "cell")
-  
-  # m1.pois <- glm(ncuts ~ 1 + Cluster + offset(ncuts.total), data = dat, family = "poisson")
-  m1.pois <- glm(ncuts ~ 1 + Plate + Cluster + offset(log(ncuts.total)), data = dat, family = "poisson")
-  mnull.pois <- glm(ncuts ~ 1 + Plate + offset(log(ncuts.total)), data = dat, family = "poisson")
-  
-  if (!returnobj){
-    jsum <- anova(mnull.pois, m1.pois)
-    pval <- pchisq(jsum$Deviance[[2]], df = jsum$Df[[2]], lower.tail = FALSE)
-    out.dat <- data.frame(pval = pval, 
-                          dev.diff = jsum$Deviance[[2]],
-                          df.diff = jsum$Df[[2]],
-                          t(as.data.frame(coefficients(m1.pois))), 
-                          stringsAsFactors = FALSE)
-    if (!is.null(jbin)){
-      out.dat$bin <- jbin
-      rownames(out.dat) <- jbin
-    }
-    return(out.dat)
-  } else {
-    return(list(fit.full = m1.pois, fit.null = mnull.pois, dat.input = dat))
-  }
-}
-
-
 # Load LDA (contains countmat)  ---------------------------------------------------------------
 
 ncores <- 8
@@ -98,7 +57,7 @@ dat.spikein.all <- fread(inf.spikein) %>%
 cbPalette <- c("#696969", "#56B4E9", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400",  "#32CD32", "#FFB6C1", "#0b1b7f", "#ff9f7d", "#eb9d01", "#2c2349", "#753187", "#f80597")
 
 for (jmark in jmarks){
-  outf <- file.path(outdir, paste0("poisson_fit_", jtype, ".",  jmark, ".", Sys.Date(), ".spikeins.again.newannot2.RData"))
+  outf <- file.path(outdir, paste0("poisson_fit_", jtype, ".",  jmark, ".", Sys.Date(), ".spikeins.again.newannot2.witherrors.RData"))
   if (file.exists(outf)){
     next
   }
@@ -192,7 +151,7 @@ for (jmark in jmarks){
   
   jfits.lst <- parallel::mclapply(jrow.names, function(jrow.name){
     jrow <- jmat.mark[jrow.name, ]
-    jout <- FitGlmRowClustersPlate(jrow, cnames, dat.annots.filt.mark, ncuts.for.fit.mark, jbin = NULL, returnobj = FALSE)
+    jout <- FitGlmRowClustersPlate(jrow, cnames, dat.annots.filt.mark, ncuts.for.fit.mark, jbin = NULL, returnobj = FALSE, with.se = TRUE)
     return(jout)
   }, mc.cores = ncores)
   

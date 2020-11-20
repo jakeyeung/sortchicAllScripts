@@ -48,12 +48,12 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 for (jmark in jmarks){
   
   indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/differential_analysis_BM_AllMerged3"
-  outf <- file.path(indir, paste0("DE_analysis_", jmark, ".", jtype, ".", jmeth, ".check_fits.pdf"))
+  # outf <- file.path(indir, paste0("DE_analysis_", jmark, ".", jtype, ".", jmeth, ".check_fits.pdf"))
   # if (file.exists(outf)){
   #   print(paste("outf exists, skipping", outf))
   #   next
   # }
-  pdf(outf, useDingbats = FALSE)
+  # pdf(outf, useDingbats = FALSE)
   
   inf.fits <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/poisson_fits_BM_AllMerged3/poisson_fit_", jtype, ".", jmark, ".2020-11-12.RData")
   assertthat::assert_that(file.exists(inf.fits))
@@ -145,7 +145,7 @@ for (jmark in jmarks){
   dat.counts.annot <- left_join(dat.annots.filt.mark, dat.counts, by = "cell") %>%
     left_join(., ncuts.cells[[jmark]], by = "cell")
   
-  ggplot(dat.counts.annot, aes(x = cluster, y = cuts / )) + 
+  ggplot(dat.counts.annot, aes(x = cluster, y = cuts)) + 
     facet_wrap(~Plate) + 
     geom_boxplot() + 
     geom_point() +
@@ -153,8 +153,7 @@ for (jmark in jmarks){
     theme_bw() + 
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
   
-  
-  dev.off()
+  # dev.off()
   
   
 }

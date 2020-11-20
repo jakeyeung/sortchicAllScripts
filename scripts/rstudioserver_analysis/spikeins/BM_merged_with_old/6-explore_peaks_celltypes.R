@@ -33,7 +33,7 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmark
 hubprefix <- "/home/jyeung/hub_oudenaarden"
 
 inmain <- file.path(hubprefix, paste0("jyeung/data/scChiC/raw_data_spikeins/BM_merge_first_and_second.same_annot_file/merged_bams.first_and_second_rounds/hiddendomains_outputs_minlength_2500.FromR.maxcount_40_60_R"))
-outpdf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/peaks_analysis/size_of_peaks.pdf")
+outpdf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/peaks_analysis/size_of_peaks.", Sys.Date(), ".pdf")
 
 pdf(outpdf, file = outpdf)
 
@@ -46,14 +46,21 @@ peaksbed.mark.long <- lapply(jmarks, function(jmark){
     ctype <- GetCtypeFromStr(dname)
     jmark <- GetMarkFromStr(dname)
     jminlength <- GetMinlengthFromStr(dname)
-    fname2 <- paste0("BM_round1_round2_merged_", jmark, "_", ctype, ".", jminlength, ".cutoff_analysis.bed")
+    # fname2 <- paste0("BM_round1_round2_merged_", jmark, "_", ctype, ".", jminlength, ".cutoff_analysis.bed")
+    fname2 <- paste0("BM_round1_round2_merged_", jmark, "_", ctype, ".", jminlength, ".cutoff_vis.bed")
     
     print(dname)
     print(jmark)
     
     inf.tmp <- file.path(inmain, dname, fname2)
     assertthat::assert_that(file.exists(file.path(inf.tmp)))
-    dat.bed <- fread(inf.tmp, col.names = c("chromo", "jstart", "jend", "peak"))
+    if (endsWith(x = fname2, suffix = "_analysis.bed")){
+      dat.bed <- fread(inf.tmp, col.names = c("chromo", "jstart", "jend", "peak"), header = FALSE)
+    } else if (endsWith(x = fname2, suffix = "_vis.bed")){
+      dat.bed <- fread(inf.tmp, col.names = c("chromo", "jstart", "jend", "peak", "score", "strand", "thickStart", "thickEnd", "itemRgb"), header = TRUE)
+    } else {
+      print(paste("Warning: fname2 should end with _analysis.bed or _vis.bed:", fname2))
+    }
     dat.bed$chromo <- paste("chr", dat.bed$chromo, sep = "")
     dat.bed$mark <- jmark
     dat.bed$cluster <- ctype
@@ -90,7 +97,7 @@ peaksbed.mark.sum <- peaksbed.mark.long %>%
   group_by(cluster, mark) %>%
   summarise(jlength = sum(jlength))
  
-ggplot(peaksbed.mark.sum, aes(x = cluster, y = log10(jlength))) + 
+ggplot(peaksbed.mark.sum, aes(x = cluster, y = log2(jlength))) + 
  geom_point() + facet_wrap(~mark) + 
  theme_bw() + 
  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))

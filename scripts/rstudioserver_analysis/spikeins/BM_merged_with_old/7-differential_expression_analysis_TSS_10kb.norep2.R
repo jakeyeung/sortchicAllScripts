@@ -1,6 +1,6 @@
 # Jake Yeung
-# Date of Creation: 2020-11-12
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/BM_merged_with_old/7-differential_expression_analysis_TSS_10kb.R
+# Date of Creation: 2020-11-14
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/BM_merged_with_old/7-differential_expression_analysis_TSS_10kb.norep2.R
 # 
 
 
@@ -66,7 +66,7 @@ for (jmark in jmarks){
   inf.annot <- file.path(indir.annot, paste0("cell_cluster_table.old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.txt"))
   dat.annot <- fread(inf.annot)
   
-  cells.keep <- colnames(count.mat)
+  cells.keep <- colnames(count.mat)[!grepl("rep2", colnames(count.mat))]
   dat.annot.filt <- subset(dat.annot, cell %in% cells.keep)
   
   dat.umap.merge <- left_join(dat.umap, subset(dat.annot, select = c(cell, cluster)))
@@ -111,7 +111,7 @@ for (jmark in jmarks){
   
   
   # Ssave outputs -----------------------------------------------------------
-  outf <- file.path(outdir, paste0("poisson_fit_TSS_", jdist, ".",  jmark, ".", Sys.Date(), ".newannot2.RData"))
+  outf <- file.path(outdir, paste0("poisson_fit_TSS_", jdist, ".",  jmark, ".", Sys.Date(), ".newannot2.norep2.RData"))
   # saveRDS(jfits.lst, outf)
   save(jfits.lst, dat.annots.filt.mark, jmat.mark, ncuts.for.fit.mark, file = outf)
   

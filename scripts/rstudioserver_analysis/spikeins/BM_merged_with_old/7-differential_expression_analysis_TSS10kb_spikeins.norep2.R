@@ -1,8 +1,7 @@
 # Jake Yeung
 # Date of Creation: 2020-11-12
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/BM_merged_with_old/7-differential_expression_analysis_hiddendomains_spikeins.R
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/BM_merged_with_old/7-differential_expression_analysis_TES_spikeins.R
 # 
-
 
 
 
@@ -31,62 +30,21 @@ jsettings$random_state <- 123
 
 
 
-# Function ----------------------------------------------------------------
-
-
-FitGlmRowClusterPlate.debug <- function(jrow, cnames, dat.annots.filt.mark, ncuts.cells.mark, jbin = NULL, returnobj=FALSE){
-  # use Offset by size of library
-  # https://stats.stackexchange.com/questions/66791/where-does-the-offset-go-in-poisson-negative-binomial-regression
-  # fit GLM for a row of a sparse matrix, should save some space?
-  
-  # pvalue by deviance goodness of fit: https://thestatsgeek.com/2014/04/26/deviance-goodness-of-fit-test-for-poisson-regression/
-  # offset is in log because the model says the log counts is equal to RHS
-  
-  if (!is.null(nrow(jrow))){
-    # probably a matrix of many rows, sum them up
-    print(paste("Merging", nrow(jrow), "rows"))
-    row <- Matrix::colSums(jrow)
-  }
-  dat <- data.frame(cell = cnames, ncuts = jrow, stringsAsFactors = FALSE) %>%
-    left_join(., dat.annots.filt.mark, by = "cell") %>%
-    left_join(., ncuts.cells.mark, by = "cell")
-  
-  # m1.pois <- glm(ncuts ~ 1 + Cluster + offset(ncuts.total), data = dat, family = "poisson")
-  m1.pois <- glm(ncuts ~ 1 + Plate + Cluster + offset(log(ncuts.total)), data = dat, family = "poisson")
-  mnull.pois <- glm(ncuts ~ 1 + Plate + offset(log(ncuts.total)), data = dat, family = "poisson")
-  
-  if (!returnobj){
-    jsum <- anova(mnull.pois, m1.pois)
-    pval <- pchisq(jsum$Deviance[[2]], df = jsum$Df[[2]], lower.tail = FALSE)
-    out.dat <- data.frame(pval = pval, 
-                          dev.diff = jsum$Deviance[[2]],
-                          df.diff = jsum$Df[[2]],
-                          t(as.data.frame(coefficients(m1.pois))), 
-                          stringsAsFactors = FALSE)
-    if (!is.null(jbin)){
-      out.dat$bin <- jbin
-      rownames(out.dat) <- jbin
-    }
-    return(out.dat)
-  } else {
-    return(list(fit.full = m1.pois, fit.null = mnull.pois, dat.input = dat))
-  }
-}
-
-
 # Load LDA (contains countmat)  ---------------------------------------------------------------
 
 ncores <- 8
 hubprefix <- "/home/jyeung/hub_oudenaarden"
-jtype <- "hiddendomains"
+# jtype <- "hiddendomains"
+jtype <- "TSS"
 # jdist <- "TES"
+jdist <- 10000
 
 # outdir <- "/home/jyeung/data/from_rstudioserver/spikein_fits_BM_poisson"
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/poisson_fits_BM_AllMerged3.spikeins"
 dir.create(outdir)
 
 # jmark <- "H3K4me1"
-jmarks <- c("H3K9me3", "H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 # jmarks <- c("H3K9me3"); names(jmarks) <- jmarks
 
 inf.spikein <- file.path(hubprefix, "jyeung/data/scChiC/from_rstudioserver/quality_control_BM_round2_all.blfix/spikein_info_BM_round2_all.blfix.txt")
@@ -98,18 +56,23 @@ dat.spikein.all <- fread(inf.spikein) %>%
 cbPalette <- c("#696969", "#56B4E9", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400",  "#32CD32", "#FFB6C1", "#0b1b7f", "#ff9f7d", "#eb9d01", "#2c2349", "#753187", "#f80597")
 
 for (jmark in jmarks){
-  outf <- file.path(outdir, paste0("poisson_fit_", jtype, ".",  jmark, ".", Sys.Date(), ".spikeins.again.newannot2.RData"))
+  outf <- file.path(outdir, paste0("poisson_fit_", jtype, ".dist_", jdist, ".",  jmark, ".", Sys.Date(), ".spikeins.again.newannot2.norep2.RData"))
   if (file.exists(outf)){
+    print(paste("outf exists, skipping", outf))
     next
   }
   # assertthat::assert_that(!file.exists(outf))
   
+  # ldaAnalysisBins_mouse_spikein_BMround2all_MergeWithOld.from_TSS.dist_10000/lda_outputs.count_mat_from_TSS.H3K4me3.dist_10000.K-30.binarize.FALSE/ldaOut.count_mat_from_TSS.H3K4me3.dist_10000.K-30.Robj
   
-  indir <- file.path(hubprefix, paste0("jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_MergeWithOld.from_", jtype))
+  indir <- file.path(hubprefix, paste0("jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_MergeWithOld.from_", jtype, ".dist_", jdist))
   
-  fname <- paste0("lda_outputs.count_mat_from_", jtype, ".", jmark, ".K-30.binarize.FALSE/ldaOut.count_mat_from_", jtype, ".", jmark, ".K-30.Robj")
+  fname <- paste0("lda_outputs.count_mat_from_", jtype, ".", jmark, ".dist_", jdist, ".K-30.binarize.FALSE/ldaOut.count_mat_from_", jtype, ".", jmark, ".dist_", jdist, ".K-30.Robj")
   
-  load(file.path(indir, fname), v=T)
+  inf.tmp <- file.path(indir, fname)
+  assertthat::assert_that(file.exists(inf.tmp))
+  
+  load(inf.tmp, v=T)
   
   dat.spikein <- subset(dat.spikein.all, cell %in% colnames(count.mat))
   
@@ -135,8 +98,8 @@ for (jmark in jmarks){
       mutate(plate = ClipLast(x = cell,jsep = "_"))
   }
   
-  cells.keep1 <- dat.spikein$cell
-  dat.annot.filt <- subset(dat.annot, cell %in% cells.keep1)
+  cells.keep <- subset(dat.spikein, !grepl("rep2", cell))$cell
+  dat.annot.filt <- subset(dat.annot, cell %in% cells.keep)
   dat.umap.merge <- left_join(dat.umap, subset(dat.annot, select = c(cell, cluster)))
   # ggplot(dat.umap.merge, aes(x = umap1, y = umap2, color = cluster)) + 
   #   geom_point() +  
@@ -152,30 +115,16 @@ for (jmark in jmarks){
   # Run fits gene by gene ---------------------------------------------------
   
   
-  
-  cells.keep <- subset(dat.annot.filt, !is.na(cluster))$cell
-  
-  
   print(jmark)
   jmat.mark <- count.mat[, cells.keep]
   dat.annots.filt.mark <- dat.annot.filt %>%
-    filter(cell %in% cells.keep) %>%
     mutate(Cluster = ifelse(cluster == "HSPCs", "aHSPCs", cluster)) %>%
     rowwise() %>%
     mutate(batch = IsRound1(cell, mark = jmark)) %>%
-    mutate(Plate = ifelse(batch == "Round2", plate, "Round1"))
+    mutate(Plate = ifelse(batch == "Round2", plate, "Round1")) %>%
+    filter(!is.na(Cluster))
   
-  
-  # print(jmark)
-  # jmat.mark <- count.mat[, cells.keep]
-  # dat.annots.filt.mark <- dat.annot.filt %>%
-  #   mutate(Cluster = ifelse(cluster == "HSPCs", "aHSPCs", cluster)) %>%
-  #   rowwise() %>%
-  #   mutate(batch = IsRound1(cell, mark = jmark)) %>%
-  #   mutate(Plate = ifelse(batch == "Round2", plate, "Round1")) %>%
-  #   filter(!is.na(Cluster))
-  # 
-  # print(unique(dat.annots.filt.mark$Plate))
+  print(unique(dat.annots.filt.mark$Plate))
   
   
   # ncuts.for.fit.mark <- data.frame(cell = colnames(count.mat), ncuts.total = colSums(count.mat), stringsAsFactors = FALSE)

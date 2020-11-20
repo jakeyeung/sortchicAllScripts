@@ -56,7 +56,7 @@ dat.spikein.all <- fread(inf.spikein) %>%
 cbPalette <- c("#696969", "#56B4E9", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400",  "#32CD32", "#FFB6C1", "#0b1b7f", "#ff9f7d", "#eb9d01", "#2c2349", "#753187", "#f80597")
 
 for (jmark in jmarks){
-  outf <- file.path(outdir, paste0("poisson_fit_", jtype, ".dist_", jdist, ".",  jmark, ".", Sys.Date(), ".spikeins.again.RData"))
+  outf <- file.path(outdir, paste0("poisson_fit_", jtype, ".dist_", jdist, ".",  jmark, ".", Sys.Date(), ".spikeins.again.newannot2.RData"))
   if (file.exists(outf)){
     print(paste("outf exists, skipping", outf))
     next
@@ -86,8 +86,10 @@ for (jmark in jmarks){
   
   # Load metadata -----------------------------------------------------------
   
-  indir.annot <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/cell_cluster_tables.spikeins_mouse.BMround2_umaps_and_ratios.Round1Round2")
-  inf.annot <- file.path(indir.annot, paste0("spikeins_mouse.BMround1and2_umaps_and_ratios.colfix.celltyping.2020-11-01.WithRelLevels.mark_", jmark, ".cell_cluster_tables.txt"))
+  # indir.annot <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/cell_cluster_tables.spikeins_mouse.BMround2_umaps_and_ratios.Round1Round2")
+  # inf.annot <- file.path(indir.annot, paste0("spikeins_mouse.BMround1and2_umaps_and_ratios.colfix.celltyping.2020-11-01.WithRelLevels.mark_", jmark, ".cell_cluster_tables.txt"))
+  indir.annot <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/count_mat_all_and_HSCs.merge_with_new_BM/clusterfilt.2020-11-04")
+  inf.annot <- file.path(indir.annot, paste0("cell_cluster_table.old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.txt"))
   dat.annot <- fread(inf.annot)
   
   if (jmark == "H3K9me3"){
@@ -146,7 +148,7 @@ for (jmark in jmarks){
   
   # Ssave outputs -----------------------------------------------------------
   # saveRDS(jfits.lst, outf)
-  save(jfits.lst, dat.annots.filt.mark, count.mat, file = outf)
+  save(jfits.lst, dat.annots.filt.mark, ncuts.for.fit.mark, jmat.mark, file = outf)
   
   print(Sys.time() - jstart)
 }
