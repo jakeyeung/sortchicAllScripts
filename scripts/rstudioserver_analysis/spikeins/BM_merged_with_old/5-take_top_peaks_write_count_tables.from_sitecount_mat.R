@@ -1,7 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2020-11-30
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/BM_merged_with_old/5-take_top_peaks_write_count_tables.filtcells_keepAllBins.R
-# Take count tables and filter out NA cells, check taht basophils aren't all disappeared afterwards
+# Date of Creation: 2020-11-17
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/BM_merged_with_old/5-take_top_peaks_write_count_tables.from_sitecount_mat.R
+# 
 
 
 rm(list=ls())
@@ -26,23 +26,25 @@ jsettings$random_state <- 123
 
 # Load LDA from peaks  ----------------------------------------------------
 
-indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_MergeWithOld.from_hiddendomains"
+indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_MergeWithOld.frompeaks.filtNAcells_allbins.from_sitecount_mat"
 assertthat::assert_that(dir.exists(indir))
 
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/count_tables.BMAllMerged2.from_peaks.sitecount_mat/filtNAcells_topbins"
+dir.create(outdir)
 
-jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
+jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarks) <- jmarks
 
 outlst <- lapply(jmarks, function(jmark){
   print(jmark)
-  fname <- paste0("lda_outputs.count_mat_from_hiddendomains.", jmark, ".K-30.binarize.FALSE/ldaOut.count_mat_from_hiddendomains.", jmark, ".K-30.Robj")
+  fname <- paste0("lda_outputs.count_mat_from_sitecount_mat.", jmark, ".filtNAcells_allbins.K-30.binarize.FALSE/ldaOut.count_mat_from_sitecount_mat.", jmark, ".filtNAcells_allbins.K-30.Robj")
   inf <- file.path(indir, fname)
+  print(inf)
   load(inf, v=T)
   tm.result <- posterior(out.lda)
   tm.result <- AddTopicToTmResult(tm.result)
   dat.umap <- DoUmapAndLouvain(tm.result$topics, jsettings = jsettings)
   return(list(tm.result = tm.result, dat.umap = dat.umap, count.mat = count.mat))
 })
-
 
 
 inf.rdata <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/LDA_downstream.BMround2all.merge_with_old.cleaner/LDA_downstream_objects.2020-11-05.again.RData"
@@ -90,19 +92,18 @@ cells.keep.lst <- lapply(jmarks, function(jmark){
 
 # Take topn ---------------------------------------------------------------
 
-
-# keeptop <- 250
-# bins.keep.lst <- lapply(jmarks, function(jmark){
-#   jtmp <- tm.result.lst[[jmark]]$terms
-#   jtopics <- rownames(jtmp)
-#   names(jtopics) <- jtopics
-#   topbins.lst <- lapply(jtopics, function(jtopic){
-#     xvec <- sort(tm.result.lst[[jmark]]$terms[jtopic, ], decreasing = TRUE)
-#     return(names(xvec)[1:keeptop])
-#   })
-#   topbins <- unique(unlist(topbins.lst))
-#   return(topbins)
-# })
+keeptop <- 250
+bins.keep.lst <- lapply(jmarks, function(jmark){
+  jtmp <- tm.result.lst[[jmark]]$terms
+  jtopics <- rownames(jtmp)
+  names(jtopics) <- jtopics
+  topbins.lst <- lapply(jtopics, function(jtopic){
+    xvec <- sort(tm.result.lst[[jmark]]$terms[jtopic, ], decreasing = TRUE)
+    return(names(xvec)[1:keeptop])
+  })
+  topbins <- unique(unlist(topbins.lst))
+  return(topbins)
+})
 
 
 # count tables ------------------------------------------------------------
@@ -110,24 +111,20 @@ cells.keep.lst <- lapply(jmarks, function(jmark){
 count.mat.filt.lst <- lapply(jmarks, function(jmark){
   count.mat <- count.mat.lst[[jmark]]
   cells.keep.tmp <- colnames(count.mat) %in% cells.keep.lst[[jmark]]
-  # rows.keep.tmp <- rownames(count.mat) %in% bins.keep.lst[[jmark]]
-  # count.mat.filt <- count.mat[rows.keep.tmp, cells.keep.tmp]
-  count.mat.filt <- count.mat[, cells.keep.tmp]
+  rows.keep.tmp <- rownames(count.mat) %in% bins.keep.lst[[jmark]]
+  count.mat.filt <- count.mat[rows.keep.tmp, cells.keep.tmp]
   print(dim(count.mat))
   print(dim(count.mat.filt))
   return(count.mat.filt)
 })
 
 
-
 # Write -------------------------------------------------------------------
 
-outdir <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/count_tables.BMAllMerged2.from_peaks/filtNAcells_allbins", ".", Sys.Date())
-dir.create(outdir)
 
 lapply(jmarks, function(jmark){
   print(jmark)
-  outf <- file.path(outdir, paste0("count_mat_from_hiddendomains.", jmark, ".filtNAcells_allbins.rds"))
+  outf <- file.path(outdir, paste0("count_mat_from_sitecount_mat.", jmark, ".filtNAcells_topbins.rds"))
   saveRDS(count.mat.filt.lst[[jmark]], file = outf)
 })
 
