@@ -24,7 +24,9 @@ jchromos <- paste("chr", c(seq(22), "X", "Y"), sep = "")
 jchromos.nochr <- paste(c(seq(22), "X", "Y"), sep = "")
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
-outpdf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2/K562_QC_plots.", Sys.Date(), ".pdf")
+outdir <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2")
+outpdf <- file.path(outdir, paste0("K562_QC_plots.", Sys.Date(), ".add_fracnonzeros.pdf"))
+outtxt <- file.path(outdir, paste0("K562_QC_plots.", Sys.Date(), ".add_fracnonzeros.txt"))
 
 pdf(outpdf, useDingbats = FALSE)
 
@@ -34,6 +36,12 @@ hubprefix <- "/home/jyeung/hub_oudenaarden"
 indir.chromo <- file.path(hubprefix, "jyeung/data/scChiC/raw_data_spikeins/VAN5039_K562_round2/tagged_bams/G1_sorted/merged_bams/countTablesAndRZr1only_ByChromo.NewFilters")
 indir.lh <- file.path(hubprefix, "jyeung/data/scChiC/raw_data_spikeins/VAN5039_K562_round2/tagged_bams/G1_sorted/merged_bams/countTablesAndRZr1only_TAfrac.NewFilters")
 indir.counts <- file.path(hubprefix, "jyeung/data/scChiC/raw_data_spikeins/VAN5039_K562_round2/tagged_bams/G1_sorted/merged_bams/countTablesAndRZr1only_CountTables.NewFilters")
+
+
+
+
+
+
 
 
 
@@ -55,6 +63,44 @@ dat.chromos <- lapply(infs.chromo, function(inf){
   bind_rows()
 
 
+
+# Load mats ---------------------------------------------------------------
+
+mats <- lapply(jmarks, function(jmark){
+  fname <- paste0("K562-EtOH-", jmark, ".G1sorted.merged.sorted.tagged.countTable.csv")
+  inf.tmp <- file.path(indir.counts, fname)
+  ReadMatSlideWinFormat(inf.tmp)
+})
+
+# get frac nonzeros
+fracnonzeros.global <- lapply(mats, function(jmat){
+  apply(jmat, 2, function(jcol) nnzero(jcol) / length(jcol))
+})
+
+# make into dat
+dat.fracnonzeros <- lapply(jmarks, function(jmark){
+  data.frame(cell = names(fracnonzeros.global[[jmark]]), mark = jmark, fracnonzeros = fracnonzeros.global[[jmark]], stringsAsFactors = FALSE)
+}) %>%
+  bind_rows()
+
+# calculate thresholds
+jthres <- 2
+bad.cells.lst <- lapply(jmarks, function(jmark){
+  nonzeros.frac.tmp <- fracnonzeros.global[[jmark]]
+  jsd.global <- mad(nonzeros.frac.tmp)
+  jmean.global <- median(nonzeros.frac.tmp)
+  jthres.frac <- jmean.global + jsd.global * jthres
+  plot(density(nonzeros.frac.tmp), main = jmark, xlab = "Fraction of nonzero cuts globally")
+  abline(v = jmean.global)
+  abline(v = jthres.frac, lty = 2)
+  bad.cells <- names(nonzeros.frac.tmp)[which(nonzeros.frac.tmp > jthres.frac)]
+  return(list(bad.cells = bad.cells, jthres.frac = jthres.frac))
+})
+bad.cells.merged <- lapply(bad.cells.lst, function(x) x$bad.cells) %>%
+  unlist()
+jthres.frac.lst <- lapply(bad.cells.lst, function(x) x$jthres.frac)
+
+
 # Load LH counts ----------------------------------------------------------
 
 # indir.lh <- file.path(hubprefix, "jyeung/data/scChiC/raw_data_spikeins/VAN6969/K562/tagged_bams/RZcounts.NewFilters")
@@ -70,13 +116,12 @@ dat.lh <- lapply(infs.lh, function(inf){
 chromocounts <- subset(dat.chromos, chromo == "1", select = c(samp, chromocounts, spikeincounts))
 
 dat.lh <- left_join(dat.lh, chromocounts)
+print(dim(dat.lh))
 
 dat.lh$mark <- sapply(dat.lh$experi, function(x) strsplit(x, "-")[[1]][[3]])
 
 dat.lh$mark <- factor(dat.lh$mark, levels = c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"))
 
-dat.lh <- dat.lh %>%
-  mutate(is.good = chromocounts > chromocountmin[[mark]] & TA.frac > fracmin & log2(chromocounts / spikeincounts) > log2fcmin)
 
 dat.lh <- dat.lh %>%
   rowwise() %>%
@@ -86,8 +131,11 @@ dat.lh <- dat.lh %>%
          colcoord = GetPlateCoord(cell = cellid, platecols = 24, is.zero.base = FALSE)[[2]],
          is.empty = rowcoord <= 8 & colcoord == 1)
 
+dat.lh <- dat.lh %>%
+  mutate(is.good = chromocounts > chromocountmin[[mark]] & TA.frac > fracmin & log2(chromocounts / spikeincounts) > log2fcmin & !is.empty)
 
-good.cells <- subset(dat.lh, is.good & !is.empty)$samp
+
+# good.cells <- subset(dat.lh, is.good & !is.empty)$samp
 
 ggplot(dat.lh, aes(x = log10(chromocounts), y = TA.frac)) + 
   geom_point_rast(alpha = 0.25) + 
@@ -108,10 +156,17 @@ ggplot(dat.lh, aes(x = log2(chromocounts / spikeincounts), y = TA.frac, color = 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
 
 dat.lh <- dat.lh %>%
-  mutate(is.good2 = chromocounts > chromocountmin[[mark]] & TA.frac > fracmin & log2(chromocounts / spikeincounts) > log2fcmin)
+  mutate(is.good2 = is.good & !samp %in% bad.cells.merged)
+  # mutate(is.good3 = !cell %in% bad.cells.merged)
+
+
+dat.lh <- left_join(dat.lh, subset(dat.fracnonzeros, select = -mark), by = c("samp" = "cell"))
+print(dim(dat.lh))
+
+
 
 for (jmark in jmarks){
-  m.points <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log2(chromocounts / spikeincounts), y = TA.frac, color = is.good)) + 
+  m.points <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log2(chromocounts / spikeincounts), y = TA.frac, color = is.good2)) + 
     geom_point_rast(alpha = 0.25) + 
     geom_vline(xintercept = log2fcmin, linetype = "dotted") + 
     geom_hline(yintercept = fracmin, linetype = "dotted") + 
@@ -120,7 +175,26 @@ for (jmark in jmarks){
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   print(m.points)
   
-  m.density <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log2(chromocounts / spikeincounts), fill = is.good)) + 
+  m.points.test <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log2(chromocounts / spikeincounts), y = fracnonzeros, color = is.good2)) + 
+    geom_point(alpha = 0.25) +
+    geom_vline(xintercept = log2fcmin, linetype = "dotted") + 
+    geom_hline(yintercept = jthres.frac.lst[[jmark]], linetype = "dotted") + 
+    xlab("log2(cuts in genome/spikein cuts)") + ylab("Fraction of bins with nonzero number of cuts") + 
+    ggtitle(jmark) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
+  print(m.points.test)
+  
+  m.points.test <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log2(chromocounts / spikeincounts), y = TA.frac, color = fracnonzeros)) + 
+    geom_point(alpha = 0.25) +
+    geom_vline(xintercept = log2fcmin, linetype = "dotted") + 
+    geom_hline(yintercept = fracmin, linetype = "dotted") + 
+    xlab("log2(cuts in genome/spikein cuts)") + ylab("Fraction of cuts starting with TA") + 
+    scale_color_viridis_c() + 
+    ggtitle(jmark) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
+  print(m.points.test)
+  
+  m.density <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log2(chromocounts / spikeincounts), fill = is.good2)) + 
     geom_density(alpha = 0.5) + 
     facet_wrap(~mark, nrow = 1) + 
     xlab("log2(cuts in genome/spikein cuts)") + ylab("Fraction of cuts starting with TA") + 
@@ -128,7 +202,7 @@ for (jmark in jmarks){
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   print(m.density)
   
-  m.points2 <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log10(chromocounts), y = TA.frac, color = is.good)) + 
+  m.points2 <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log10(chromocounts), y = TA.frac, color = is.good2)) + 
     geom_point_rast(alpha = 0.25) + 
     geom_vline(xintercept = log2fcmin, linetype = "dotted") + 
     geom_hline(yintercept = fracmin, linetype = "dotted") + 
@@ -137,7 +211,7 @@ for (jmark in jmarks){
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   print(m.points2)
   
-  m.density2 <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log10(chromocounts), fill = is.good)) + 
+  m.density2 <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log10(chromocounts), fill = is.good2)) + 
     geom_density(alpha = 0.5) + 
     facet_wrap(~mark, nrow = 1) + 
     xlab("log10(cuts in genome)") + ylab("Fraction of cuts starting with TA") + 
@@ -248,7 +322,7 @@ dat.peaks <- lapply(jmarks, function(jmark){
   bind_rows()
 
 # add spikeins
-dat.peaks.merge <- left_join(dat.peaks, subset(dat.lh, select = c(samp, spikeincounts, is.good)), by = c("cell" = "samp"))
+dat.peaks.merge <- left_join(dat.peaks, subset(dat.lh, select = c(samp, spikeincounts, is.good, is.good2)), by = c("cell" = "samp"))
  
 ggplot(dat.peaks.merge, aes(x = log10(cuts_in_peaks + cuts_notin_peaks), y = cuts_in_peaks / (cuts_in_peaks + cuts_notin_peaks)))  +
   geom_point_rast(alpha = 0.25) + 
@@ -273,7 +347,7 @@ ggplot(dat.peaks.merge, aes(x = log10(cuts_in_peaks), y = log2(cuts_in_peaks / (
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-ggplot(dat.peaks.merge %>% filter(!is.na(is.good)), aes(x = log10(cuts_in_peaks), y = cuts_in_peaks / (cuts_in_peaks + cuts_notin_peaks), color = is.good))  +
+ggplot(dat.peaks.merge %>% filter(!is.na(is.good)), aes(x = log10(cuts_in_peaks), y = cuts_in_peaks / (cuts_in_peaks + cuts_notin_peaks), color = is.good2))  +
   geom_point_rast(alpha = 0.25) + 
   facet_wrap(~mark) + 
   theme_bw() + 
@@ -304,6 +378,22 @@ ggplot(dat.peaks.merge.var, aes(y = cell.var.within.sum.norm, x = log2(cuts_in_p
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 
 dev.off()
+
+
+# Write to output ---------------------------------------------------------
+
+fwrite(dat.lh, file = outtxt)
+
+# keep good cells
+for (jmark in jmarks){
+  print(jmark)
+  outtxt.tmp <- file.path(outdir, paste0("K562_QC_plots.", Sys.Date(), ".add_fracnonzeros.", jmark, ".good_cells.txt"))
+  dat.lh.tmp <- dat.lh %>% filter(mark == jmark & is.good2)
+  print(dim(dat.lh.tmp))
+  fwrite(dat.lh.tmp, file = outtxt.tmp)
+}
+
+
 
 # cutoffs used for analysis
 

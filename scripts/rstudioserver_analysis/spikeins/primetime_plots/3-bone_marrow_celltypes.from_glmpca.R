@@ -26,6 +26,8 @@ jsettings$n_neighbors <- 30
 jsettings$min_dist <- 0.1
 jsettings$random_state <- 123
 
+cbPalette <- c("#696969", "#56B4E9", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400",  "#32CD32", "#FFB6C1", "#0b1b7f", "#ff9f7d", "#eb9d01", "#2c2349", "#753187", "#f80597")
+
 # Load LDA output ---------------------------------------------------------
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
@@ -33,9 +35,29 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmark
 
 hubprefix <- "/home/jyeung/hub_oudenaarden"
 
+# niter <- "1000"
+# binskeep <- 0
+niter <- "500"
+binskeep <- 1000
+jsuffix <- paste0("bincutoff_0.binskeep_", binskeep, ".byplate.szname_none.niter_", niter, ".reorder_rownames.dupfilt")
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2"
+# outname <- paste0("bonemarrow_celltypes.", Sys.Date(), ".niter_", niter, ".pdf")
+outname <- paste0("BM_celltypes.", jsuffix, ".", Sys.Date(), ".pdf")
+outf <- file.path(outdir, outname)
+
+infs.lst <- lapply(jmarks, function(jmark){
+  inf <- file.path(hubprefix, paste0("jyeung/data/scChiC/glmpca_outputs/glmpca.", jmark, ".", jsuffix, ".RData"))
+  assertthat::assert_that(file.exists(inf))
+  return(inf)
+})
+
+
+pdf(outf, useDingbats = FALSE)
+
 dat.umap.lst <- lapply(jmarks, function(jmark){
   print(jmark)
-  inf <- file.path(hubprefix, paste0("jyeung/data/scChiC/glmpca_outputs/glmpca.", jmark, ".bincutoff_0.binskeep_0.byplate.szname_none.niter_1000.reorder_rownames.dupfilt.RData"))
+  inf <- infs.lst[[jmark]]
+  # inf <- file.path(hubprefix, paste0("jyeung/data/scChiC/glmpca_outputs/glmpca.", jmark, ".", jsuffix, ".RData"))
   load(inf, v=T)
   dat.umap <- DoUmapAndLouvain(glm.out$factors, jsettings = jsettings)
   return(dat.umap)
@@ -53,9 +75,12 @@ m.lst <- lapply(jmarks, function(jmark){
   print(jmark)
   m <- ggplot(dat.umap.lst[[jmark]], aes(x = umap1, y = umap2, color = louvain)) + 
     geom_point() + 
+    ggtitle(jmark) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   return(m)
 })
+print(m.lst)
+
 
 
 
@@ -70,7 +95,79 @@ dat.annots <- lapply(jmarks, function(jmark){
 
 
 
-# Manually get colors -----------------------------------------------------
+# match colors to k4me1 motif analysis ------------------------------------
+
+inf.colors <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2/motif_activity_H3K4me1.niter_1000.2020-11-20.uniquecolor.txt"
+dat.colors.all <- fread(inf.colors)
+dat.colors <- subset(dat.colors.all, select = c(cell, cluster, batch, col))
+
+dat.colors.sum <- dat.colors %>%
+  group_by(cluster) %>%
+  summarise(col = unique(col))
+
+dat.colors.sum.k9me3 <- dat.colors.sum %>%
+  rowwise() %>%
+  mutate(cluster = gsub(pattern = "Bcells", replacement = "Lymphoid", x = cluster),
+         cluster = gsub(pattern = "HSPCs", replacement = "HSPCs", x = cluster),
+         cluster = gsub(pattern = "Eryths", replacement = "Eryth", x = cluster)) %>%
+  ungroup() %>%
+  filter(cluster %in% c("Lymphoid", "HSPCs", "Eryth", "Granulocytes"))
+
+dat.colors.sum.merge <- rbind(dat.colors.sum, dat.colors.sum.k9me3)
+
+colhash <- hash::hash(dat.colors.sum.merge$cluster, dat.colors.sum.merge$col)
+
+
+# K9me3 has specific clusternames -----------------------------------------
+
+dat.umap.annot.lst <- lapply(jmarks, function(jmark){
+  print(jmark)
+  jtmp1 <- left_join(dat.umap.lst[[jmark]], subset(dat.annots[[jmark]], select = c(cell, cluster, batch, plate)), by = c("cell"))
+  jtmp1$col <- sapply(jtmp1$cluster, function(x) AssignHash(x, colhash, null.fill = x))
+  return(jtmp1)
+  # if (jmark != "H3K9me3"){
+  #   print("Not H3K9me3")
+  #   jtmp1 <- left_join(jtmp1, dat.colors.sum, by = c("cluster"))
+  # } else {
+  #   print("Is H3K9me3")
+  #   jtmp1 <- left_join(jtmp1, dat.colors.sum.k9me3, by = c("cluster"))
+  # }
+})
+
+m.annot.lst2 <- lapply(jmarks, function(jmark){
+  print(jmark)
+  m <- ggplot(dat.umap.annot.lst[[jmark]], aes(x = umap1, y = umap2, color = cluster)) + 
+    geom_point() + 
+    ggtitle(jmark) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+    scale_color_manual(values = cbPalette) 
+  return(m)
+})
+print(m.annot.lst2)
+
+m.annot.lst <- lapply(jmarks, function(jmark){
+  print(jmark)
+  m <- ggplot(dat.umap.annot.lst[[jmark]], aes(x = umap1, y = umap2, color = col)) + 
+    geom_point() + 
+    ggtitle(jmark) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom") + 
+    scale_color_identity(guide = "legend", labels = unique(dat.umap.annot.lst[[jmark]]$cluster), breaks = unique(dat.umap.annot.lst[[jmark]]$col), na.value = "grey85")
+  return(m)
+})
+print(m.annot.lst)
+
+dev.off()
+
+
+# Write tables to output --------------------------------------------------
+
+for (jmark in jmarks){
+  print(jmark)
+  outname.mark <- paste0("BM_celltypes.", jsuffix, ".", Sys.Date(), ".", jmark, ".txt")
+  fwrite(dat.umap.annot.lst[[jmark]], file = file.path(outdir, outname.mark), sep = "\t", quote = FALSE)
+}
 
 
 

@@ -1,7 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2020-11-19
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/primetime_plots/4-TF_activities_output.R
-# 
+# Date of Creation: 2020-12-04
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/primetime_plots/4-TF_activities_output.other_glmpca.same_annot_file.R
+# description
 
 rm(list=ls())
 
@@ -19,6 +19,9 @@ library(umap)
 
 library(heatmap3)
 
+
+source("~/projects/scchic/scripts/rstudioserver_analysis/spikeins/primetime_plots/heatmap3revR.R")
+
 jsettings <- umap.defaults
 jsettings$n_neighbors <- 30
 jsettings$min_dist <- 0.1
@@ -28,16 +31,21 @@ jsettings$random_state <- 123
 # Load UMAP  ---------------------------------------------------------------
 
 hubprefix <- "/home/jyeung/hub_oudenaarden"
-niter <- 1000
-# fname <- "jyeung/data/scChiC/glmpca_outputs/glmpca.H3K4me1.bincutoff_0.binskeep_0.byplate.szname_none.reorder_rownames.dupfilt.RData"
+# jmark <- "H3K27me3"
+jmark <- "H3K4me1"
 
-indir <- "jyeung/data/scChiC/glmpca_outputs"
-# jsuffix <- paste0("glmpca_plate.bincutoff_0.binskeep_0.byplate.szname_none.niter_", niter, ".reorder_rownames.dupfilt")
-jsuffix <- paste0("glmpca.H3K4me1.bincutoff_0.binskeep_0.byplate.szname_none.niter_", niter, ".reorder_rownames.dupfilt")
-# jsuffix2 <- paste0("glmpca_plate.bincutoff_0.binskeep_0.byplate.szname_none.niter_1000.reorder_rownames.dupfilt.cleanuprows")
-jsuffix2 <- paste0("BM_H3K4me1.BM_AllMerged3.glmpca_plate.bincutoff_0.binskeep_0.byplate.szname_none.niter_1000.reorder_rownames.dupfilt.cleanuprows")
-# jsuffix2 <- paste0(jsuffix, ".cleanuprows")
+indir <- "jyeung/data/scChiC/glmpca_outputs/same_annot_file_rerun"
+
+# niter <- "1000"
+binskeep <- 0
+niter <- "500"
+# binskeep <- 1000
+jsuffix <- paste0("glmpca.", jmark, ".bincutoff_0.binskeep_", binskeep, ".byplate.szname_none.niter_", niter, ".reorder_rownames.dupfilt")
 fname <- paste0(jsuffix, ".RData")
+
+# jsuffix2 <- paste0("glmpca_plate.bincutoff_0.binskeep_0.byplate.szname_none.niter_1000.reorder_rownames.dupfilt.cleanuprows")
+jsuffix2 <- paste0("BM_", jmark, ".BM_AllMerged3.glmpca_plate.bincutoff_0.binskeep_", binskeep, ".byplate.szname_none.niter_", niter, ".reorder_rownames.dupfilt.cleanuprows.same_annot_file")
+# jsuffix2 <- paste0(jsuffix, ".cleanuprows")
 
 inf <- file.path(hubprefix, indir, fname)
 
@@ -48,23 +56,33 @@ dat.umap <- DoUmapAndLouvain(glm.out$factors, jsettings = jsettings)
 
 # Load clusters -----------------------------------------------------------
 
-inf.annot <- file.path(hubprefix, "jyeung/data/scChiC/from_rstudioserver/cell_cluster_tables.spikeins_mouse.BMround2_umaps_and_ratios.Round1Round2.redo_after_varfilt_with_spikeins/cell_cluster_table_with_spikeins.H3K4me1.2020-11-18.dupfilt.txt")
-dat.annot <- fread(inf.annot)
+jmarkref <- "H3K4me1"  # has all clusters so colors will match
+inf.annot <- file.path(hubprefix, paste0("jyeung/data/scChiC/from_rstudioserver/pdfs_all/genesets_on_umap/geneset_on_umap.binskeep_0.niter_500.2020-12-04.more_celltypes.metadta.", jmark, ".txt"))
+inf.annot.ref <- file.path(hubprefix, paste0("jyeung/data/scChiC/from_rstudioserver/pdfs_all/genesets_on_umap/geneset_on_umap.binskeep_0.niter_500.2020-12-04.more_celltypes.metadta.", jmarkref, ".txt"))
+dat.annot <- fread(inf.annot) %>%
+  as.data.frame()
+rownames(dat.annot) <- dat.annot$cell
 
+dat.annot.ref <- fread(inf.annot.ref)
+
+cbPalette <- c("#696969", "#56B4E9", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400",  "#32CD32", "#FFB6C1", "#0b1b7f", "#ff9f7d", "#eb9d01", "#2c2349", "#753187", "#f80597")
+clusters <- sort(unique(dat.annot$cluster))
+colsvec.byclusters <- hash(clusters, cbPalette[seq(length(clusters))])
+dat.annot$col <- sapply(dat.annot$cluster, function(x) AssignHash(x = x, jhash = colsvec.byclusters, null.fill = "grey95"))
 
 
 dat.merge <- left_join(dat.umap, subset(dat.annot, select = c(cell, cluster, batch)))
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2"
 
-outbase <- paste0("motif_activity_H3K4me1.niter_", niter, ".", Sys.Date(), ".uniquecolor")
+outbase <- paste0("motif_activity_", jmark, ".niter_", niter, ".binskeep_", binskeep, ".", Sys.Date(), ".uniquecolor.same_annot_file.fix_colors")
 outname <- paste0(outbase, ".pdf")
 outnametxt <- paste0(outbase, ".txt")
 outtxt <- file.path(outdir, outnametxt)
 outpdf <- file.path(outdir, outname)
 pdf(file = outpdf, useDingbats = FALSE)
 
-cbPalette <- c("#696969", "#56B4E9", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400",  "#32CD32", "#FFB6C1", "#0b1b7f", "#ff9f7d", "#eb9d01", "#2c2349", "#753187", "#f80597")
+# cbPalette <- c("#696969", "#56B4E9", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400",  "#32CD32", "#FFB6C1", "#0b1b7f", "#ff9f7d", "#eb9d01", "#2c2349", "#753187", "#f80597")
 ggplot(dat.merge, aes(x = umap1, y = umap2, color = cluster)) + 
   geom_point() + 
   scale_color_manual(values = cbPalette) + 
@@ -74,7 +92,7 @@ ggplot(dat.merge, aes(x = umap1, y = umap2, color = cluster)) +
 
 # Load MARA output --------------------------------------------------------
 
-indir.mara <- file.path(hubprefix, paste0("jyeung/data/scChiC/mara_analysis_BM-AllMerged3_Peaks/H3K4me1/mara_output.lessmemory/", jsuffix2, "-hiddenDomains_motevo_merged.closest.long.scale_0.center_0.byrow_0.H3K4me1/", jsuffix2))
+indir.mara <- file.path(hubprefix, paste0("jyeung/data/scChiC/mara_analysis_BM-AllMerged3_Peaks/", jmark, "/mara_output.lessmemory/", jsuffix2, "-hiddenDomains_motevo_merged.closest.long.scale_0.center_0.byrow_0.", jmark, "/", jsuffix2))
 print(indir.mara)
 assertthat::assert_that(dir.exists(indir.mara))
 
@@ -154,9 +172,13 @@ jsub <- jmat[cells.ordered, motifs.keep]
 
 
 # cbPalette <- c("#696969", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
-colvec <- sapply(as.numeric(dat.annots.mergeclst$clst.merged), function(x) cbPalette[[x]])
+# colvec <- sapply(as.numeric(dat.annots.mergeclst$clst.merged), function(x) cbPalette[[x]])
+# colvec <- sapply(as.(dat.annots.mergeclst$cluster), function(x) cbPalette[[x]])
+# dat.col <- data.frame(cell = dat.annots.mergeclst$cell, col = colvec, stringsAsFactors = FALSE)
 
-dat.col <- data.frame(cell = dat.annots.mergeclst$cell, col = colvec, stringsAsFactors = FALSE)
+dat.col <- dat.annot[cells.ordered, ] %>%
+  dplyr::select(c(cell, col))
+colvec <- dat.col$col
 
 # plot color
 
@@ -178,6 +200,44 @@ hm.out <- heatmap3(jsub, margins = c(5, 8), cexCol = 0.35, Colv = TRUE, Rowv = N
                    labRow = FALSE, scale = "column", revC = TRUE,
                    distfun = dist, hclustfun = hclust, method = jmeth)
 
+hm.out <- heatmap3(jsub, margins = c(5, 8), cexCol = 0.35, Colv = TRUE, Rowv = NA, 
+                   # ColSideColors = rep("blue", ncol(jsub)), 
+                   # ColSideColors = FALSE,
+                   RowSideColors = colvec, 
+                   # RowSideColors = rep("red", nrow(jsub)), 
+                   RowSideLabs = "celltype", 
+                   labRow = FALSE, scale = "column", revC = FALSE,
+                   distfun = dist, hclustfun = hclust, method = jmeth)
+
+
+hm.out.transpose <- heatmap3(t(jsub), margins = c(5, 8), cexCol = 0.35, Colv = NA, Rowv = TRUE, 
+                   # ColSideColors = rep("blue", ncol(jsub)), 
+                   # ColSideColors = FALSE,
+                   ColSideColors = colvec, 
+                   # RowSideColors = rep("red", nrow(jsub)), 
+                   ColSideLabs = "celltype", 
+                   labCol = FALSE, scale = "row", revC = FALSE, 
+                   distfun = dist, hclustfun = hclust, method = jmeth)
+
+hm.out.transpose <- heatmap3(t(jsub), margins = c(5, 8), cexCol = 0.35, Colv = NA, Rowv = TRUE, 
+                             # ColSideColors = rep("blue", ncol(jsub)), 
+                             # ColSideColors = FALSE,
+                             ColSideColors = colvec, 
+                             # RowSideColors = rep("red", nrow(jsub)), 
+                             ColSideLabs = "celltype", 
+                             labCol = FALSE, scale = "row", revC = TRUE,
+                             distfun = dist, hclustfun = hclust, method = jmeth)
+
+
+
+hm.out.transpose <- heatmap.3(t(jsub), cexCol = 0.35, Colv = NA, Rowv = TRUE, 
+                   # ColSideColors = rep("blue", ncol(jsub)), 
+                   # ColSideColors = FALSE,
+                   ColSideColors = colvec, 
+                   # RowSideColors = rep("red", nrow(jsub)), 
+                   ColSideLabs = "celltype", 
+                   labCol = FALSE, scale = "row", revC = FALSE, revR = TRUE,
+                   distfun = dist, hclustfun = hclust, method = jmeth)
 
 
 

@@ -279,6 +279,16 @@ ggplot(subset(jfits.byconc.merge, param == "logncells"), aes(x = Estimate, fill 
   theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   xlab("Slope")
 
+for (jres in unique(jfits.byconc.merge$Response)){
+  m <- ggplot(subset(jfits.byconc.merge, param == "logncells" & Response == jres), aes(x = Estimate, fill = Response)) + 
+    geom_density(alpha = 0.25) + 
+    ggtitle(jres) + 
+    theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+    xlab("Slope") + 
+    geom_vline(xintercept = 1, linetype = "dotted")
+    xlim(c(0, 2))
+  print(m)
+}
 
 
 # Do a fit for K4me3 ------------------------------------------------------
@@ -289,8 +299,8 @@ jmnaseu <- "75U"
 m.lst <- lapply(jmarks, function(jmark){
   jsubsub.check <- jsub %>% filter(mark == jmark & spikeinconcFactor == jconc & conc == jmnaseu)
   jfits.check <- subset(jfits.byconc.merge, param == "logncells" & conc == jconc & mnaseu == jmnaseu & mark == jmark)
-  jslope.ratio <- signif(subset(jfits.check, Response == "logratio")$Estimate[[1]], digits = 2)
-  jslope.chromo <- signif(subset(jfits.check, Response == "logchromo")$Estimate[[1]], digits = 2)
+  jslope.ratio <- signif(subset(jfits.check, Response == "logratio")$Estimate[[1]], digits = 3)
+  jslope.chromo <- signif(subset(jfits.check, Response == "logchromo")$Estimate[[1]], digits = 3)
   m1 <- ggplot(jsubsub.check, aes(x = log2ncells, y = log2ratio)) + geom_point() + ggtitle(paste(jmark, jconc, jmnaseu, jslope.ratio)) + 
     theme_bw(24) + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
     geom_smooth(se = TRUE, method = "lm") + 

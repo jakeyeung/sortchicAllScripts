@@ -122,5 +122,8 @@ mlst.spikeins <- lapply(jmarks, function(jmark){
 # JFuncs::multiplot(mlst[[1]], mlst[[2]], mlst[[3]], mlst[[4]], cols = 2) 
 
 
+# Get signal at each peak?  -----------------------------------------------
+
+
 
 

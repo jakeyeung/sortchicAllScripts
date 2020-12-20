@@ -1,7 +1,8 @@
 # Jake Yeung
-# Date of Creation: 2020-11-19
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/primetime_plots/4-TF_activities_output.R
+# Date of Creation: 2020-11-21
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/primetime_plots/4-TF_activities_output.other_glmpca.R
 # 
+
 
 rm(list=ls())
 
@@ -28,16 +29,23 @@ jsettings$random_state <- 123
 # Load UMAP  ---------------------------------------------------------------
 
 hubprefix <- "/home/jyeung/hub_oudenaarden"
-niter <- 1000
+# niter <- 1000
 # fname <- "jyeung/data/scChiC/glmpca_outputs/glmpca.H3K4me1.bincutoff_0.binskeep_0.byplate.szname_none.reorder_rownames.dupfilt.RData"
 
 indir <- "jyeung/data/scChiC/glmpca_outputs"
 # jsuffix <- paste0("glmpca_plate.bincutoff_0.binskeep_0.byplate.szname_none.niter_", niter, ".reorder_rownames.dupfilt")
-jsuffix <- paste0("glmpca.H3K4me1.bincutoff_0.binskeep_0.byplate.szname_none.niter_", niter, ".reorder_rownames.dupfilt")
+# jsuffix <- paste0("glmpca.H3K4me1.bincutoff_0.binskeep_0.byplate.szname_none.niter_", niter, ".reorder_rownames.dupfilt")
+
+# niter <- "1000"
+# binskeep <- 0
+niter <- "500"
+binskeep <- 1000
+jsuffix <- paste0("glmpca.H3K4me1.bincutoff_0.binskeep_", binskeep, ".byplate.szname_none.niter_", niter, ".reorder_rownames.dupfilt")
+fname <- paste0(jsuffix, ".RData")
+
 # jsuffix2 <- paste0("glmpca_plate.bincutoff_0.binskeep_0.byplate.szname_none.niter_1000.reorder_rownames.dupfilt.cleanuprows")
 jsuffix2 <- paste0("BM_H3K4me1.BM_AllMerged3.glmpca_plate.bincutoff_0.binskeep_0.byplate.szname_none.niter_1000.reorder_rownames.dupfilt.cleanuprows")
 # jsuffix2 <- paste0(jsuffix, ".cleanuprows")
-fname <- paste0(jsuffix, ".RData")
 
 inf <- file.path(hubprefix, indir, fname)
 
@@ -57,7 +65,7 @@ dat.merge <- left_join(dat.umap, subset(dat.annot, select = c(cell, cluster, bat
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2"
 
-outbase <- paste0("motif_activity_H3K4me1.niter_", niter, ".", Sys.Date(), ".uniquecolor")
+outbase <- paste0("motif_activity_H3K4me1.niter_", niter, ".binskeep_", binskeep, ".", Sys.Date(), ".uniquecolor")
 outname <- paste0(outbase, ".pdf")
 outnametxt <- paste0(outbase, ".txt")
 outtxt <- file.path(outdir, outnametxt)
