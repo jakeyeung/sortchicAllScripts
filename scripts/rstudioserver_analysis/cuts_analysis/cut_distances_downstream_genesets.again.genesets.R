@@ -161,7 +161,7 @@ for (jmark in jmarks){
     # jdir <- file.path(infmain, paste0(gset, "_", jmark, "-BM_AllMerged.", ctype, ".sorted"))
     # assertthat::assert_that(dir.exists(jdir))
     
-    outpdf <- file.path(outdir, paste0("distances_summary_BM.", jmark, ".", ctype, ".pdf"))
+    outpdf <- file.path(outdir, paste0("distances_summary_BM.", jmark, ".", ctype, ".", Sys.Date(), ".pdf"))
     if (file.exists(outpdf)){
       print(paste("Skipping...", outpdf))
       next
@@ -210,6 +210,12 @@ for (jmark in jmarks){
     rownames(jmat) <- seq(nrow(jmat))
     
     jmat.filt <- jmat[20:nrow(jmat), ]
+    
+    x <- t(as.matrix(BinarizeMatrix(as.matrix(jout$Bcell))))
+    gplots::heatmap.2(log(t(jout$Bcell) + 1), Rowv = NA, Colv = NA, trace = "none")
+    gplots::heatmap.2(as.matrix(BinarizeMatrix(as.matrix(jout$Bcell))), Rowv = NA, Colv = NA, trace = "none")
+    gplots::heatmap.2(x), Rowv = NA, Colv = NA, trace = "none")
+    plot(density(as.matrix(BinarizeMatrix(as.matrix(jout$Bcell)))))
     
     
     counts.long <- as.matrix(jmat.filt) %>%
