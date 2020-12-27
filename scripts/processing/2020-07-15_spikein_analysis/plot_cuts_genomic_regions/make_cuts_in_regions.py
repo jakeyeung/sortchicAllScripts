@@ -30,7 +30,6 @@ from itertools import product
 
 import numpy as np
 import matplotlib
-matplotlib.use('pdf')
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 mpl.rcParams['figure.dpi'] = 300
@@ -188,8 +187,11 @@ def create_sc_region_plot(
                     overlap_dist:int = 20_000,
                     gene_height:float = 0.002,
                     spacer:float = 0.035,
+
+                    outsuffix = "pdf",
     
                     colorbar_label=None,
+                    jfigsize:tuple = (5, 8),
                     
                     min_gene_len_to_plot:int = 0,
                     gene_models_height:float = 0.2,
@@ -307,7 +309,7 @@ def create_sc_region_plot(
             vmin=0,
             dendrogram_ratio=0.1,
             row_colors=row_colors,
-            figsize=(8,5), cmap='Greys', cbar_kws={"shrink": .1},
+            figsize=jfigsize, cmap='Greys', cbar_kws={"shrink": .1},
             cbar_pos=(0.0, 0.5, 0.01, 0.16),)
 
     # Add gene models
@@ -426,7 +428,7 @@ def create_sc_region_plot(
                     gene_height =gene_height,
                     spacer = spacer)
 
-    plt.savefig(f'{outprefix}_{region[0]}_{region[1]}_{region[2]}.pdf',bbox_inches='tight',format="pdf")
+    plt.savefig(f'{outprefix}_{region[0]}_{region[1]}_{region[2]}.{outsuffix}',bbox_inches='tight',format=outsuffix)
     
     # if meta_frame is not None:
     #     sns.palplot(lut[grouper_name].values())
@@ -461,10 +463,18 @@ def main():
                         help='infmeta')
     parser.add_argument('-mark', metavar='mark',
                         help='H3K4me1, H3K4me3 or H3K27me3')
+    parser.add_argument('-sigma_cells', metavar = 'sigma', type=float, default=0.00001, help="Sigma smoothing across cells, maybe mark dependent")
+    parser.add_argument('-sigma', metavar = 'sigma', type=float, default=6, help="Sigma smoothing across regions")
+    parser.add_argument('-jsep', metavar = 'separator', default=",", help="Separator for meta dat, sometimes , sometimes \t")
+    parser.add_argument('-jname', metavar = 'Name', default="_", help="Add name between mark and sigma, default _")
+    parser.add_argument('-colorcname', metavar = 'colname', default="colorcode", help="Color code usually colorcode or clustercol")
+    parser.add_argument('-outfiletype', metavar = 'ImageType', default="pdf", help="Either pdf or png")
     parser.add_argument('-percentile', metavar='Percentile', type=float, default=99.5,
                         help='Perceentile. If too low background turns grey')
     parser.add_argument('--rserver2hpc_prefix', action='store_true',
                         help='Swap prefix')
+    parser.add_argument('--is_region', action='store_true',
+                        help='Switch gene to region, skips using gene dict and assigns regions directly')
     parser.add_argument('--quiet', '-q', action='store_true',
                         help='Suppress some print statements')
     parser.add_argument('--logfile', '-l', metavar='LOGFILE', default = None,
@@ -489,9 +499,18 @@ def main():
         print ('Argparse variables:')
         print(ARG_INPUTS)
 
+    if args.outfiletype == "pdf":
+        print("Setting matploblib to pdf")
+        matplotlib.use('pdf')
+    elif args.outfiletype == "png":
+        print("Setting matploblib to Agg")
+        matplotlib.use('Agg')
+    else:
+        print(args.outfiletype, " outfiletype must be pdf or png" )
+
     percentile = args.percentile
     jmark = args.mark
-    assert jmark in ['H3K4me1', 'H3K4me3', 'H3K27me3']
+    assert jmark in ['H3K4me1', 'H3K4me3', 'H3K27me3', 'H3K9me3']
 
     print("Loading objects") 
     bam_dict_dict = pickle.load(open(args.infbam, "rb"))
@@ -525,19 +544,29 @@ def main():
     output_folder = args.outdir
 
     for gene in genesvec :
-        contig,start,end,strand =  gene_locations[gene]
-        if strand == "+":
-            jstart = start - radiusleft
-            jend = start + radiusright
-        elif strand == "-":
-            jstart = end - radiusleft
-            jend = end + radiusright
+        if not args.is_region:
+            contig,start,end,strand =  gene_locations[gene]
+
+            if strand == "+":
+                jstart = start - radiusleft
+                jend = start + radiusright
+            elif strand == "-":
+                jstart = end - radiusleft
+                jend = end + radiusright
+            else:
+                print("strand either + or -, setting start and end:"  + strand)
+                jstart = start - radiusleft
+                jend = end + radiusright
+                # regions.append( [contig,start-extra_radius, end+extra_radius] )
+            assert jend - jstart > 0
+
         else:
-            print("strand either + or -, setting start and end:"  + strand)
-            jstart = start - radiusleft
-            jend = end + radiusright
-            # regions.append( [contig,start-extra_radius, end+extra_radius] )
-        assert jend - jstart > 0
+            contig = gene.split(":")[0]
+            jstartend = gene.split(":")[1]
+            jstart = int(jstartend.split("-")[0])
+            jend = int(jstartend.split("-")[1])
+            strand = "+"
+
         # jname = gene
         regions.append( [contig, jstart, jend] )
 
@@ -554,19 +583,21 @@ def main():
     # infmeta = '/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/robjs_for_heatmaps_and_umaps/metadata_umap_celltype_cuts.' + jmark + '.txt'
 
     infmeta = args.infmeta
-    jakeframe = pd.read_csv(infmeta, sep = ",")
+    jakeframe = pd.read_csv(infmeta, sep = args.jsep)
     jakeframe.index = pd.MultiIndex.from_tuples( ('merged',cell) for cell in jakeframe['cell'] )
 
-    jakeframe['colorcodergb'] = [hex_to_rgb(x, normalize=True) for x in jakeframe['colorcode']]
+    jakeframe['colorcodergb'] = [hex_to_rgb(x, normalize=True) for x in jakeframe[args.colorcname]]
 
     selected_cells_meta = jakeframe['cell'].index
+
+    jname = args.jname
 
     for region in regions:
 
         print(region)
         jstart = region[2]
         jend = region[1]
-        jname = args.gene
+        # jname = args.gene
 
         print(jend)
         print(jstart)
@@ -578,6 +609,8 @@ def main():
         cell_subset = None #  [((m, plate), cell) for (m, plate), cell in total_count_per_cell.index if m==mark]
 
         bwpath = None
+        jsigmacells = args.sigma_cells
+        jsigma = args.sigma
 
         target_dir = f'{output_folder}'
         if not os.path.exists(target_dir):      
@@ -586,13 +619,15 @@ def main():
                             bam_dict_dict[jmark],
                             region=region,
                             selected_cells=selected_cells_meta,
-                            outprefix=f'{target_dir}/{jname}_{jmark}',
+                            # outprefix=f'{target_dir}/{jname}_{jmark}_{jsigmacells}_{jsigma}',
+                            outprefix=f'{target_dir}/{jmark}_{jname}_{jsigmacells}_{jsigma}',
                             bwpath = bwpath,
                             region_bin_size = 500, # The size of the cells in the heatmap
                             normalize_to_counts=total_count_per_cell_dict[jmark], #.loc[cell_subset],
                             trace_sigma = 2, # Sigma for the bulk trace (gauss)
-                            sigma = 6, # Sigma for the single cell dots (gauss)
-                            sigma_cells = 0.00001, # Sigma for smoothing across cells. Very low values basically disable it.
+                            sigma = args.sigma, # Sigma for the single cell dots (gauss)
+                            # sigma_cells = 0.00001, # Sigma for smoothing across cells. Very low values basically disable it.
+                            sigma_cells = args.sigma_cells, # Sigma for smoothing across cells. Very low values basically disable it.
                             sigma_bw = 10, # Smoothing on the bigwig
                             bw_ticks=12, # Amount of yticks on the bigwig axis
                             PCT_COLOR = percentile, 
@@ -604,6 +639,8 @@ def main():
                             meta_frame = jakeframe,
                             color_cname = 'colorcodergb',
                             bulk_track_meta_column_group = 'cluster',
+
+                            outsuffix = args.outfiletype,
 
                             features=features,
                             gene_height=0.0001,
