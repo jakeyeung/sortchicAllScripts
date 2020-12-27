@@ -43,13 +43,14 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmark
 
 
 keeptop <- 150
-# low.in.k9 <- TRUE
-low.in.k9 <- FALSE
+low.in.k9 <- TRUE
+# low.in.k9 <- FALSE
 # outpdf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/H3K4me1_H3K9me3_differential_expression_outputs/heatmap_k9me3_k4me1_signif_bins_k9.highink9_", low.in.k9, ".", Sys.Date(), ".WithLogFCmaps.pdf")
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/H3K4me1_H3K9me3_differential_expression_outputs"
-outpdf <- file.path(outdir, paste0("correlate_k9_specific_bins.with_giladi.topn_", keeptop, ".LowInK9_", low.in.k9, ".pdf"))
-outtxt <- file.path(outdir, paste0("correlate_k9_specific_bins.topn_", keeptop, ".LowInK9_", low.in.k9, ".txt"))
+outpdf <- file.path(outdir, paste0("correlate_k9_specific_bins.with_giladi.topn_", keeptop, ".LowInK9_", low.in.k9, ".", Sys.Date(), ".pdf"))
+outtxt <- file.path(outdir, paste0("correlate_k9_specific_bins.topn_", keeptop, ".LowInK9_", low.in.k9, ".", Sys.Date(), ".txt"))
+
 
 # Select bins  ------------------------------------------------------------
 
@@ -67,78 +68,88 @@ k9.bins <- which(pvals.lst2 < 1e-10)
 
 k9.bins.names <- names(k9.bins)
 
-params.dat2.wide <- data.table::dcast(subset(params.dat2.all, bin %in% k9.bins.names), formula = bin ~ param, value.var = "estimate2") %>%
-  rowwise() %>%
-  mutate(ClusterBcells.Estimate = ClusterBcells.Estimate / log(2),
-         ClusterGranulocytes.Estimate = ClusterGranulocytes.Estimate / log(2),
-         ClusterEryths.Estimate = ClusterEryths.Estimate / log(2),
-         ClusterBcells.Estimate_ClusterGranulocytes.Estimate = mean(c(ClusterBcells.Estimate, ClusterGranulocytes.Estimate)),
-         ClusterEryths.Estimate_ClusterGranulocytes.Estimate = mean(c(ClusterEryths.Estimate, ClusterGranulocytes.Estimate)),
-         ClusterBcells.Estimate_ClusterEryths.Estimate =  mean(c(ClusterBcells.Estimate, ClusterEryths.Estimate)),
-         bcell.effect = ClusterBcells.Estimate - ClusterBcells.Estimate_ClusterGranulocytes.Estimate,
-         eryth.effect = ClusterEryths.Estimate - ClusterEryths.Estimate_ClusterGranulocytes.Estimate,
-         granu.effect = ClusterGranulocytes.Estimate - ClusterBcells.Estimate_ClusterEryths.Estimate,
-         mean.effect = mean(c(ClusterEryths.Estimate, ClusterGranulocytes.Estimate, ClusterBcells.Estimate)))
+params.dat2.wide <- GetParamsWideFormat(params.long.filt = subset(params.dat2.all, bin %in% k9.bins.names), jvalue.var = "estimate2")
 
+# params.dat2.wide <- data.table::dcast(subset(params.dat2.all, bin %in% k9.bins.names), formula = bin ~ param, value.var = "estimate2") %>%
+#   rowwise() %>%
+#   mutate(ClusterBcells.Estimate = ClusterBcells.Estimate / log(2),
+#          ClusterGranulocytes.Estimate = ClusterGranulocytes.Estimate / log(2),
+#          ClusterEryths.Estimate = ClusterEryths.Estimate / log(2),
+#          ClusterBcells.Estimate_ClusterGranulocytes.Estimate = mean(c(ClusterBcells.Estimate, ClusterGranulocytes.Estimate)),
+#          ClusterEryths.Estimate_ClusterGranulocytes.Estimate = mean(c(ClusterEryths.Estimate, ClusterGranulocytes.Estimate)),
+#          ClusterBcells.Estimate_ClusterEryths.Estimate =  mean(c(ClusterBcells.Estimate, ClusterEryths.Estimate)),
+#          Bcells.effect = ClusterBcells.Estimate - ClusterEryths.Estimate_ClusterGranulocytes.Estimate,
+#          Eryths.effect = ClusterEryths.Estimate - ClusterBcells.Estimate_ClusterGranulocytes.Estimate,
+#          Granulocytes.effect = ClusterGranulocytes.Estimate - ClusterBcells.Estimate_ClusterEryths.Estimate,
+#          HSPCs.effect = mean(c(ClusterEryths.Estimate, ClusterGranulocytes.Estimate, ClusterBcells.Estimate)))
+
+
+bins.keep.lst <- GetK9CelltypeBins(params.dat.wide = params.dat2.wide, low.in.k9 = low.in.k9, keeptop = keeptop)
 
 # add pval
 dat.pvals.k9 <- data.frame(pvals = unlist(pvals.lst2), bin = names(unlist(pvals.lst2)), stringsAsFactors = FALSE)
 params.k9.wide <- left_join(params.dat2.wide, dat.pvals.k9)
 
-if (low.in.k9){
-  jsort.hspcs <- params.dat2.wide %>%
-    group_by(bin) %>%
-    # arrange(mean.effect)
-    arrange(desc(mean.effect))
-  jbins.hspcs <- jsort.hspcs$bin[1:keeptop]
-  
-  jsort.bcell <- params.dat2.wide %>%
-    group_by(bin) %>%
-    # arrange(desc(bcell.effect)) 
-    arrange(bcell.effect)
-  jbins.bcell <- jsort.bcell$bin[1:keeptop]
-  
-  jsort.granu <- params.dat2.wide %>%
-    group_by(bin) %>%
-    # arrange(desc(granu.effect))
-    arrange(granu.effect)
-  jbins.granu <- jsort.granu$bin[1:keeptop]
-  
-  jsort.eryth <- params.dat2.wide %>%
-    group_by(bin) %>%
-    # arrange(desceryth.effect)) 
-    arrange(eryth.effect)
-  jbins.eryth <- jsort.eryth$bin[1:keeptop]
-} else {
-  jsort.hspcs <- params.dat2.wide %>%
-    group_by(bin) %>%
-    arrange(mean.effect)
-  jbins.hspcs <- jsort.hspcs$bin[1:keeptop]
-  
-  jsort.bcell <- params.dat2.wide %>%
-    group_by(bin) %>%
-    arrange(desc(bcell.effect))
-  jbins.bcell <- jsort.bcell$bin[1:keeptop]
-  
-  jsort.granu <- params.dat2.wide %>%
-    group_by(bin) %>%
-    arrange(desc(granu.effect))
-  jbins.granu <- jsort.granu$bin[1:keeptop]
-  
-  jsort.eryth <- params.dat2.wide %>%
-    group_by(bin) %>%
-    arrange(desc(eryth.effect))
-  jbins.eryth <- jsort.eryth$bin[1:keeptop]
-}
+# if (low.in.k9){
+#   jsort.hspcs <- params.dat.wide %>%
+#     group_by(bin) %>%
+#     # arrange(HSPCs.effect)
+#     arrange(desc(HSPCs.effect))
+#   jbins.hspcs <- jsort.hspcs$bin[1:keeptop]
+#   
+#   jsort.bcell <- params.dat.wide %>%
+#     group_by(bin) %>%
+#     # arrange(desc(Bcells.effect)) 
+#     arrange(Bcells.effect)
+#   jbins.bcell <- jsort.bcell$bin[1:keeptop]
+#   
+#   jsort.granu <- params.dat.wide %>%
+#     group_by(bin) %>%
+#     # arrange(desc(Granulocytes.effect))
+#     arrange(Granulocytes.effect)
+#   jbins.granu <- jsort.granu$bin[1:keeptop]
+#   
+#   jsort.eryth <- params.dat.wide %>%
+#     group_by(bin) %>%
+#     # arrange(descEryths.effect)) 
+#     arrange(Eryths.effect)
+#   jbins.eryth <- jsort.eryth$bin[1:keeptop]
+# } else {
+#   jsort.hspcs <- params.dat.wide %>%
+#     group_by(bin) %>%
+#     arrange(HSPCs.effect)
+#   jbins.hspcs <- jsort.hspcs$bin[1:keeptop]
+#   
+#   jsort.bcell <- params.dat.wide %>%
+#     group_by(bin) %>%
+#     arrange(desc(Bcells.effect))
+#   jbins.bcell <- jsort.bcell$bin[1:keeptop]
+#   
+#   jsort.granu <- params.dat.wide %>%
+#     group_by(bin) %>%
+#     arrange(desc(Granulocytes.effect))
+#   jbins.granu <- jsort.granu$bin[1:keeptop]
+#   
+#   jsort.eryth <- params.dat.wide %>%
+#     group_by(bin) %>%
+#     arrange(desc(Eryths.effect))
+#   jbins.eryth <- jsort.eryth$bin[1:keeptop]
+# }
+# 
+# 
+# bins.keep <- c(jbins.eryth, jbins.bcell, jbins.granu, jbins.hspcs)
+# 
+# bins.keep.lst <- list("Eryths" = jbins.eryth,
+#                       "Bcells" = jbins.bcell,
+#                       "Granulocytes" = jbins.granu,
+#                       "HSPCs" = jbins.hspcs)
 
-
-
+jbins.eryth <- bins.keep.lst[["Eryths"]]
+jbins.bcell <- bins.keep.lst[["Bcells"]]
+jbins.granu <- bins.keep.lst[["Granulocytes"]]
+jbins.hspcs <- bins.keep.lst[["HSPCs"]]
 bins.keep <- c(jbins.eryth, jbins.bcell, jbins.granu, jbins.hspcs)
 
-bins.keep.lst <- list("Eryths" = jbins.eryth,
-                      "Bcells" = jbins.bcell,
-                      "Granulocytes" = jbins.granu,
-                      "HSPCs" = jbins.hspcs)
 bnames <- names(bins.keep.lst); names(bnames) <- bnames
 
 

@@ -34,6 +34,7 @@ jsettings$n_neighbors <- 30
 jsettings$min_dist <- 0.1
 jsettings$random_state <- 123
 
+ncores <- 4
 hubprefix <- "/home/jyeung/hub_oudenaarden"
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
@@ -57,7 +58,7 @@ inf.lda.lst <- lapply(jmarks, function(jmark){
 out.lst <- lapply(jmarks, function(jmark){
   print(jmark)
   inf.lda <- inf.lda.lst[[jmark]]
-  inf.lda <- file.path(hubprefix, paste0("jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_MergeWithOld.clusterfilt.2020-11-04/lda_outputs.count_mat_old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.K-30.binarize.FALSE/ldaOut.count_mat_old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.K-30.Robj"))
+  # inf.lda <- file.path(hubprefix, paste0("jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_MergeWithOld.clusterfilt.2020-11-04/lda_outputs.count_mat_old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.K-30.binarize.FALSE/ldaOut.count_mat_old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.K-30.Robj"))
   load(inf.lda, v=T)
   tm.result <- posterior(out.lda)
   return(list(tm.result = tm.result, count.mat = count.mat))
@@ -113,9 +114,10 @@ imputed.long.lst <- lapply(jmarks, function(jmark){
 
 # Correct batch  ----------------------------------------------------------
 
+print("Correcting batch multicore 4")
 system.time(
   # dat.adj.lst <- lapply(imputed.long.lst, function(jdat){
-  dat.adj.lst <- lapply(jmarks, function(jmark){
+  dat.adj.lst <- mclapply(jmarks, function(jmark){
     jdat <- imputed.long.lst[[jmark]]
     if (jmark != "H3K27me3"){
       dat.adj <- jdat %>%
@@ -128,7 +130,7 @@ system.time(
       dat.adj$log2exprsadj <- dat.adj$log2exprs
     }
     return(dat.adj)
-  })
+  }, mc.cores = ncores)
 )
 
 dat.adj.lst2 <- lapply(dat.adj.lst, function(jdat){

@@ -36,8 +36,8 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmark
 
 
 keeptop <- 150
-# low.in.k9 <- FALSE
-low.in.k9 <- TRUE
+low.in.k9 <- FALSE
+# low.in.k9 <- TRUE
 # outpdf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/H3K4me1_H3K9me3_differential_expression_outputs/heatmap_k9me3_k4me1_signif_bins_k9.highink9_", low.in.k9, ".", Sys.Date(), ".WithLogFCmaps.pdf")
 
 # Load LDA outputs --------------------------------------------------------
@@ -87,8 +87,8 @@ params.dat2.wide <- data.table::dcast(subset(params.dat2.all, bin %in% k9.bins.n
          ClusterBcells.Estimate_ClusterGranulocytes.Estimate = mean(c(ClusterBcells.Estimate, ClusterGranulocytes.Estimate)),
          ClusterEryths.Estimate_ClusterGranulocytes.Estimate = mean(c(ClusterEryths.Estimate, ClusterGranulocytes.Estimate)),
          ClusterBcells.Estimate_ClusterEryths.Estimate =  mean(c(ClusterBcells.Estimate, ClusterEryths.Estimate)),
-         bcell.effect = ClusterBcells.Estimate - ClusterBcells.Estimate_ClusterGranulocytes.Estimate,
-         eryth.effect = ClusterEryths.Estimate - ClusterEryths.Estimate_ClusterGranulocytes.Estimate,
+         bcell.effect = ClusterBcells.Estimate - ClusterEryths.Estimate_ClusterGranulocytes.Estimate,
+         eryth.effect = ClusterEryths.Estimate - ClusterBcells.Estimate_ClusterGranulocytes.Estimate,
          granu.effect = ClusterGranulocytes.Estimate - ClusterBcells.Estimate_ClusterEryths.Estimate,
          mean.effect = mean(c(ClusterEryths.Estimate, ClusterGranulocytes.Estimate, ClusterBcells.Estimate)))
 
