@@ -192,6 +192,8 @@ def create_sc_region_plot(
     
                     colorbar_label=None,
                     jfigsize:tuple = (5, 8),
+
+                    norm_by = "mean",
                     
                     min_gene_len_to_plot:int = 0,
                     gene_models_height:float = 0.2,
@@ -348,7 +350,21 @@ def create_sc_region_plot(
             '''
             color = lut[grouper_name][group]
             subset = qf[meta_frame[grouper_name]==group]
-            bulk_track = subset.mean().droplevel(0)
+            if norm_by == "mean":
+                print("Normalizing by mean")
+                bulk_track = subset.mean().droplevel(0)
+            else:
+                print("Normalizing by colname:" + norm_by)
+                norm_factor = meta_frame[norm_by].sum()
+                bulk_track = subset.sum().droplevel(0)
+                print("Normalizing...")
+                print(bulk_track.shape)
+                print(norm_factor.shape)
+                print(bulk_track)
+                print(norm_factor)
+                print("Normalizing...done")
+                bulk_track = bulk_track / norm_factor
+            # bulk_track = subset.mean().droplevel(0)
             # print("group: " + group)
             # print("color: ")
             # print(color)
@@ -467,6 +483,9 @@ def main():
     parser.add_argument('-sigma', metavar = 'sigma', type=float, default=6, help="Sigma smoothing across regions")
     parser.add_argument('-jsep', metavar = 'separator', default=",", help="Separator for meta dat, sometimes , sometimes \t")
     parser.add_argument('-jname', metavar = 'Name', default="_", help="Add name between mark and sigma, default _")
+    parser.add_argument('-width', metavar = 'Width', default="5", type=int, help="Width probably inches")
+    parser.add_argument('-height', metavar = 'Height', default="8", type=int, help="Height probably inches")
+    parser.add_argument('-norm_by', metavar = 'mean or colname', default="mean", help="Colname from metadata for normalizing. Default is mean, uses bam mean")
     parser.add_argument('-colorcname', metavar = 'colname', default="colorcode", help="Color code usually colorcode or clustercol")
     parser.add_argument('-outfiletype', metavar = 'ImageType', default="pdf", help="Either pdf or png")
     parser.add_argument('-percentile', metavar='Percentile', type=float, default=99.5,
@@ -641,6 +660,7 @@ def main():
                             bulk_track_meta_column_group = 'cluster',
 
                             outsuffix = args.outfiletype,
+                            norm_by = args.norm_by,
 
                             features=features,
                             gene_height=0.0001,
