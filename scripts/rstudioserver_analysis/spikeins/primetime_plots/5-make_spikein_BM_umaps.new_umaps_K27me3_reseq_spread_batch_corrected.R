@@ -1,8 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2020-11-29
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/primetime_plots/5-make_spikein_BM_umaps.R
-# Fig 4 init
-
+# Date of Creation: 2020-12-28
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/primetime_plots/5-make_spikein_BM_umaps.new_umaps_K27me3_reseq_spread_batch_corrected.R
+# description
 
 rm(list=ls())
 
@@ -43,9 +42,9 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmark
 hubprefix <- "/home/jyeung/hub_oudenaarden"
 
 # outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/global_hist_mod_BM"
-outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2"
-outpdf <- file.path(outdir, paste0("bone_marrow_hist_mod_differences.", Sys.Date(), ".normtorep3.same_annot_file.K27me3reseq.spread.pdf"))
-outrds <- file.path(outdir, paste0("bone_marrow_hist_mod_differences.", Sys.Date(), ".normtorep3.same_annot_file.K27me3reseq.spread.rds"))
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2/batch_corrected"
+outpdf <- file.path(outdir, paste0("bone_marrow_hist_mod_differences.", Sys.Date(), ".normtorep3.same_annot_file.K27me3reseq.spread.batch_corrected.pdf"))
+outrds <- file.path(outdir, paste0("bone_marrow_hist_mod_differences.", Sys.Date(), ".normtorep3.same_annot_file.K27me3reseq.spread.batch_corrected.rds"))
 
 make.plots <- TRUE
 
@@ -57,17 +56,15 @@ if (make.plots){
 
 # Load UMAPs --------------------------------------------------------------
 
-indir.meta <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/cell_cluster_tables.spikeins_mouse.BMround2_umaps_and_ratios.Round1Round2.redo_after_varfilt_with_spikeins.2020-12-22.umap_spread.H3K27me3_cleaned"
-jdate <- "2020-12-23"
+indir.meta <- file.path(hubprefix, "jyeung/data/scChiC/from_rstudioserver/cell_cluster_tables.batch_corrected_umaps.2020-12-28")
 dat.metas <- lapply(jmarks, function(jmark){
   print(jmark)
-  fname <- paste0("cell_cluster_table_with_spikeins.", jmark, ".", jdate, ".umap_spread.final.txt")
-  inf.meta <- file.path(indir.meta, fname)
-  dat.tmp <- fread(inf.meta) %>%
-    rowwise() %>% 
-    mutate(stype = batch,
-           platenbr = plate,
-           plate = ClipLast(cell, jsep = "_"))
+  inf.meta <- file.path(indir.meta, paste0("metadata_batch_corrected.", jmark, ".2020-12-28.txt"))
+  print(inf.meta)
+  dat.meta <- fread(inf.meta)
+  # adjuast plate 
+  dat.meta$plate <- sapply(dat.meta$cell, function(x) ClipLast(x, jsep = "_"))
+  return(dat.meta)
 })
 
 
@@ -175,7 +172,7 @@ m.lst.ctype <- lapply(jmarks, function(jmark){
 })
 print(m.lst.ctype)
 
-  m.lst.umap <- lapply(jmarks, function(jmark){
+m.lst.umap <- lapply(jmarks, function(jmark){
   print(jmark)
   dat.umap <- jfits.ds.lst.bymark[[jmark]]$jsub.effects %>%
     rowwise() %>%
@@ -235,7 +232,7 @@ jmark <- "H3K27me3"
 dat.umap <- jfits.ds.lst.bymark[[jmark]]$jsub.effects
 
 jcols <- c("grey", "red", "blue")
-ggplot(dat.umap %>% filter(cluster == "Eryths" & umap2 < -6), aes(x = -umap1, y = log2(cuts_in_peak/spikein_cuts) - Estimate, color = stype)) + 
+ggplot(dat.umap %>% filter(cluster == "Eryths" & umap2 < -6), aes(x = -umap1, y = log2(cuts_in_peak/spikein_cuts) - Estimate, color = batch)) + 
   geom_point(size = 2) + 
   ggtitle("Eryths, umap2 < -6, umap1 as pseudotime") + 
   stat_smooth(geom='smooth', alpha=0.25, se=FALSE, color = 'blue', size = 2) + 

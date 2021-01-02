@@ -384,10 +384,11 @@ ggplot(jsub.sd.long %>% filter(grepl("^cv", Response)), aes(x = forcats::fct_reo
 print("Done")
 
 # do statistical test 
-#jrow <- jsub.sd[1, ]
-#jcheck <- subset(jsub, mark == "H3K4me3" & conc == "37U" & 350)
-#jout <- 1 - pf( var(jsub$log2chromo) / var(jsub$log2ratio), df1 = nrow(jsub) - 1, df2 = nrow(jsub) - 1, lower.tail = TRUE)
-#var.test(jsub$log2chromo, jsub$log2ratio, ratio = 1, alternative = "two.sided")
+# p-value < 
+jrow <- jsub.sd[1, ]
+jcheck <- subset(jsub, mark == "H3K4me3" & conc == "37U" & 350)
+jout <- pf( var(jsub$log2chromo) / var(jsub$log2ratio), df1 = nrow(jsub) - 1, df2 = nrow(jsub) - 1, lower.tail = TRUE)
+var.test(jsub$log2chromo, jsub$log2ratio, ratio = 1, alternative = "two.sided")
 
 dev.off()
 
