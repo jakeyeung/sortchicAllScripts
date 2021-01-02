@@ -40,9 +40,13 @@ hubprefix <- "/home/jyeung/hub_oudenaarden"
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
+colpalette <- colorRampPalette(c("grey99", "grey65", "grey1"))(1024)
+ctypes <- c("Eryths", "Bcells", "NKs", "pDCs", "Granulocytes", "DCs", "Basophils", "HSPCs")
+ctypes.k9me3 <- c("Eryths", "Bcells", "Granulocytes", "HSPCs")
+
 keeptop <- 150
-low.in.k9 <- FALSE
-# low.in.k9 <- TRUE
+# low.in.k9 <- FALSE
+low.in.k9 <- TRUE
 
 # Load LDA outputs --------------------------------------------------------
 
@@ -207,8 +211,6 @@ bins.common <- Reduce(f = intersect, x = lapply(mat.adj.lst, rownames))
 
 bins.keep.common <- bins.keep[bins.keep %in% bins.common]
 
-ctypes <- c("Eryths", "Bcells", "NKs", "Granulocytes", "Basophils", "pDCs", "DCs", "HSPCs")
-ctypes.k9me3 <- c("Eryths", "Bcells", "Granulocytes", "HSPCs")
 
 jmetas.pretty.lst <- lapply(jmarks, function(jmark){
   jmeta <- dat.metas[[jmark]]
@@ -266,10 +268,13 @@ jmat.lst <- lapply(jmarks, function(jmark){
 # jmat1 <- apply(jmat1, 2, function(jcol) Winsorize(jcol, probs = c(0.01, 0.99)))
 
 outpdf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/H3K4me1_H3K9me3_differential_expression_outputs/heatmap_allmarks_signif_bins_k9.lowink9_", low.in.k9, ".", Sys.Date(), ".tryagain.pdf")
+# colpalette <- colorRampPalette(c("white", "black"))(1024)
 print("Making heatmaps")
 pdf(outpdf, useDingbats = FALSE)
 for (jmark in jmarks){
-  heatmap3::heatmap3(jmat.lst[[jmark]], Rowv = NA, Colv = NA, scale = "row", ColSideColors = jmetas.pretty.lst[[jmark]]$clustercol, RowSideColors = sapply(bins.keep.common, AssignHash, jhash = bin2col),  revC = TRUE, main = paste0(jmark, " 50kb bins"), margins = c(5, 8))
+  heatmap3::heatmap3(jmat.lst[[jmark]], Rowv = NA, Colv = NA, scale = "row", ColSideColors = jmetas.pretty.lst[[jmark]]$clustercol, RowSideColors = sapply(bins.keep.common, AssignHash, jhash = bin2col),  revC = TRUE, main = paste0(jmark, " 50kb bins"), margins = c(5, 8), col = colpalette)
 }
 dev.off()
+
+# redo colors
 
