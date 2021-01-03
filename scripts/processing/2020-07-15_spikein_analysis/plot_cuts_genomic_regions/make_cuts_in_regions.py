@@ -194,6 +194,7 @@ def create_sc_region_plot(
                     jfigsize:tuple = (5, 8),
 
                     norm_by = "mean",
+                    skip_clustermap = False,
                     
                     min_gene_len_to_plot:int = 0,
                     gene_models_height:float = 0.2,
@@ -301,26 +302,44 @@ def create_sc_region_plot(
         # return(row_colors, meta_frame['colorcodergb'])
         # return(row_colors, lut)
     # return qf
-    
-    
-    cm = sns.clustermap(qf,
-           #z_score=0,
-            row_cluster=False,
-            col_cluster=False,
-            vmax=np.percentile(qf,PCT_COLOR), #if cell_normalizer!='raw' else 1, #0.0005,
-            vmin=0,
-            dendrogram_ratio=0.1,
-            row_colors=row_colors,
-            figsize=jfigsize, cmap='Greys', cbar_kws={"shrink": .1},
-            cbar_pos=(0.0, 0.5, 0.01, 0.16),)
+
+    if not skip_clustermap:
+        cm = sns.clustermap(qf,
+               #z_score=0,
+                row_cluster=False,
+                col_cluster=False,
+                vmax=np.percentile(qf,PCT_COLOR), #if cell_normalizer!='raw' else 1, #0.0005,
+                vmin=0,
+                dendrogram_ratio=0.1,
+                row_colors=row_colors,
+                figsize=jfigsize, cmap='Greys', cbar_kws={"shrink": .1},
+                cbar_pos=(0.0, 0.5, 0.01, 0.16),)
+    else:
+        print("Skipping clustermap, but still intialize size")
+        # cm = sns.clustermap(np.zeros(qf.shape), 
+        #         row_cluster=False,
+        #         col_cluster=False,
+        #         vmax=np.percentile(qf,PCT_COLOR), #if cell_normalizer!='raw' else 1, #0.0005,
+        #         vmin=0,
+        #         dendrogram_ratio=0.1,
+        #         # row_colors=row_colors,
+        #         figsize=jfigsize, cmap='Greys', cbar_kws={"shrink": .1},
+        #         cbar_pos=(0.0, 0.5, 0.01, 0.16),)
 
     # Add gene models
-    fig = plt.gcf()
-    ax = cm.ax_col_dendrogram
-    ax.clear()
-    ax.set_xticks([])
+    if not skip_clustermap:
+        fig = plt.gcf()
+        ax = cm.ax_col_dendrogram
+        ax.clear()
+        ax.set_xticks([])
+    else:
+        fig = plt.Figure(figsize = jfigsize)
+        ax = plt.subplot(111, aspect = 'auto')
+        # ax = fig.add_axes(  (0, 0, jfigsize[0], jfigsize[1])  )
+        # ax.clear()
+        # ax.set_xticks([])
+        # ax = None
     # Plot density:
-
 
     if trace_normalizer=='zscore':
         trace_norm_function = zscore
@@ -350,17 +369,15 @@ def create_sc_region_plot(
             '''
             color = lut[grouper_name][group]
             subset = qf[meta_frame[grouper_name]==group]
+            meta_frame_subset = meta_frame[meta_frame[grouper_name]==group]
             if norm_by == "mean":
                 print("Normalizing by mean")
                 bulk_track = subset.mean().droplevel(0)
             else:
-                print("Normalizing by colname:" + norm_by)
-                norm_factor = meta_frame[norm_by].sum()
+                print("Normalizing by colname:" + norm_by + ", group:" + group)
+                norm_factor = meta_frame_subset[norm_by].sum()
                 bulk_track = subset.sum().droplevel(0)
-                print("Normalizing...")
-                print(bulk_track.shape)
-                print(norm_factor.shape)
-                print(bulk_track)
+                print("Normalizing... with norm_factor")
                 print(norm_factor)
                 print("Normalizing...done")
                 bulk_track = bulk_track / norm_factor
@@ -374,7 +391,7 @@ def create_sc_region_plot(
             pd.Series(trace_norm_function(bulk_track), index=bulk_track.index).plot(color=color,lw=bulk_lw,ax=ax)
             
     
-
+    # if not skip_clustermap:
     # Format the axis of the top bulk profiles:
     ax.tick_params(axis='y', labelcolor='black',labelsize=4)
     if trace_normalizer=='zscore':
@@ -387,6 +404,8 @@ def create_sc_region_plot(
             ax.grid(True, color='grey',which='minor')
             ax.grid(True, color='grey',which='major')
     ax.set_xlim(start,end)
+    # else:
+    #     print("Skip making axis of top bulk profiles because clustermap")
     
 
     # Plot bw track on secondary axis
@@ -414,35 +433,40 @@ def create_sc_region_plot(
 
     sns.despine(ax=ax,top=True, right=False, left=False)
 
+    if not skip_clustermap:
+        cm.ax_heatmap.set_xticks([]) #np.arange(start,end, 1_000_000))
+        cm.ax_heatmap.set_yticks([])
+        cm.ax_heatmap.set_ylabel(f'{qf.shape[0]} single cells', fontsize=6)
+        cm.ax_heatmap.tick_params(length=0.5)
+        cm.ax_heatmap.set_xlabel(None)
 
-    cm.ax_heatmap.set_xticks([]) #np.arange(start,end, 1_000_000))
-    cm.ax_heatmap.set_yticks([])
-    cm.ax_heatmap.set_ylabel(f'{qf.shape[0]} single cells', fontsize=6)
-    cm.ax_heatmap.tick_params(length=0.5)
-    cm.ax_heatmap.set_xlabel(None)
+
+        cm.cax.set_ylabel(caxlabel,fontsize=4)
+        cm.cax.tick_params(labelsize=4)
+
+        heatmap_start_x,heatmap_start_y, heatmap_end_x, heatmap_end_y = cm.ax_heatmap.get_position().bounds
+
+        width = heatmap_end_x #-heatmap_start_x
+        height = gene_models_height if features is not None else 0.05
+        ax = fig.add_axes(  (heatmap_start_x, heatmap_start_y-height-0.02, width, height)  )
+        ax.ticklabel_format(axis='x',style='sci')
+        ax.set_yticks([])
+        # despine the gene map
+        sns.despine(ax=ax,left=True,right=True,top=True)
+    else:
+        print("Skipped adjusting heatmap because skip_clustermap")
 
 
-    cm.cax.set_ylabel(caxlabel,fontsize=4)
-    cm.cax.tick_params(labelsize=4)
-
-    heatmap_start_x,heatmap_start_y, heatmap_end_x, heatmap_end_y = cm.ax_heatmap.get_position().bounds
-
-    width = heatmap_end_x #-heatmap_start_x
-    height = gene_models_height if features is not None else 0.05
-    ax = fig.add_axes(  (heatmap_start_x, heatmap_start_y-height-0.02, width, height)  )
-    ax.ticklabel_format(axis='x',style='sci')
-    ax.set_yticks([])
-    # despine the gene map
-    sns.despine(ax=ax,left=True,right=True,top=True)
-
-    
-    if features is not None:
-        create_gene_models(contig,start,end,features=features, ax=ax,minlen=min_gene_len_to_plot,plot_tss_markers=plot_tss_markers,
-                       plot_gene_names=plot_gene_names,plot_gene_bodies=plot_gene_bodies,                    
-    
-                    overlap_dist = overlap_dist,
-                    gene_height =gene_height,
-                    spacer = spacer)
+    if not skip_clustermap: 
+        if features is not None:
+            create_gene_models(contig,start,end,features=features, ax=ax,minlen=min_gene_len_to_plot,plot_tss_markers=plot_tss_markers,
+                           plot_gene_names=plot_gene_names,plot_gene_bodies=plot_gene_bodies,                    
+        
+                        overlap_dist = overlap_dist,
+                        gene_height =gene_height,
+                        spacer = spacer)
+    else:
+        print("Skipped making gene models because skip_clustermap")
 
     plt.savefig(f'{outprefix}_{region[0]}_{region[1]}_{region[2]}.{outsuffix}',bbox_inches='tight',format=outsuffix)
     
@@ -490,8 +514,12 @@ def main():
     parser.add_argument('-outfiletype', metavar = 'ImageType', default="pdf", help="Either pdf or png")
     parser.add_argument('-percentile', metavar='Percentile', type=float, default=99.5,
                         help='Perceentile. If too low background turns grey')
+    parser.add_argument('-trace_sigma', metavar='trace_sigma', type=float, default=2,
+                        help='Smoothing for bulk track')
     parser.add_argument('--rserver2hpc_prefix', action='store_true',
                         help='Swap prefix')
+    parser.add_argument('--skip_clustermap', action='store_true',
+                        help='Skip clustermap just show the bulk')
     parser.add_argument('--is_region', action='store_true',
                         help='Switch gene to region, skips using gene dict and assigns regions directly')
     parser.add_argument('--quiet', '-q', action='store_true',
@@ -643,7 +671,7 @@ def main():
                             bwpath = bwpath,
                             region_bin_size = 500, # The size of the cells in the heatmap
                             normalize_to_counts=total_count_per_cell_dict[jmark], #.loc[cell_subset],
-                            trace_sigma = 2, # Sigma for the bulk trace (gauss)
+                            trace_sigma = args.trace_sigma, # Sigma for the bulk trace (gauss)
                             sigma = args.sigma, # Sigma for the single cell dots (gauss)
                             # sigma_cells = 0.00001, # Sigma for smoothing across cells. Very low values basically disable it.
                             sigma_cells = args.sigma_cells, # Sigma for smoothing across cells. Very low values basically disable it.
@@ -661,6 +689,9 @@ def main():
 
                             outsuffix = args.outfiletype,
                             norm_by = args.norm_by,
+                            skip_clustermap = args.skip_clustermap,
+                            jfigsize = (args.width, args.height),
+
 
                             features=features,
                             gene_height=0.0001,
