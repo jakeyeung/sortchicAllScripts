@@ -281,7 +281,7 @@ def create_sc_region_plot(
 
     # Additive
     qf += pd.DataFrame(gaussian_filter(qf, sigma=(sigma_cells,sigma),mode='reflect'), index=qf.index, columns=qf.columns)
-
+    # qf += pd.DataFrame(maximum_filter(qf, size=(sigma_cells,sigma),mode='reflect'), index=qf.index, columns=qf.columns)
     
     qf = qf.loc[meta_frame.index]
     # qf = qf.sort_index(1)
