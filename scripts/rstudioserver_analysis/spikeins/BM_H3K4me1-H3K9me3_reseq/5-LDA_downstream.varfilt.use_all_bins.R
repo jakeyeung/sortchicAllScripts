@@ -37,7 +37,11 @@ hubprefix <- "/home/jyeung/hub_oudenaarden"
 
 pdfout <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/H3K4me1_H3K9me3_differential_expression_outputs/differential_expression_output_H3K4me1_H3K9me3.FilterByK4me1.", Sys.Date(), ".pdf")
 
-pdf(pdfout, useDingbats = FALSE)
+make.plots <- FALSE
+
+if (make.plots){
+  pdf(pdfout, useDingbats = FALSE)
+}
 
 # inf <- file.path(hubprefix, "jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BM_dbl_reseq/lda_outputs.count_mat_cleaned_reseq.H3K4me1_H3K9me3.K-30.binarize.FALSE/ldaOut.count_mat_cleaned_reseq.H3K4me1_H3K9me3.K-30.Robj")
 inf <- file.path(hubprefix, "jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BM_dbl_reseq.varfilt/lda_outputs.count_mat_cleaned_reseq.H3K4me1_H3K9me3.varfilt.K-30.binarize.FALSE/ldaOut.count_mat_cleaned_reseq.H3K4me1_H3K9me3.varfilt.K-30.Robj")
@@ -608,8 +612,9 @@ ggplot(params.dat.merge.all %>%
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 
-
-dev.off()
+if (make.plots){
+  dev.off()
+}
 
 
 

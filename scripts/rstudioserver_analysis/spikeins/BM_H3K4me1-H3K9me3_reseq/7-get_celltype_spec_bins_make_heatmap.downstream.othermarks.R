@@ -40,7 +40,8 @@ hubprefix <- "/home/jyeung/hub_oudenaarden"
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
-colpalette <- colorRampPalette(c("grey99", "grey65", "grey1"))(1024)
+# colpalette <- colorRampPalette(c("grey99", "grey65", "grey1"))(1024)
+colpalette <- colorRampPalette(c("grey1", "grey35", "grey99"))(1024)
 ctypes <- c("Eryths", "Bcells", "NKs", "pDCs", "Granulocytes", "DCs", "Basophils", "HSPCs")
 ctypes.k9me3 <- c("Eryths", "Bcells", "Granulocytes", "HSPCs")
 
