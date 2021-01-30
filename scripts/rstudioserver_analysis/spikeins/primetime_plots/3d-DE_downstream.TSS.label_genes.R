@@ -277,24 +277,70 @@ for (mark2 in mark2vec){
   print(m)
   
   m <- ggplot(dat.filt,
-              aes(x = estimate.x / log(2), y = estimate.y/ log(2), color = ctypeXhspcs)) + 
-    geom_point(alpha = 0.5) + 
-    geom_density_2d(mapping = aes(x = estimate.x, y = estimate.y), inherit.aes = FALSE, alpha = 0.25, color = "black", bins = 10) + 
-    # geom_density_2d() + 
+              # aes(x = estimate.x / log(2), y = estimate.y/ log(2), color = ctypeXhspcs)) + 
+              aes(x = estimate.x / log(2), fill = ctypeXhspcs)) + 
+    geom_density(alpha = 0.25) + 
     geom_vline(xintercept = 0, linetype = "dotted") + 
+    facet_wrap(~celltype, ncol = 2) + 
+    ggtitle(paste0(".FCs at HSPC-specific TSS: ", mark1)) + 
+    theme_bw() + 
+    scale_fill_manual(values = c(stypecols, "grey"), name = "GeneLabel", labels = c("Other", "Celltype-specific", "HSPC-specific", "Other2")) + 
+    xlab(paste(mark1, ", log2FC relative to HSPC")) + 
+    # ylab(paste(mark2, ", log2FC relative to HSPC")) + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
+  print(m)
+  
+  m <- ggplot(dat.filt,
+              # aes(x = estimate.x / log(2), y = estimate.y/ log(2), color = ctypeXhspcs)) + 
+              aes(y = estimate.x / log(2), fill = ctypeXhspcs, x = ctypeXhspcs)) + 
+    geom_boxplot(alpha = 0.5) + 
     geom_hline(yintercept = 0, linetype = "dotted") + 
     facet_wrap(~celltype, ncol = 2) + 
-    ggtitle(paste0(".FCs at HSPC-specific TSS: ", mark1, " vs ", mark2)) + 
+    ggtitle(paste0(".FCs at HSPC-specific TSS: ", mark1)) + 
     theme_bw() + 
-    scale_color_manual(values = c(stypecols, "grey"), name = "GeneLabel", labels = c("Other", "Celltype-specific", "HSPC-specific", "Other2")) + 
-    xlab(paste(mark1, ", log2FC relative to HSPC")) + 
+    scale_fill_manual(values = c(stypecols, "grey"), name = "GeneLabel", labels = c("Other", "Celltype-specific", "HSPC-specific", "Other2")) + 
+    ylab(paste(mark1, ", log2FC relative to HSPC")) + 
+    # ylab(paste(mark2, ", log2FC relative to HSPC")) + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
+  print(m)
+  
+  m <- ggplot(dat.filt,
+              # aes(x = estimate.x / log(2), y = estimate.y/ log(2), color = ctypeXhspcs)) + 
+              aes(x = estimate.y / log(2), fill = ctypeXhspcs)) + 
+    geom_density(alpha = 0.25) + 
+    geom_vline(xintercept = 0, linetype = "dotted") + 
+    facet_wrap(~celltype, ncol = 2) + 
+    ggtitle(paste0(".FCs at HSPC-specific TSS: ", mark1)) + 
+    theme_bw() + 
+    scale_fill_manual(values = c(stypecols, "grey"), name = "GeneLabel", labels = c("Other", "Celltype-specific", "HSPC-specific", "Other2")) + 
+    # xlab(paste(mark1, ", log2FC relative to HSPC")) + 
+    xlab(paste(mark2, ", log2FC relative to HSPC")) + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
+  print(m)
+  
+  m <- ggplot(dat.filt,
+              # aes(x = estimate.x / log(2), y = estimate.y/ log(2), color = ctypeXhspcs)) + 
+              aes(y = estimate.y / log(2), fill = ctypeXhspcs, x = ctypeXhspcs)) + 
+    geom_boxplot(alpha = 0.5) + 
+    geom_hline(yintercept = 0, linetype = "dotted") + 
+    facet_wrap(~celltype, ncol = 2) + 
+    ggtitle(paste0(".FCs at HSPC-specific TSS: ", mark2)) + 
+    theme_bw() + 
+    scale_fill_manual(values = c(stypecols, "grey"), name = "GeneLabel", labels = c("Other", "Celltype-specific", "HSPC-specific", "Other2")) + 
     ylab(paste(mark2, ", log2FC relative to HSPC")) + 
+    # ylab(paste(mark2, ", log2FC relative to HSPC")) + 
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   print(m)
   
   
   
+  # check figure
+  
+  
+  
+  
   
 }
+
 dev.off()
 

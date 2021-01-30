@@ -16,13 +16,19 @@ library(igraph)
 library(umap)
 library(DescTools)
 
+library(RColorBrewer)
+
 jstart <- Sys.Date()
 
-bwpalette.active <- colorRampPalette(c("grey1", "grey50", "grey99"))(1024)
-bwpalette.repressive <- colorRampPalette(c("grey1", "grey50", "grey99"))(1024)
+# brewer.pa
+ryb <- brewer.pal(11, 'RdYlBu')
+bwpalette.active <- rev(colorRampPalette(c(ryb[1], ryb[6], ryb[11]))(1024))
+# bwpalette.active <- colorRampPalette(c("grey1", "grey50", "grey99"))(1024)
+# bwpalette.repressive <- colorRampPalette(c("grey1", "grey50", "grey99"))(1024)
+bwpalette.repressive <- bwpalette.active
 ctypes.arranged <-  c("Eryths", "Bcells", "NKs", "pDCs", "Granulocytes", "DCs", "Basophils", "HSPCs")
 
-make.plots <- FALSE
+make.plots <- TRUE
 
 
 # Load objs  --------------------------------------------------------------
@@ -129,7 +135,7 @@ dat.genes.sub.join <- dat.genes.sub.join %>%
 
 # pdf(paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2/bonemarrow_heatmaps_3_marks_TSS_pretty.", Sys.Date(), ".cexsmall2.pdf"), useDingbats = FALSE)
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/robjs_for_heatmaps_and_umaps/heatmap_pdfs_and_ordered_matrices"
-outpdf <- file.path(outdir, paste0("bonemarrow_heatmaps_3_marks_TSS_pretty.", Sys.Date(), ".cexsmall.rearranged.bw.pdf"))
+outpdf <- file.path(outdir, paste0("bonemarrow_heatmaps_3_marks_TSS_pretty.", Sys.Date(), ".cexsmall.rearranged.ryb_tweak.pdf"))
 
 if (make.plots){
   pdf(outpdf, useDingbats = FALSE)
@@ -163,14 +169,15 @@ for (jmark.test in jmarks){
   # rownames(mat.adj.tmp) <- dat.genes.sub.join$genesymbol
   
   if (jmark.test == "H3K27me3"){
-    mat.adj.tmp <- t(apply(mat.adj.tmp, 1, function(jrow) Winsorize(jrow, probs = c(0.05, 0.95))))
-    mat.adj.tmp <- apply(mat.adj.tmp, 2, function(jcol) Winsorize(jcol, probs = c(0.05, 0.95)))
-    # mat.adj.tmp <- t(apply(mat.adj.tmp, 1, function(jrow) Winsorize(jrow, probs = c(0.1, 0.9))))
-    # mat.adj.tmp <- apply(mat.adj.tmp, 2, function(jcol) Winsorize(jcol, probs = c(0.1, 0.9)))
+    # mat.adj.tmp <- t(apply(mat.adj.tmp, 1, function(jrow) Winsorize(jrow, probs = c(0.05, 0.95))))
+    # mat.adj.tmp <- apply(mat.adj.tmp, 2, function(jcol) Winsorize(jcol, probs = c(0.05, 0.95)))
+    mat.adj.tmp <- t(apply(mat.adj.tmp, 1, function(jrow) Winsorize(jrow, probs = c(0.1, 0.9))))
+    # mat.adj.tmp <- apply(mat.adj.tmp, 2, function(jcol) Winsorize(jcol, probs = c(0.01, 0.99)))
     bwpalette <- bwpalette.repressive
   } else {
-    mat.adj.tmp <- apply(mat.adj.tmp, 2, function(jcol) Winsorize(jcol, probs = c(0.05, 0.95)))
-    mat.adj.tmp <- t(apply(mat.adj.tmp, 1, function(jrow) Winsorize(jrow, probs = c(0.05, 0.95))))
+    # mat.adj.tmp <- apply(mat.adj.tmp, 2, function(jcol) Winsorize(jcol, probs = c(0.05, 0.95)))
+    # mat.adj.tmp <- t(apply(mat.adj.tmp, 1, function(jrow) Winsorize(jrow, probs = c(0.05, 0.95))))
+    mat.adj.tmp <- t(apply(mat.adj.tmp, 1, function(jrow) Winsorize(jrow, probs = c(0.1, 0.9))))
     # scale rows
     # rnames.tmp <- rownames(mat.adj.tmp)
     # mat.adj.tmp <- apply(mat.adj.tmp, MARGIN = 2, FUN = function(x) (x - mean(x)) / sd(x))

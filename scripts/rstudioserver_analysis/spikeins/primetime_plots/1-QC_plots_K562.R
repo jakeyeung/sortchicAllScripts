@@ -24,7 +24,8 @@ jchromos <- paste("chr", c(seq(22), "X", "Y"), sep = "")
 jchromos.nochr <- paste(c(seq(22), "X", "Y"), sep = "")
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
-outdir <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2")
+outdir <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2/K562_again")
+dir.create(outdir)
 outpdf <- file.path(outdir, paste0("K562_QC_plots.", Sys.Date(), ".add_fracnonzeros.pdf"))
 outtxt <- file.path(outdir, paste0("K562_QC_plots.", Sys.Date(), ".add_fracnonzeros.txt"))
 
@@ -353,6 +354,13 @@ ggplot(dat.peaks.merge %>% filter(!is.na(is.good)), aes(x = log10(cuts_in_peaks)
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
+
+
+ggplot(dat.peaks.merge, aes(x = cuts_in_peaks / (cuts_in_peaks + cuts_notin_peaks)))  +
+  geom_density(alpha = 0.5, fill = "red") + 
+  facet_wrap(~mark, nrow = 1) + 
+  theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 # Load LDA  ---------------------------------------------------------------
 

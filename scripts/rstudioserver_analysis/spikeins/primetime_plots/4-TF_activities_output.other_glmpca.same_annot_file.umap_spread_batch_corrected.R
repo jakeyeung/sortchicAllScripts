@@ -24,6 +24,12 @@ library(heatmap3)
 
 source("~/projects/scchic/scripts/rstudioserver_analysis/spikeins/primetime_plots/heatmap3revR.R")
 
+
+# bwpalette <- colorRampPalette(c("grey99", "grey65", "grey1"))(1024)
+bwpalette <- colorRampPalette(c("grey1", "grey75", "grey99"))(1024)
+ctypes.arranged <-  c("Eryths", "Bcells", "NKs", "pDCs", "Granulocytes", "DCs", "Basophils", "HSPCs")
+
+
 jsettings <- umap.defaults
 jsettings$n_neighbors <- 30
 jsettings$min_dist <- 0.1
@@ -164,16 +170,22 @@ for (lst in list(hscs, ilcs, bcells, granus, basos, dends, pdends)){
   }
 }
 
+# dat.annots.mergeclst <- dat.merge %>%
+#   rowwise() %>%
+#   mutate(clst.merged = ifelse(!is.null(clstr.hash[[cluster]]), clstr.hash[[cluster]], cluster),
+#          umapdist = sqrt(umap1^2 + umap2^2)) %>%
+#   ungroup()
+
 dat.annots.mergeclst <- dat.merge %>%
   rowwise() %>%
-  mutate(clst.merged = ifelse(!is.null(clstr.hash[[cluster]]), clstr.hash[[cluster]], cluster),
+  mutate(clst.merged = cluster,
          umapdist = sqrt(umap1^2 + umap2^2)) %>%
   ungroup()
 
-dat.annots.mergeclst$clst.merged <- factor(dat.annots.mergeclst$clst.merged, levels = c("Eryths", "Bcells", "NKcells", "Granulocytes", "Basophils", "Dendritic", "pDendritic", "HSPCs"))
+dat.annots.mergeclst$clst.merged <- factor(dat.annots.mergeclst$clst.merged, levels = ctypes.arranged)
 
 dat.annots.mergeclst <- dat.annots.mergeclst %>%
-  mutate(clst.merged = forcats::fct_relevel(clst.merged, c("Eryths", "Bcells", "NKcells", "Granulocytes", "Basophils", "Dendritic", "pDendritic", "HSPCs"))) %>%
+  mutate(clst.merged = forcats::fct_relevel(clst.merged, ctypes.arranged)) %>%
   arrange(clst.merged)
 
 
@@ -197,6 +209,7 @@ ggplot(dat.merge.col, aes(x = umap1, y = umap2, color = clustercol)) +
 
 par(mfrow=c(1,1), mar=c(1,1,1,1), mgp=c(3, 1, 0), las=0)
 hm.out <- heatmap3(jsub, margins = c(5, 8), cexCol = 0.35, Colv = TRUE, Rowv = NA, 
+                   col = bwpalette, 
                    # ColSideColors = rep("blue", ncol(jsub)), 
                    # ColSideColors = FALSE,
                    RowSideColors = colvec, 
@@ -206,6 +219,7 @@ hm.out <- heatmap3(jsub, margins = c(5, 8), cexCol = 0.35, Colv = TRUE, Rowv = N
                    distfun = dist, hclustfun = hclust, method = jmeth)
 
 hm.out <- heatmap3(jsub, margins = c(5, 8), cexCol = 0.35, Colv = TRUE, Rowv = NA, 
+                   col = bwpalette,
                    # ColSideColors = rep("blue", ncol(jsub)), 
                    # ColSideColors = FALSE,
                    RowSideColors = colvec, 
@@ -216,6 +230,7 @@ hm.out <- heatmap3(jsub, margins = c(5, 8), cexCol = 0.35, Colv = TRUE, Rowv = N
 
 
 hm.out.transpose <- heatmap3(t(jsub), margins = c(5, 8), cexCol = 0.35, Colv = NA, Rowv = TRUE, 
+                             col = bwpalette,
                    # ColSideColors = rep("blue", ncol(jsub)), 
                    # ColSideColors = FALSE,
                    ColSideColors = colvec, 
@@ -225,6 +240,7 @@ hm.out.transpose <- heatmap3(t(jsub), margins = c(5, 8), cexCol = 0.35, Colv = N
                    distfun = dist, hclustfun = hclust, method = jmeth)
 
 hm.out.transpose <- heatmap3(t(jsub), margins = c(5, 8), cexCol = 0.35, Colv = NA, Rowv = TRUE, 
+                             col = bwpalette,
                              # ColSideColors = rep("blue", ncol(jsub)), 
                              # ColSideColors = FALSE,
                              ColSideColors = colvec, 
@@ -236,6 +252,7 @@ hm.out.transpose <- heatmap3(t(jsub), margins = c(5, 8), cexCol = 0.35, Colv = N
 
 
 hm.out.transpose <- heatmap.3(t(jsub), cexCol = 0.35, Colv = NA, Rowv = TRUE, 
+                              # col = bwpalette,
                    # ColSideColors = rep("blue", ncol(jsub)), 
                    # ColSideColors = FALSE,
                    ColSideColors = colvec, 

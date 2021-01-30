@@ -37,6 +37,8 @@ DoFitsDownstream <- function(jfit, jfit.null, jgrep = "^experi|Intercept"){
   return(list(jfit = jfit, jfit.null = jfit.null, jcompare = jcompare, jfit.merge = jfit.merge))
 }
 
+# zval <- 2  # 95% con interval
+zval <- 2.58  # 99% con interval
 
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 hubprefix <- "/home/jyeung/hub_oudenaarden"
@@ -158,6 +160,8 @@ jfits.ds.lst.bymark <- lapply(jmarks, function(jmark){
 
 cbPalette <- c("#696969", "#56B4E9", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400",  "#32CD32", "#FFB6C1", "#0b1b7f", "#ff9f7d", "#eb9d01", "#2c2349", "#753187", "#f80597")
 
+jprobs <- c(0.05, 0.95)
+
 m.lst.ctype <- lapply(jmarks, function(jmark){
   print(jmark)
   dat.umap <- jfits.ds.lst.bymark[[jmark]]$jsub.effects
@@ -177,8 +181,9 @@ m.lst.umap <- lapply(jmarks, function(jmark){
   dat.umap <- jfits.ds.lst.bymark[[jmark]]$jsub.effects %>%
     rowwise() %>%
     mutate(l2r = log2(cuts_in_peak / spikein_cuts) - Estimate) %>%
-    ungroup() %>%
-    mutate(l2r.win = DescTools::Winsorize(l2r, probs = c(0.01, 0.99)))
+    # ungroup() %>%
+    group_by(cluster) %>%
+    mutate(l2r.win = DescTools::Winsorize(l2r, probs = jprobs))
   m <- ggplot(dat.umap, aes(x = umap1, y = umap2, color = l2r.win)) + 
     geom_point() + 
     theme_bw() + 
@@ -189,10 +194,57 @@ m.lst.umap <- lapply(jmarks, function(jmark){
 })
 print(m.lst.umap)
 
+# set same UMAP
+jmerged <- lapply(jmarks, function(jmark){
+  jtmp <- jfits.ds.lst.bymark[[jmark]]$jsub.effects
+  jtmp$mark <- jmark
+  return(jtmp)
+}) %>%
+  bind_rows() %>%
+  rowwise() %>%
+  mutate(l2r = log2(cuts_in_peak / spikein_cuts) - Estimate) %>%
+  group_by(mark, clst) %>%
+  mutate(l2r.win = DescTools::Winsorize(l2r, probs = jprobs))
+  # mutate(l2r.win = l2r)
+  # group_by(mark) %>%
+  # mutate(l2r.win = scale(l2r.win, center = TRUE, scale = FALSE))
+
+# shift so HSPCs are centered at zero? 
+jshifts <- jmerged %>%
+  group_by(mark) %>%
+  filter(clst == "aHSPCs") %>%
+  # summarise(l2r.med = ifelse(mark == "H3K4me1", median(l2r.win), median(l2r.win)))
+  summarise(l2r.med = median(l2r.win)) %>%
+  mutate(l2r.med = ifelse(mark == "H3K4me1", -0.75, 0))
+
+
+jmerged2 <- left_join(jmerged, jshifts)
+
+m <- ggplot(jmerged2, aes(x = umap1, y = umap2, color = l2r.win - l2r.med)) + 
+  geom_point(size = 0.7) + 
+  theme_minimal(8) + 
+  scale_color_viridis_c() + 
+  ggtitle(jmark) + 
+  facet_wrap(~mark) + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
+print(m)
+
+m.lst.boxplots.check <- ggplot(jmerged2, 
+              aes(x = forcats::fct_reorder(.f = clst, .x = l2r.win, .desc = TRUE, .fun = median), y = l2r.win - l2r.med)) + 
+    geom_boxplot(outlier.shape = NA) + 
+    geom_jitter(alpha = 0.25, width = 0.1) + 
+    theme_bw(24) + 
+    facet_wrap(~mark) + 
+    scale_color_viridis_c() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+print(m.lst.boxplots.check)
+
 m.lst.boxplots <- lapply(jmarks, function(jmark){
   print(jmark)
   dat.umap <- jfits.ds.lst.bymark[[jmark]]$jsub.effects
-  m <- ggplot(dat.umap, aes(x = forcats::fct_reorder(.f = clst, .x = log2(cuts_in_peak/spikein_cuts) - Estimate, .desc = TRUE, .fun = median), y = log2(cuts_in_peak / spikein_cuts) - Estimate)) + 
+  m <- ggplot(dat.umap, 
+              aes(x = forcats::fct_reorder(.f = clst, .x = log2(cuts_in_peak/spikein_cuts) - Estimate, .desc = TRUE, .fun = median), y = log2(cuts_in_peak / spikein_cuts) - Estimate)) + 
     geom_boxplot(outlier.shape = NA) + 
     geom_jitter(alpha = 0.25, width = 0.1) + 
     theme_bw(24) + 
@@ -204,6 +256,8 @@ m.lst.boxplots <- lapply(jmarks, function(jmark){
 
 print(m.lst.boxplots)
 
+JFuncs::multiplot(m.lst.boxplots[[1]], m.lst.boxplots[[2]], m.lst.boxplots[[3]], m.lst.boxplots[[4]], cols = 4)
+
 ymax <- 1
 ymin <- -4.5
 m.lst.effects <- lapply(jmarks, function(jmark){
@@ -212,7 +266,7 @@ m.lst.effects <- lapply(jmarks, function(jmark){
   jsub.tmp <- jfits.ds.lst.bymark[[jmark]]$jfits.ds.lst$jfit.merge %>%
     filter(!grepl("platePZ", param))
   
-  m <- ggplot(jsub.tmp, aes(x = forcats::fct_reorder(.f = param, .x = est, .desc = TRUE, .fun = median), y = est, ymin = est - 2 * est.se, ymax = est + 2 * est.se)) + 
+  m <- ggplot(jsub.tmp, aes(x = forcats::fct_reorder(.f = param, .x = est, .desc = TRUE, .fun = median), y = est, ymin = est - zval * est.se, ymax = est + zval * est.se)) + 
     geom_errorbar() + 
     theme_bw(24) + 
     ggtitle(jmark) + 
@@ -263,15 +317,96 @@ ggplot(dat.umap %>% filter(cluster == "HSPCs"), aes(x = -umap1, y = log2(cuts_in
 
 
 
-if (make.plots){
-  dev.off()
-} else {
-  print("Skipping making plots")
-}
 
 
 
 # Write batch correction to output ----------------------------------------
 
-saveRDS(jfits.ds.lst.bymark, file = outrds)
+# saveRDS(jfits.ds.lst.bymark, file = outrds)
 
+
+
+# Do pseudotime  ----------------------------------------------------------
+
+jfilt.full <- dat.metas$H3K27me3 %>% filter(cluster == "Eryths")
+jfilt <- jfilt.full %>%
+  dplyr::select(c(cell, umap1, umap2)) %>%
+  as.data.frame() 
+rownames(jfilt) <- jfilt$cell
+jfilt$cell <- NULL
+
+pcurveout <- princurve::principal_curve(x = as.matrix(jfilt))
+
+pcurve.dat <- data.frame(pcurveout$s, cell = rownames(pcurveout$s), ptime = pcurveout$lambda, stringsAsFactors = FALSE)
+
+jfilt.full.join <- left_join(jfilt.full, subset(pcurve.dat, select = -c(umap1, umap2)), by = "cell")
+
+ggplot(pcurve.dat, aes(x = umap1, y = umap2, color = ptime)) + 
+  # geom_line(mapping = aes(color = ptime)) + 
+  geom_line(size = 2, alpha = 0.5) + 
+  #  geom_point(data = jfilt.full, mapping = aes(color = log2(cuts_in_peak / spikein_cuts))) + 
+  geom_point(data = jfilt.full.join) + 
+  theme_bw() + 
+  scale_color_viridis_c() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+ggplot(pcurve.dat, aes(x = umap1, y = umap2)) + 
+  # geom_line(mapping = aes(color = ptime)) + 
+  geom_line(size = 2, alpha = 0.5) + 
+  geom_point(data = jfilt.full, mapping = aes(color = log2(cuts_in_peak / spikein_cuts))) + 
+  # geom_point(data = jfilt.full.join) + 
+  theme_bw() + 
+  scale_color_viridis_c() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+ggplot(pcurve.dat, aes(x = umap1, y = umap2)) + 
+  # geom_line(mapping = aes(color = ptime)) + 
+  geom_line(size = 2, alpha = 0.5) + 
+  geom_point(data = jfilt.full, mapping = aes(color = batch)) + 
+  # geom_point(data = jfilt.full.join) + 
+  theme_bw() + 
+  scale_color_manual(values = c("grey", "red", "blue")) + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+
+jfilt.full <- dat.metas$H3K27me3 %>% filter(cluster == "Eryths")
+jfilt <- jfilt.full %>%
+  dplyr::select(c(cell, umap1, umap2)) %>%
+  as.data.frame() 
+rownames(jfilt) <- jfilt$cell
+jfilt$cell <- NULL
+
+pcurveout <- princurve::principal_curve(x = as.matrix(jfilt))
+
+pcurve.dat <- data.frame(pcurveout$s, cell = rownames(pcurveout$s), ptime = pcurveout$lambda, stringsAsFactors = FALSE)
+
+jfilt.full.join <- left_join(jfilt.full, subset(pcurve.dat, select = -c(umap1, umap2)), by = "cell")
+
+ggplot(pcurve.dat, aes(x = umap1, y = umap2, color = ptime)) + 
+  # geom_line(mapping = aes(color = ptime)) + 
+  geom_line() + 
+  #  geom_point(data = jfilt.full, mapping = aes(color = log2(cuts_in_peak / spikein_cuts))) + 
+  geom_point(data = jfilt.full.join) + 
+  theme_bw() + 
+  scale_color_viridis_c() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+# ggplot(jfilt.full.join, aes(x = log2(cuts_in_peak / spikein_cuts), y = ptime)) + 
+#   geom_point() + 
+#   theme_bw() + 
+#   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+# 
+# ggplot(jfilt.full.join, aes(x = log2(cuts_in_peak / spikein_cuts), y = ptime)) + 
+#   geom_point() + 
+#   theme_bw() + 
+#   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+
+
+
+
+if (make.plots){
+  dev.off()
+} else {
+  print("Skipping making plots")
+}
