@@ -84,3 +84,17 @@ mlst <- lapply(jmarks, function(jmark){
     facet_wrap(~jrep)
   print(m)
 })
+
+
+
+# Filter for celtype specific genes ---------------------------------------
+
+# 
+# 
+# # maybe load the robjs? 
+# 
+# inf.matobjs <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/robjs_for_heatmaps_and_umaps/heatmap_pdfs_and_ordered_matrices/heatmap_ordered_with_labels.H3K27me3.2021-01-08.rearranged.RData"
+# load(inf.matobjs, v=T)
+# 
+
+
