@@ -1,0 +1,157 @@
+# Jake Yeung
+# Date of Creation: 2021-02-11
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/correct_batch_effects/1-correct_batch_effects_from_TES_from_LDA.R
+# 
+
+
+rm(list=ls())
+
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(data.table)
+library(Matrix)
+
+library(scchicFuncs)
+library(topicmodels)
+
+library(JFuncs)
+
+library(hash)
+library(igraph)
+library(umap)
+
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(org.Mm.eg.db)
+library(ChIPseeker)
+library(GenomicRanges)
+
+library(DescTools)
+
+library(topicmodels)
+
+jsettings <- umap.defaults
+jsettings$n_neighbors <- 30
+jsettings$min_dist <- 0.1
+jsettings$random_state <- 123
+
+ncores <- 8
+hubprefix <- "/home/jyeung/hub_oudenaarden"
+
+jmarks <- c("H3K4me1"); names(jmarks) <- jmarks
+
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/robjs_batch_correction_output"
+outrdata2 <- file.path(outdir, paste0("batch_corrected_imputed_values.TES.k4_k9.mat.namesfix.", Sys.Date(), ".TES.from_LDA.RData"))
+assertthat::assert_that(!file.exists(outrdata2))
+
+# Load LDA outputs --------------------------------------------------------
+
+# for K27me3 
+
+# indir.lda <- "jyeung/data/scChiC/from_rstudioserver/count_tables.BM.k4_k9_TES_genomewide"
+indir.lda <- "jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BM_dbl_reseq.varfilt.TES_genomewide"
+inf.lda.lst <- lapply(jmarks, function(jmark){
+  print(jmark)
+  # fname <- paste0("count_name.", jmark, ".k4_k9_TES_genomewide.2021-02-11.rds")
+  fname <- paste0("lda_outputs.count_name.", jmark, ".k4_k9_TES_genomewide.2021-02-11.K-30.binarize.FALSE/ldaOut.count_name.", jmark, ".k4_k9_TES_genomewide.2021-02-11.K-30.Robj")
+  inf.lda.tmp <- file.path(hubprefix, indir.lda, fname)
+  assertthat::assert_that(file.exists(inf.lda.tmp))
+  return(inf.lda.tmp)
+})
+
+out.lst <- lapply(jmarks, function(jmark){
+  print(jmark)
+  inf.lda <- inf.lda.lst[[jmark]]
+  load(inf.lda, v=T)  # out.lda, count.mat
+  tm.result <- posterior(out.lda)
+  return(list(tm.result = tm.result, count.mat = count.mat))
+})
+
+count.mat.lst <- lapply(out.lst, function(out){
+  out$count.mat
+})
+
+# Load meta data  ---------------------------------------------------------
+
+indir.metas <- file.path(hubprefix, "jyeung/data/scChiC/from_rstudioserver/count_tables.BMround2.from_peaks.sitecount_mat.split_old_and_new/add_experi")
+dat.metas <- lapply(jmarks, function(jmark){
+  fname <- paste0("count_mat_from_sitecount_mat.", jmark, ".filtNAcells_allbins.from_same_annot_file.metadata.2020-12-28.with_experi.txt")
+  fread(file.path(indir.metas, fname))
+})
+
+# add jrep2 for batch correction?
+dat.metas <- lapply(jmarks, function(jmark){
+  dat.metas.tmp <- dat.metas[[jmark]]
+  if (jmark != "H3K9me3"){
+    dat.metas.tmp$jrep2 <- sapply(dat.metas.tmp$jrep, function(x) ifelse(x == "rep1old", "zold", "anew"))
+  } else {
+    dat.metas.tmp$jrep2 <- sapply(dat.metas.tmp$jrep, function(x) ifelse(x != "rep1old", "zold", "anew"))
+  }
+  return(dat.metas.tmp)
+})
+
+
+# Select bins and correct -------------------------------------------------
+
+imputed.lst <- lapply(jmarks, function(jmark){
+  print(jmark)
+  xmat <- log2(t(out.lst[[jmark]]$tm.result$topics %*% out.lst[[jmark]]$tm.result$terms))
+  print("Dim before")
+  print(dim(xmat))
+  rnames.tmp <- rownames(xmat)
+  cnames.tmp <- colnames(xmat)
+  rnames.tmp.i <- !duplicated(rnames.tmp)
+  cnames.tmp.i <- !duplicated(cnames.tmp)
+  xmat <- xmat[rnames.tmp.i, cnames.tmp.i]
+  print("Dim after")
+  print(dim(xmat))
+  return(xmat)
+})
+
+
+imputed.long.lst <- lapply(jmarks, function(jmark){
+  rnames.keep <- rownames(imputed.lst[[jmark]])  # keep all
+  jmat.filt <- imputed.lst[[jmark]][rnames.keep, ] %>%
+    data.table::melt()
+  colnames(jmat.filt) <- c("rname", "cell", "log2exprs")
+  jmat.filt <- jmat.filt %>%
+    left_join(., dat.metas[[jmark]])
+  return(jmat.filt)
+})
+
+
+# Correct batch  ----------------------------------------------------------
+
+print("Correcting batch multicore 4")
+system.time(
+  # dat.adj.lst <- lapply(imputed.long.lst, function(jdat){
+  dat.adj.lst <- mclapply(jmarks, function(jmark){
+    jdat <- imputed.long.lst[[jmark]]
+    if (jmark != "H3K27me3"){
+      dat.adj <- jdat %>%
+        group_by(rname) %>%
+        do(AdjustBatchEffect(.))
+    } else {
+      dat.adj <- jdat
+      dat.adj$plateadj2 <- 0
+      dat.adj$clstradj2 <- 0
+      dat.adj$log2exprsadj <- dat.adj$log2exprs
+    }
+    return(dat.adj)
+  }, mc.cores = ncores)
+)
+
+dat.adj.lst2 <- lapply(dat.adj.lst, function(jdat){
+  subset(jdat, select = c(rname, cell, log2exprs, cluster, batch, jrep, jrep2, plateadj2, clstradj2, log2exprsadj))
+})
+
+mat.adj.lst <- lapply(dat.adj.lst2, function(dat.adj){
+  mat.adj <- data.table::dcast(dat.adj, formula = rname ~ cell, value.var = "log2exprsadj")
+})
+
+save(mat.adj.lst, count.mat.lst, file = outrdata2)
+
+
+
+
