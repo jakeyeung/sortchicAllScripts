@@ -17,6 +17,8 @@ library(hash)
 library(igraph)
 library(umap)
 
+library(topicmodels)
+
 jsettings <- umap.defaults
 jsettings$n_neighbors <- 30
 jsettings$min_dist <- 0.1
@@ -38,14 +40,31 @@ dat.metas <- lapply(jmarks, function(jmark){
 
 # LDA  --------------------------------------------------------------------
 
+jdate <- "2021-01-30"
 # jmark <- "H3K4me1"
 indir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BM_dbl_reseq.varfilt.k4_k9_dynamic_bins"
-dat.umap.lst <- lapply(jmarks.withdbl, function(jmark){
+
+outs.lst <- lapply(jmarks.withdbl, function(jmark){
   print(jmark)
-  dname <- paste0("lda_outputs.count_name.", jmark, ".k4_k9_dynamic_bins.2021-01-29.K-30.binarize.FALSE/ldaOut.count_name.", jmark, ".k4_k9_dynamic_bins.2021-01-29.K-30.Robj")
+  dname <- paste0("lda_outputs.count_name.", jmark, ".k4_k9_dynamic_bins.", jdate, ".K-30.binarize.FALSE/ldaOut.count_name.", jmark, ".k4_k9_dynamic_bins.", jdate, ".K-30.Robj")
   inf <- file.path(indir, dname)
   assertthat::assert_that(file.exists(inf))
   load(inf, v=T)
+  return(list(out.lda = out.lda, count.mat = count.mat))
+})
+
+out.lda.lst <- lapply(jmarks.withdbl, function(jmark){
+  jout.lda <- outs.lst[[jmark]]$out.lda
+  return(jout.lda)
+})
+
+count.mat.lst <- lapply(jmarks.withdbl, function(jmark){
+  jout.lda <- outs.lst[[jmark]]$count.mat
+  return(jout.lda)
+})
+
+dat.umap.lst <- lapply(jmarks.withdbl, function(jmark){
+  out.lda <- out.lda.lst[[jmark]]
   tm.result <- posterior(out.lda)
   tm.result <- AddTopicToTmResult(tm.result)
   topics.mat <- tm.result$topics
@@ -56,24 +75,44 @@ dat.umap.lst <- lapply(jmarks.withdbl, function(jmark){
       left_join(., dat.metas.tmp) %>%
       mutate(louvain = cluster)
   } else {
-    dat.umap.annot <- dat.umap 
+    dat.umap.annot <- dat.umap  %>%
+      mutate(cluster = louvain)
   }
   return(dat.umap.annot)
 })
 
 
-
 # Plot UMAP  --------------------------------------------------------------
 
-
-m.lst <- lapply(jmarks, function(jmark){
+cbPalette <- c("#696969", "#32CD32", "#56B4E9", "#FFB6C1", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#006400", "#FFB6C1", "#32CD32", "#0b1b7f", "#ff9f7d", "#eb9d01", "#7fbedf")
+m.lst <- lapply(jmarks.withdbl, function(jmark){
   m <- ggplot(dat.umap.lst[[jmark]], aes(x = umap1, y = umap2, color = louvain)) + 
     geom_point() + 
+    scale_color_manual(values = cbPalette) + 
     theme_bw() + 
-    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   return(m)
 })
 
-JFuncs::multiplot(m.lst[[1]], m.lst[[2]], m.lst[3[]])
+JFuncs::multiplot(m.lst[[1]], m.lst[[2]], m.lst[[3]], cols = 3)
+
+
+# Write outlda and cluster  ---------------------------------------------
+
+outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/count_tables.BM.k4_k9_dynamic_regions/lda_and_clusters"
+for (jmark in jmarks.withdbl){
+  print(jmark)
+  jmarkout <- ifelse(jmark == "H3K4me1-H3K9me3", "H3K4me1xH3K9me3", jmark)
+  fnameout <- paste0("ClusterAnnot.lda_and_datmerged.k4_k9_dynamic_regions.", jmarkout, ".", Sys.Date(), ".RData")
+  outf <- file.path(outdir, fnameout)
+  out.lda <- out.lda.lst[[jmark]]
+  count.mat <- count.mat.lst[[jmark]]
+  dat.merge <- dat.umap.lst[[jmark]]
+  save(out.lda, count.mat, dat.merge, file = outf)
+}
+
+lapply(out.lda.lst, function(jout) length(jout@terms))
+lapply(out.lda.lst, function(jout) length(jout@documents))
+
 
 

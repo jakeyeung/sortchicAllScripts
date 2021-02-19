@@ -55,6 +55,7 @@ bins.filt1 <- subset(pvals.long.lst[[jmark1]], pval < pval.cutoff1)$bin
 bins.filt2 <- subset(pvals.long.lst[[jmark2]], pval < pval.cutoff2)$bin
 
 
+
 # Load TSS diff exprs -----------------------------------------------------
 
 inf.mat <- file.path(hubprefix, "jyeung/data/scChiC/from_rstudioserver/robjs_for_heatmaps_and_umaps/heatmap_pdfs_and_ordered_matrices/heatmap_ordered_with_labels.H3K4me1.2021-01-08.rearranged.RData")

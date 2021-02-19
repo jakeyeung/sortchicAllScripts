@@ -25,7 +25,7 @@ library(scchicFuncs)
 
 options(scipen=0)
 
-make.plots <- TRUE
+make.plots <- FALSE
 
 pvalcutoff <- 1e-10
 # padjcutoff <- 1e-9
@@ -397,17 +397,6 @@ bins.annot.high.lst <- lapply(jmarks, function(jmark){
   return(bins.annot.tmp)
 })
 
-# write to output
-for (jmark in jmarks){
-  print(jmark)
-  jtmp <- bins.annot.filt.lst[[jmark]]
-  print(jtmp)
-  fnametmp <- paste0("DE_bins_all_marks_padjcutoff_dists_to_TSS.annot_table.", jmark, ".", Sys.Date(), ".txt")
-  outftmp <- file.path(outdir, fnametmp)
-  fwrite(jtmp, file = outftmp, quote = FALSE, sep = "\t")
-}
-
-# write high bins
 
 # get diostributio nof TSS
 print("Median distances to TSS")
@@ -628,4 +617,26 @@ ggplot(bins.merge, aes(x = is.signif, y = abs(distanceToTSS) + 1)) +
 
 if (make.plots){
   dev.off()
+}
+
+
+
+# write to output
+for (jmark in jmarks){
+  print(jmark)
+  jtmp <- bins.annot.filt.lst[[jmark]]
+  print(jtmp)
+  fnametmp <- paste0("DE_bins_all_marks_padjcutoff_dists_to_TSS.annot_table.", jmark, ".", Sys.Date(), ".txt")
+  outftmp <- file.path(outdir, fnametmp)
+  fwrite(jtmp, file = outftmp, quote = FALSE, sep = "\t")
+}
+
+# write high bins
+for (jmark in jmarks){
+  print(jmark)
+  jtmp <- bins.annot.high.lst[[jmark]]
+  print(jtmp)
+  fnametmp <- paste0("High_bins_all_marks_padjcutoff_dists_to_TSS.annot_table.", jmark, ".", Sys.Date(), ".txt")
+  outftmp <- file.path(outdir, fnametmp)
+  fwrite(jtmp, file = outftmp, quote = FALSE, sep = "\t")
 }

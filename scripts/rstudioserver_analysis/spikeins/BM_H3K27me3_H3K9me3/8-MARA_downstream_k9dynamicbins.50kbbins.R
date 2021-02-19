@@ -21,6 +21,7 @@ hubprefix <- "/home/jyeung/hub_oudenaarden"
 jmarks <- c("H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 # jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
+zscores.cutoff <- 1.25
 
 # Get emtas ---------------------------------------------------------------
 
@@ -47,7 +48,7 @@ dat.metas <- lapply(jmarks, function(jmark){
 for (jmark in jmarks){
   
   outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/MARA_output_BM_k9dynamicbins"
-  fname <- paste0("MARA_output_BM_k9dynamicbinsfilt.", jmark, ".50kbins.", Sys.Date(), ".pdf")
+  fname <- paste0("MARA_output_BM_k9dynamicbinsfilt.", jmark, ".50kbins.zscore_", zscores.cutoff, ".", Sys.Date(), ".pdf")
   outpdf <- file.path(outdir, fname)
   
   pdf(outpdf, useDingbats = FALSE)
@@ -75,7 +76,6 @@ for (jmark in jmarks){
     mutate(cell = gsub("\\.", "-", cell))
   
   
-  zscores.cutoff <- 0.7
   motifs.keep <- subset(mara.out$zscores, zscore > zscores.cutoff)$motif
   
   m.zscores <- mara.out$zscores %>%
@@ -134,11 +134,74 @@ for (jmark in jmarks){
   }
   
   
+  
+  # Add heatmap -------------------------------------------------------------
+  
+  
+  jmat <- as.matrix(subset(act.mat.clean.dat, select = -cell))
+  rownames(jmat) <- act.mat.clean.dat$cell
+  
+  # jmat[dat.metas$H3K9me3$cell, ][1:5, 1:5]
+  
+  cells.ordered <- dat.metas[[jmark]]$cell
+  jsub <- jmat[cells.ordered, motifs.keep]
+  
+  
+  library(heatmap3)
+  
+  colvec <- dat.metas[[jmark]]$clustercol
+  
+  jmeth <- "ward.D2"
+  
+  par(mfrow=c(1,1), mar=c(1,1,1,1), mgp=c(3, 1, 0), las=0)
+  hm.out <- heatmap3(jsub, margins = c(5, 8), cexCol = 0.35, Colv = TRUE, Rowv = NA, 
+                     main = jmark, 
+                     # ColSideColors = rep("blue", ncol(jsub)), 
+                     # ColSideColors = FALSE,
+                     RowSideColors = colvec, 
+                     # RowSideColors = rep("red", nrow(jsub)), 
+                     RowSideLabs = "celltype", 
+                     labRow = FALSE, scale = "column", revC = TRUE,
+                     distfun = dist, hclustfun = hclust, method = jmeth)
+  
+  hm.out <- heatmap3(jsub, margins = c(5, 8), cexCol = 0.35, Colv = TRUE, Rowv = NA, 
+                     main = jmark, 
+                     # ColSideColors = rep("blue", ncol(jsub)), 
+                     # ColSideColors = FALSE,
+                     RowSideColors = colvec, 
+                     # RowSideColors = rep("red", nrow(jsub)), 
+                     RowSideLabs = "celltype", 
+                     labRow = FALSE, scale = "column", revC = FALSE,
+                     distfun = dist, hclustfun = hclust, method = jmeth)
+  
+  
+  hm.out.transpose <- heatmap3(t(jsub), margins = c(5, 8), cexCol = 0.35, Colv = NA, Rowv = TRUE, 
+                     main = jmark, 
+                               # ColSideColors = rep("blue", ncol(jsub)), 
+                               # ColSideColors = FALSE,
+                               ColSideColors = colvec, 
+                               # RowSideColors = rep("red", nrow(jsub)), 
+                               ColSideLabs = "celltype", 
+                               labCol = FALSE, scale = "row", revC = FALSE, 
+                               distfun = dist, hclustfun = hclust, method = jmeth)
+  
+  hm.out.transpose <- heatmap3(t(jsub), margins = c(5, 8), cexCol = 0.35, Colv = NA, Rowv = TRUE, 
+                     main = jmark, 
+                               # ColSideColors = rep("blue", ncol(jsub)), 
+                               # ColSideColors = FALSE,
+                               ColSideColors = colvec, 
+                               # RowSideColors = rep("red", nrow(jsub)), 
+                               ColSideLabs = "celltype", 
+                               labCol = FALSE, scale = "row", revC = TRUE,
+                               distfun = dist, hclustfun = hclust, method = jmeth)
+  
+  
+  
+  
+  
   dev.off()
-  
-  
-  
 }
+
 
 
 

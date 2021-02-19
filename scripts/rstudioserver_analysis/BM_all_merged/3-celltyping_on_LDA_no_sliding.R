@@ -221,6 +221,7 @@ m.celltypes.bar <- ggplot(LL.dat %>% group_by(is.stem, ctype.pred) %>% summarise
 
 print(m.celltypes.bar)
 
+
 # Do UMAP  ----------------------------------------------------------------
 
 dat.merged <- left_join(dat.umap.long, LL.dat)

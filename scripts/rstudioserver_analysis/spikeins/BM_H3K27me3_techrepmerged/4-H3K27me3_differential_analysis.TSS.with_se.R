@@ -31,7 +31,7 @@ jsettings$random_state <- 123
 
 # Load LDA (contains countmat)  ---------------------------------------------------------------
 
-ncores <- 2
+ncores <- 8
 hubprefix <- "/home/jyeung/hub_oudenaarden"
 jdist <- 10000
 
@@ -73,8 +73,15 @@ for (jmark in jmarks){
   # inf.annot <- paste0(hubprefix, "jyeung/data/scChiC/from_rstudioserver/cell_cluster_tables.H3K27me3_techrepmerged/BM_rep2_rep3reseq_H3K27me3.2020-12-10.txt")
   # inf.annot <- file.path(indir.annot, paste0("cell_cluster_table.old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.txt"))
   
-  inf.annot <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/cell_cluster_tables.H3K27me3_techrepmerged/BM_rep2_rep3reseq_H3K27me3.2020-12-10.txt"
+  # inf.annot <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/cell_cluster_tables.H3K27me3_techrepmerged/BM_rep2_rep3reseq_H3K27me3.2020-12-10.txt"
+  # dat.annot <- fread(inf.annot)
+  
+  inf.annot <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/cell_cluster_tables.batch_corrected_umaps.2020-12-28/metadata_batch_corrected.H3K27me3.2020-12-28.txt"
   dat.annot <- fread(inf.annot)
+  
+  dat.annot <- dat.annot %>%
+    rowwise() %>%
+    mutate(plate = ClipLast(x = cell,jsep = "_"))
   
   cells.keep <- colnames(count.mat)
   dat.annot.filt <- subset(dat.annot, cell %in% cells.keep)
@@ -122,7 +129,8 @@ for (jmark in jmarks){
   
   jfits.lst <- parallel::mclapply(jrow.names, function(jrow.name){
     jrow <- jmat.mark[jrow.name, ]
-    jout <- FitGlmRowClustersPlate.withse(jrow, cnames, dat.annots.filt.mark, ncuts.for.fit.mark, jbin = NULL, returnobj = FALSE)
+    # jout <- FitGlmRowClustersPlate.withse(jrow, cnames, dat.annots.filt.mark, ncuts.for.fit.mark, jbin = NULL, returnobj = FALSE)
+    jout <- FitGlmRowClustersPlate(jrow, cnames, dat.annots.filt.mark, ncuts.for.fit.mark, jbin = NULL, returnobj = FALSE, with.se = TRUE)
     return(jout)
   }, mc.cores = ncores)
   
