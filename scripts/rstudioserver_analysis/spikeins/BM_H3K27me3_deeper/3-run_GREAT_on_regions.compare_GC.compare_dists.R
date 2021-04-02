@@ -395,7 +395,9 @@ for (jlab in jlabs){
 }
 
 
-
-
-
+# 
+# x <- 2^seq(10)
+# scale(log(x))
+# scale(log2(x))
+# 
 

@@ -11,8 +11,9 @@ library(GenomicRanges)
 # Constants ---------------------------------------------------------------
 
 
-winsize <- 100000L
-
+# winsize <- 100000L
+winsize <- 40000L
+nochr <- FALSE
 
 # Biomart init ------------------------------------------------------------
 
@@ -79,15 +80,19 @@ dat.win <- gos.filt %>%
   dplyr::select(seqnames, start, end, peak.name)
   # mutate(dist = 0)
 
+if (nochr){
+  dat.win$seqnames <- gsub("^chr", "", dat.win$seqnames)
+}
 #
 
 # Write -------------------------------------------------------------------
 
 # write bedfile to table
-data.table::fwrite(dat.win, file = paste0("~/data/scchic/tables/gene_tss_winsize.", winsize, ".bed"), sep = "\t", col.names = FALSE, row.names = FALSE)
-
-
-
-
+if (nochr){
+  outf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/databases/gene_tss/IGtypes/CodingGenes_IGtypes_gene_tss_winsize.", winsize, ".nochr.", Sys.Date(), ".bed")
+} else {
+  outf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/databases/gene_tss/IGtypes/CodingGenes_IGtypes_gene_tss_winsize.", winsize, ".withchr.", Sys.Date(), ".bed")
+}
+data.table::fwrite(dat.win, file = outf, sep = "\t", col.names = FALSE, row.names = FALSE)
 
 

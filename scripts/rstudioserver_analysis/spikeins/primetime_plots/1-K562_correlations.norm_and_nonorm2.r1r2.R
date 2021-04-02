@@ -93,6 +93,35 @@ for (bsize in bsizes){
   
   xmat.filt[, cnames.chic] <- log2(xmat.filt[, cnames.chic])
   
+  # plot by chromos
+  jchromos <- paste("chr", c(seq(22), "X", "Y"), sep = "")
+  
+  for (jchromo in jchromos){
+    rkeep <- grepl(jchromo, rownames(xmat.filt))
+    plot(density(xmat.filt[rkeep, "H3K9me3_chic"]), main = jchromo)
+  }
+  
+  jcheck <- data.frame(bin = rownames(xmat.filt), log2signal = xmat.filt[, "H3K9me3_chic"], stringsAsFactors = FALSE) %>%
+    rowwise() %>%
+    mutate(chromo = scchicFuncs::GetChromo(bin))
+  
+  m.check <- ggplot(jcheck, aes(x = log2signal)) + 
+    geom_density(alpha = 0.25) + 
+    geom_vline(xintercept = c(-1, -0.5)) + 
+    theme_bw() + 
+    ggtitle("K562 H3K9me3 signal all chromosomes") + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none")
+    
+  m.check2 <- ggplot(jcheck, aes(x = log2signal, fill = chromo)) + 
+    geom_density(alpha = 0.25) + 
+    theme_bw() + 
+    geom_vline(xintercept = c(-1, -0.5), linetype = "dotted") + 
+    facet_wrap(~chromo, nrow = 3) + 
+    ggtitle("K562 H3K9me3 signal by chromosome") + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none")
+  
+  print(m.check)
+  print(m.check2)
   
   
   # Show correlations norm vs nonorm ----------------------------------------

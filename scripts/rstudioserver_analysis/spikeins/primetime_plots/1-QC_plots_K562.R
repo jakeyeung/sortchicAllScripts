@@ -354,13 +354,17 @@ ggplot(dat.peaks.merge %>% filter(!is.na(is.good)), aes(x = log10(cuts_in_peaks)
   theme_bw() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-
-
-ggplot(dat.peaks.merge, aes(x = cuts_in_peaks / (cuts_in_peaks + cuts_notin_peaks)))  +
-  geom_density(alpha = 0.5, fill = "red") + 
+ggplot(dat.peaks.merge %>% filter(!is.na(is.good)), aes(x = cuts_in_peaks / (cuts_in_peaks + cuts_notin_peaks), fill = is.good2))  +
+  geom_density(alpha = 0.5) + 
   facet_wrap(~mark, nrow = 1) + 
   theme_bw() + 
-  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
+
+# ggplot(dat.peaks.merge, aes(x = cuts_in_peaks / (cuts_in_peaks + cuts_notin_peaks)))  +
+#   geom_histogram(alpha = 0.5, fill = "red") + 
+#   facet_wrap(~mark, nrow = 1) + 
+#   theme_bw() + 
+#   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 # Load LDA  ---------------------------------------------------------------
 

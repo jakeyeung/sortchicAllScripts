@@ -3,12 +3,15 @@
 # File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/misc/make_plate_names_for_Peter.R
 # Make plate names for Peter
 
+rm(list=ls())
 
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(data.table)
 library(Matrix)
+library(scchicFuncs)
+library(JFuncs)
 
 
 hubprefix <- "/home/jyeung/hub_oudenaarden"

@@ -1,8 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2021-01-04
-# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/BM_H3K4me1-H3K9me3_reseq/14-check_differential_bins_and_peaks.R
-#
-
+# Date of Creation: 2021-02-19
+# File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/BM_H3K4me1-H3K9me3_reseq/14-check_differential_bins_and_peaks.check.R
+# description
 
 rm(list=ls())
 
@@ -23,6 +22,8 @@ library(topicmodels)
 library(JFuncs)
 library(scchicFuncs)
 
+library(hash)
+
 options(scipen=0)
 
 make.plots <- FALSE
@@ -32,7 +33,7 @@ pvalcutoff <- 1e-10
 padjcutoff <- 1e-50
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/DE_downstream_analysis_BM_allmerged_H3K27me3_cleaned"
-fname <- paste0("DE_bins_all_marks_padjcutoff_dists_to_TSS.tweak.", Sys.Date(), ".padj_", padjcutoff, ".pdf")
+fname <- paste0("DE_bins_all_marks_padjcutoff_dists_to_TSS.tweak.jmidbug_fixed.", Sys.Date(), ".padj_", padjcutoff, ".pdf")
 outpdf <- file.path(outdir, fname)
 
 
@@ -220,8 +221,8 @@ count.mat.bins.lst <- lapply(inf.lda.bins.lst, function(inf.bins){
 jthres.lst <- c(3, 4, 2.3, 4)
 names(jthres.lst) <- jmarks
 
-coordhash <<- hash()
-cvec.norm.log.lst <- lapply(jmarks, function(jmark){
+# coordhash <<- hash()
+dat.cvec.norm.lst <- lapply(jmarks, function(jmark){
   jthres <- jthres.lst[[jmark]]
   print(jmark)
   cvec <- rowSums(count.mat.bins.lst[[jmark]])
@@ -237,18 +238,32 @@ cvec.norm.log.lst <- lapply(jmarks, function(jmark){
   jstart <- sapply(coord, JFuncs::GetStart, returnAsInt = TRUE)
   jend <- sapply(coord, JFuncs::GetEnd, returnAsInt = TRUE)
   jchromo <- sapply(coord, JFuncs::GetChromo, add.chr = FALSE)
-  # jmid <- jstart + round((jstart - jend) / 2)
-  jmid <- mean(c(jstart, jend))
+  # jmid <- jstart + round((jstart - jend) / 2)  # this is wrong!!
+  # jmid <- mean(c(jstart, jend))
+  jmid <- (jstart + jend) / 2
   # jmid <- jstart + ((jstart - jend) / 2)
   # new coord
   coordnew <- paste(jchromo, paste(jmid - 1, jmid + 1, sep = "-"), sep = ":")
   names(cvec.norm.log) <- coordnew
   # names(cvec.norm.log) <- coord
-  mapply(FUN = function(x, y) coordhash[[x]] <- y, coordnew, coord)
-  return(cvec.norm.log)
+  # mapply(FUN = function(x, y) coordhash[[x]] <- y, coordnew, coord)
+  # return as dat
+  dat.cvec.norm <- data.frame(cvec.norm.log = cvec.norm.log, Coord = coordnew, CoordOriginal = coord, stringsAsFactors = FALSE)
+  # return(cvec.norm.log)
+  return(dat.cvec.norm)
 })
 
 # saveRDS(coordhash, paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/DE_downstream_analysis_BM_allmerged_H3K27me3_cleaned/coord2hash_highbins.", Sys.Date(), ".rds"))
+
+cvec.norm.log.lst <- lapply(dat.cvec.norm.lst, function(jdat){
+  xvec <- jdat$cvec.norm.log
+  names(xvec) <- jdat$Coord
+  return(xvec)
+})
+
+coordsnew.high <- unlist(lapply(dat.cvec.norm.lst, function(jdat) jdat$Coord))
+coordsorig.high <- unlist(lapply(dat.cvec.norm.lst, function(jdat) jdat$CoordOriginal))
+coord.high.hash <- hash(coordsnew.high, coordsorig.high)
 
 bins.high.lst <- lapply(jmarks, function(jmark){
   cvec.filt.i <- cvec.norm.log.lst[[jmark]] > jthres.lst[[jmark]]
@@ -373,11 +388,12 @@ signif.bins.lst <- lapply(jmarks, function(jmark){
   jend <- sapply(coord, JFuncs::GetEnd, returnAsInt = TRUE)
   jchromo <- sapply(coord, JFuncs::GetChromo, add.chr = FALSE)
   # jmid <- jstart + round((jstart - jend) / 2)
-  jmid <- mean(c(jstart, jend))
+  jmid <- (jstart + jend) / 2
   # new coord
   coordnew <- paste(jchromo, paste(jmid - 1, jmid + 1, sep = "-"), sep = ":")
   
   jdat <- data.frame(Coord = coordnew, 
+                     CoordOriginal = coord,
                      Chromo = jchromo, 
                      Start = jstart, End = jend, 
                      Mid = jmid, 
@@ -389,11 +405,17 @@ signif.bins.lst <- lapply(jmarks, function(jmark){
   
 })
 
+coordsnew.de <- unlist(lapply(signif.bins.lst, function(jdat) jdat$Coord))
+coordsorig.de <- unlist(lapply(signif.bins.lst, function(jdat) jdat$CoordOriginal))
+coord.de.hash <- hash(coordsnew.de, coordsorig.de)
+
 bins.annot.filt.lst <- lapply(jmarks, function(jmark){
   print(jmark)
   bins.annot.tmp <- AnnotateCoordsFromList(coords.vec = signif.bins.lst[[jmark]]$Coord, inf.tss = inf.tsspretty, txdb = TxDb.Mmusculus.UCSC.mm10.knownGene, annodb = "org.Mm.eg.db", chromos.keep = jchromos)
   bins.annot.tmp <- bins.annot.tmp$regions.annotated
   bins.annot.tmp$mark <- jmark
+  # add original coord
+  bins.annot.tmp$CoordOriginal <- sapply(bins.annot.tmp$region_coord, function(x) coord.de.hash[[x]])
   return(bins.annot.tmp)
 })
 
@@ -402,6 +424,8 @@ bins.annot.high.lst <- lapply(jmarks, function(jmark){
   bins.annot.tmp <- AnnotateCoordsFromList(coords.vec = bins.high.lst[[jmark]], inf.tss = inf.tsspretty, txdb = TxDb.Mmusculus.UCSC.mm10.knownGene, annodb = "org.Mm.eg.db", chromos.keep = jchromos)
   bins.annot.tmp <- bins.annot.tmp$regions.annotated
   bins.annot.tmp$mark <- jmark
+  # add original coord
+  bins.annot.tmp$CoordOriginal <- sapply(bins.annot.tmp$region_coord, function(x) coord.high.hash[[x]])
   return(bins.annot.tmp)
 })
 
@@ -628,23 +652,23 @@ if (make.plots){
 }
 
 
-# 
-# # write to output
-# for (jmark in jmarks){
-#   print(jmark)
-#   jtmp <- bins.annot.filt.lst[[jmark]]
-#   print(jtmp)
-#   fnametmp <- paste0("DE_bins_all_marks_padjcutoff_dists_to_TSS.annot_table.", jmark, ".", Sys.Date(), ".txt")
-#   outftmp <- file.path(outdir, fnametmp)
-#   fwrite(jtmp, file = outftmp, quote = FALSE, sep = "\t")
-# }
-# 
-# # write high bins
-# for (jmark in jmarks){
-#   print(jmark)
-#   jtmp <- bins.annot.high.lst[[jmark]]
-#   print(jtmp)
-#   fnametmp <- paste0("High_bins_all_marks_padjcutoff_dists_to_TSS.annot_table.", jmark, ".", Sys.Date(), ".txt")
-#   outftmp <- file.path(outdir, fnametmp)
-#   fwrite(jtmp, file = outftmp, quote = FALSE, sep = "\t")
-# }
+
+# write to output
+for (jmark in jmarks){
+  print(jmark)
+  jtmp <- bins.annot.filt.lst[[jmark]]
+  print(jtmp)
+  fnametmp <- paste0("DE_bins_all_marks_padjcutoff_dists_to_TSS.annot_table.jmidbug_fixed.", jmark, ".", Sys.Date(), ".txt")
+  outftmp <- file.path(outdir, fnametmp)
+  fwrite(jtmp, file = outftmp, quote = FALSE, sep = "\t")
+}
+
+# write high bins
+for (jmark in jmarks){
+  print(jmark)
+  jtmp <- bins.annot.high.lst[[jmark]]
+  print(jtmp)
+  fnametmp <- paste0("High_bins_all_marks_padjcutoff_dists_to_TSS.annot_table.jmidbug_fixed.", jmark, ".", Sys.Date(), ".txt")
+  outftmp <- file.path(outdir, fnametmp)
+  fwrite(jtmp, file = outftmp, quote = FALSE, sep = "\t")
+}

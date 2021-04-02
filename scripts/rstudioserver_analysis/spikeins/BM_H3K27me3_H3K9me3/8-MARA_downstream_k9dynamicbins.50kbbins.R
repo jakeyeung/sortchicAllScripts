@@ -21,6 +21,7 @@ hubprefix <- "/home/jyeung/hub_oudenaarden"
 jmarks <- c("H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 # jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 
+jsize <- 1.5
 zscores.cutoff <- 1.25
 
 # Get emtas ---------------------------------------------------------------
@@ -48,7 +49,7 @@ dat.metas <- lapply(jmarks, function(jmark){
 for (jmark in jmarks){
   
   outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/MARA_output_BM_k9dynamicbins"
-  fname <- paste0("MARA_output_BM_k9dynamicbinsfilt.", jmark, ".50kbins.zscore_", zscores.cutoff, ".", Sys.Date(), ".pdf")
+  fname <- paste0("MARA_output_BM_k9dynamicbinsfilt.", jmark, ".50kbins.zscore_", zscores.cutoff, ".dotsize_", jsize, ".", Sys.Date(), ".pdf")
   outpdf <- file.path(outdir, fname)
   
   pdf(outpdf, useDingbats = FALSE)
@@ -124,7 +125,8 @@ for (jmark in jmarks){
     
     # pdf("/home/jyeung/hub_oudenaarden/jyeung/tmp/motiftest.pdf", useDingbats = FALSE)
     m <- ggplot(dat.merge.motifs, aes_string(x = "umap1", y = "umap2", color = jmotif)) + 
-      geom_point(size = 0.75) + 
+      # geom_point(size = 0.75) + 
+      geom_point(size = jsize) + 
       ggtitle(jtitle) + 
       theme_bw() + 
       scale_color_viridis_c() + 
