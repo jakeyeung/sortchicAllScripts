@@ -21,16 +21,17 @@ library(hash)
 
 jymax <- 500
 
-make.plots <- FALSE
+make.plots <- TRUE
 
 # merge.ctypes.by.lineage <- FALSE
 # merge.ctypes.by.lineage <- FALSE
 
-jscale <- 1000
-log2filt <- -1
+jscale <- 1000000L
+# log10filt <- -2
+log10filt <- -1
 
 outdir <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/dendrograms_heatmaps"
-outpdf <- file.path(outdir, paste0("variance_by_clusters_by_HighBins.", Sys.Date(), ".", jscale, ".log2filt_", log2filt, ".pdf"))
+outpdf <- file.path(outdir, paste0("variance_by_clusters_by_HighBins.", Sys.Date(), ".", jscale, ".log10filt_", log10filt, ".methods.pdf"))
 
 if (make.plots){
   pdf(outpdf, useDingbats = FALSE)
@@ -91,63 +92,57 @@ count.mat.bins.raw.lst <- lapply(inf.lda.lst, function(jinf){
   return(count.mat)
 })
 
-
-
-inf.lda.bins.lst <- lapply(jmarks, function(jmark){
-  if (jmark != "H3K27me3"){
-    inf.lda.tmp <- file.path(hubprefix, paste0("jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_MergeWithOld.clusterfilt.2020-11-04/lda_outputs.count_mat_old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.K-30.binarize.FALSE/ldaOut.count_mat_old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.K-30.Robj"))
-  } else {
-    inf.lda.tmp <- file.path(hubprefix, paste0("jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_rep2rep3reseq_varfilt/lda_outputs.BM_rep2rep3reseq_H3K27me3.cleaned.varfilt_2.K-30.binarize.FALSE/ldaOut.BM_rep2rep3reseq_", jmark, ".cleaned.varfilt_2.K-30.Robj"))
-  }
-  return(inf.lda.tmp)
-})
-
-
-count.mat.bins.lst <- lapply(inf.lda.bins.lst, function(inf.bins){
-  print(inf.bins)
-  inf.bins <- inf.bins
-  load(inf.bins, v=T)  # out.lda, count.mat
-  return(count.mat)
-})
-
+# 
+# 
+# inf.lda.bins.lst <- lapply(jmarks, function(jmark){
+#   if (jmark != "H3K27me3"){
+#     inf.lda.tmp <- file.path(hubprefix, paste0("jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_MergeWithOld.clusterfilt.2020-11-04/lda_outputs.count_mat_old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.K-30.binarize.FALSE/ldaOut.count_mat_old_merged_with_new.", jmark, ".remove_bad_clusters.2020-11-04.K-30.Robj"))
+#   } else {
+#     inf.lda.tmp <- file.path(hubprefix, paste0("jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BMround2all_rep2rep3reseq_varfilt/lda_outputs.BM_rep2rep3reseq_H3K27me3.cleaned.varfilt_2.K-30.binarize.FALSE/ldaOut.BM_rep2rep3reseq_", jmark, ".cleaned.varfilt_2.K-30.Robj"))
+#   }
+#   return(inf.lda.tmp)
+# })
+# 
+# 
+# count.mat.bins.lst <- lapply(inf.lda.bins.lst, function(inf.bins){
+#   print(inf.bins)
+#   inf.bins <- inf.bins
+#   load(inf.bins, v=T)  # out.lda, count.mat
+#   return(count.mat)
+# })
+# 
 
 
 # Load high bins ----------------------------------------------------------
 
 bsize <- 50000
 dat.high.bins <- lapply(jmarks, function(jmark){
-  inf <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/DE_downstream_analysis_BM_allmerged_H3K27me3_cleaned/High_bins_all_marks_padjcutoff_dists_to_TSS.annot_table.", jmark, ".2021-01-30.txt")
-  dat <- fread(inf)%>%
-    rowwise() %>%
-    mutate(startExtend = start - bsize / 2 + 1, 
-           endExtend = end + bsize / 2 - 1,
-           region_coordExtend = paste(seqnames, paste(as.integer(startExtend), as.integer(endExtend), sep = "-"), sep = ":"),
-           region_coordExtend_fromhash = coordhash[[region_coord]])
+  indir <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/DE_downstream_analysis_BM_allmerged_H3K27me3_cleaned")
+  inf <- file.path(indir, paste0("High_bins_all_marks_padjcutoff_dists_to_TSS.annot_table.jmidbug_fixed.", jmark, ".2021-02-19.txt"))
+  dat <- fread(inf)
 })
 
 high.bins.lst <- lapply(dat.high.bins, function(jdat){
-  jdat$region_coordExtend_fromhash
+  jdat$CoordOriginal
 })
 
 # check 
 assertthat::assert_that(!all(unlist(lapply(high.bins.lst, function(x) any(grepl("\\+", x))))))
 
-regionpred <- dat.high.bins$H3K4me1$region_coordExtend
-regiontrue <- dat.high.bins$H3K4me1$region_coordExtend_fromhash
-
 
 # Filter bins -------------------------------------------------------------
 
 count.mat.peaks.raw.filt.lst <- lapply(jmarks, function(jmark){
-  # count.mat <- count.mat.bins.raw.lst[[jmark]]
-  count.mat <- count.mat.bins.lst[[jmark]]
+  count.mat <- count.mat.bins.raw.lst[[jmark]]
+  # count.mat <- count.mat.bins.lst[[jmark]]
   # rmeans <- log10(rowMeans(count.mat))
   bfilt.keep <- high.bins.lst[[jmark]]
   # bfilt.keep <- bins.high.lst[[jmark]]  # from File: ~/projects/scchic/scripts/rstudioserver_analysis/spikeins/BM_H3K4me1-H3K9me3_reseq/14-check_differential_bins_and_peaks.R
   bfilt.keep2 <- which(rownames(count.mat) %in% bfilt.keep)
+  assertthat::assert_that(length(bfilt.keep) == length(bfilt.keep2))
   print(length(bfilt.keep))
   print(length(bfilt.keep2))
-  bfilt.keep2.check <- bfilt.keep[which(!bfilt.keep %in% rownames(count.mat))]
+  # bfilt.keep2.check <- bfilt.keep[which(!bfilt.keep %in% rownames(count.mat))]
   count.mat[bfilt.keep, ]
 })
 
@@ -155,9 +150,29 @@ lapply(count.mat.bins.raw.lst, dim)
 lapply(count.mat.peaks.raw.filt.lst, dim)
 
 
+# Filter by rmaens? -------------------------------------------------------
+
+rmeans.lst <- lapply(count.mat.peaks.raw.filt.lst, function(x){
+  log10(rowMeans(x))
+})
+
+for (jmark in jmarks){
+  plot(density(rmeans.lst[[jmark]]), main = jmark)
+}
+
+count.mat.peaks.raw.filt.lst2 <- lapply(jmarks, function(jmark){
+  jmat.tmp <- count.mat.peaks.raw.filt.lst[[jmark]]
+  rmeans <- rmeans.lst[[jmark]]
+  rows.keep <- rmeans > log10filt
+  jmat.tmp2 <- jmat.tmp[rows.keep, ]
+})
+
+lapply(count.mat.peaks.raw.filt.lst, dim)
+lapply(count.mat.peaks.raw.filt.lst2, dim)
+
+count.mat.peaks.raw.filt.lst <- count.mat.peaks.raw.filt.lst2
 
 # Get pbu,k ---------------------------------------------------------------
-
 
 
 dat.raw.pbulk.lst <- lapply(jmarks, function(jmark){
@@ -323,14 +338,24 @@ for (jmark in jmarks){
 # make heatmaps 
 
 # jmark <- "H3K9me3"
-jmethod <- "ward.D2"
+jmethods <- c("complete", "ward.D2")
+# jmethod <- "ward.D2"
 # jmethod <- "complete"
-for (jmark in jmarks){
-  jmat2 <- log2(dat.raw.pbulk.lst[[jmark]])
-  cnames.color <- sapply(colnames(jmat2), function(x) AssignHash(x, cname2color, null.fill = x))
-  heatmap3::heatmap3(jmat2, 
-                     Rowv = TRUE, Colv = TRUE, scale = "row",  revC = TRUE, 
-                     main = paste("peaks", jmark, jmethod), margins = c(5, 8), cexRow = 0.5, method = jmethod, ColSideColors = cnames.color, col = colpalette)
+for (jmethod in jmethods){
+  
+  for (jmark in jmarks){
+    print(paste("Making heatmap for", jmark))
+    jmat2 <- log2(dat.raw.pbulk.lst[[jmark]])
+    print(dim(jmat2))
+    Ngenes <- nrow(jmat2)
+    cnames.color <- sapply(colnames(jmat2), function(x) AssignHash(x, cname2color, null.fill = x))
+    heatmap3::heatmap3(jmat2, 
+                       Rowv = TRUE, Colv = TRUE, scale = "row",  revC = TRUE, 
+                       main = paste("peaks", jmark, jmethod, Ngenes), margins = c(5, 8), cexRow = 0.5, method = jmethod, ColSideColors = cnames.color, col = colpalette)
+  }
+  
+  
+  
 }
 
 if (make.plots){

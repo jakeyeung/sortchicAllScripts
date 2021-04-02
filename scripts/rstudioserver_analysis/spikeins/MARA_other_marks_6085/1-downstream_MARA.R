@@ -17,7 +17,14 @@ library(ggrepel)
 jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmarks
 hubprefix <- "/home/jyeung/hub_oudenaarden"
 
+outdir <- file.path(hubprefix, "jyeung/data/scChiC/from_rstudioserver/pdfs_all/MARA_output_BM_k9dynamicbins")
+
 zscores.cutoff <- 1.25
+jsize <- 1.5
+outpdf <- file.path(outdir, paste0("H3K27me3_MARA_outputs.zscorecutoff_", zscores.cutoff, ".dotsize_", jsize, "." , Sys.Date(), ".pdf"))
+
+pdf(outpdf, useDingbats = FALSE)
+
 
 
 # Load UMAP  --------------------------------------------------------------
@@ -85,13 +92,15 @@ jmotif <- "Wt1"
 jmotif <- "Ebf1"
 jmotif <- "Tfdp1"
 jmotif <- "Pax8"
+jmotif <- "Yy2"
+jmotif <- "Yy1"
 jzscore <- signif(subset(mara.out$zscores, motif == jmotif)$zscore, digits = 2)
-(jtitle <- paste(jmotif, "Zscore:", jzscore))
 
 for (jmotif in motifs.keep){
 # pdf("/home/jyeung/hub_oudenaarden/jyeung/tmp/motiftest.pdf", useDingbats = FALSE)
+  (jtitle <- paste(jmotif, "Zscore:", jzscore))
   m <- ggplot(dat.merge.motifs, aes_string(x = "umap1", y = "umap2", color = jmotif)) + 
-    geom_point(size = 0.75) + 
+    geom_point(size = jsize) + 
     ggtitle(jtitle) + 
     theme_bw() + 
     scale_color_viridis_c() + 
@@ -163,6 +172,7 @@ hm.out.transpose <- heatmap3(t(jsub), margins = c(5, 8), cexCol = 0.35, Colv = N
 
 
 
+dev.off()
 
 
 
