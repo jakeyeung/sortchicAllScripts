@@ -1,0 +1,11 @@
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gfi1.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Foxp2.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Foxq1.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Glis1.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gabpa.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Glis2.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gata1.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Glis3.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gmeb1.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gata5.pwm.sh
+/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gsc.pwm.sh

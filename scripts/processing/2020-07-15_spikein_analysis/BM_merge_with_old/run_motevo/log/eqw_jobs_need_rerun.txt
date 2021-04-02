@@ -1,0 +1,341 @@
+==============================================================
+job_number:                 3101489
+exec_file:                  job_scripts/3101489
+submission_time:            Mon Feb 17 09:25:47 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gfi1.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Gfi1.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gfi1.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Gfi1.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101474
+exec_file:                  job_scripts/3101474
+submission_time:            Mon Feb 17 09:25:45 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Foxp2.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Foxp2.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Foxp2.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Foxp2.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101476
+exec_file:                  job_scripts/3101476
+submission_time:            Mon Feb 17 09:25:45 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Foxq1.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Foxq1.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Foxq1.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Foxq1.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101494
+exec_file:                  job_scripts/3101494
+submission_time:            Mon Feb 17 09:25:47 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Glis1.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Glis1.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Glis1.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Glis1.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101478
+exec_file:                  job_scripts/3101478
+submission_time:            Mon Feb 17 09:25:45 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gabpa.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Gabpa.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gabpa.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Gabpa.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101495
+exec_file:                  job_scripts/3101495
+submission_time:            Mon Feb 17 09:25:47 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Glis2.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Glis2.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Glis2.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Glis2.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101479
+exec_file:                  job_scripts/3101479
+submission_time:            Mon Feb 17 09:25:46 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gata1.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Gata1.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gata1.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Gata1.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101496
+exec_file:                  job_scripts/3101496
+submission_time:            Mon Feb 17 09:25:47 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Glis3.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Glis3.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Glis3.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Glis3.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101497
+exec_file:                  job_scripts/3101497
+submission_time:            Mon Feb 17 09:25:47 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gmeb1.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Gmeb1.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gmeb1.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Gmeb1.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101483
+exec_file:                  job_scripts/3101483
+submission_time:            Mon Feb 17 09:25:46 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gata5.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Gata5.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gata5.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Gata5.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
+==============================================================
+job_number:                 3101500
+exec_file:                  job_scripts/3101500
+submission_time:            Mon Feb 17 09:25:48 2020
+owner:                      jyeung
+uid:                        10099
+group:                      hub_oudenaarden
+gid:                        10308
+sge_o_home:                 /home/hub_oudenaarden/jyeung
+sge_o_log_name:             jyeung
+sge_o_path:                 /hpc/hub_oudenaarden/jyeung/software/anaconda3/envs/py2/bin:/hpc/hub_oudenaarden/jyeung/software/anaconda3/condabin:/path/to/anaconda3/bin:/hpc/hub_oudenaarden/jyeung/gemtools_bins:/hpc/hub_oudenaarden/bin/software/samtools_install/bin:/home/hub_oudenaarden/jyeung/bin:/opt/sge/bin:/opt/sge/bin/lx-amd64:/hpc/local/CentOS7/hub_oudenaarden/bin:/hpc/local/CentOS7/hub_oudenaarden/sbin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/gnu/profiles/base/bin:/home/hub_oudenaarden/jyeung/.fzf/bin
+sge_o_shell:                /bin/bash
+sge_o_workdir:              /hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files
+sge_o_host:                 hpcs03
+account:                    sge
+stderr_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gsc.pwm.err
+reserve:                    y
+hard resource_list:         h_rt=7200,h_vmem=16G
+mail_list:                  jyeung@hpcs03.compute.hpc
+notify:                     FALSE
+job_name:                   MOTEVO_Gsc.pwm
+stdout_path_list:           NONE:NONE:/hpc/hub_oudenaarden/jyeung/data/scChiC/tfbs_output_cluster_BM-AllMerged_Peaks_1000/H3K27me3/motevo_outputs/split/aa/param_files/Gsc.pwm.out
+jobshare:                   0
+shell_list:                 NONE:/bin/bash
+env_list:                   TERM=NONE,TMPSPACE=1G
+script_file:                Gsc.pwm.sh
+project:                    hub_oudenaarden
+binding:                    set linear:slots
+job_type:                   NONE
+error reason          1:      can't get password entry for user "jyeung". Either user does not exist or error with NIS/LDAP etc.
+scheduling info:            (Collecting of scheduler job information is turned off)
