@@ -69,10 +69,10 @@ dat.mat.log2.diff.lst <- lapply(dat.mat.lst, function(dat.mat){
   return(dat.mat.log2.diff[, cnames.keep])
 })
 
-ctypes.k4 <- colnames(dat.mat.log2.lst$H3K4me1)[colnames(dat.mat.log2.lst$H3K4me1) != "HSPCs"]
+ctypes.k4 <- colnames(dat.mat.log2.diff.lst$H3K4me1)[colnames(dat.mat.log2.diff.lst$H3K4me1) != "HSPCs"]
 names(ctypes.k4) <- ctypes.k4
 
-ctypes.k9 <- colnames(dat.mat.log2.lst$H3K9me3)[colnames(dat.mat.log2.lst$H3K9me3) != "HSPCs"]
+ctypes.k9 <- colnames(dat.mat.log2.diff.lst$H3K9me3)[colnames(dat.mat.log2.diff.lst$H3K9me3) != "HSPCs"]
 names(ctypes.k9) <- ctypes.k9
 
 ctype.spec.up <- lapply(jmarks, function(jmark){
