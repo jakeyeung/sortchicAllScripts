@@ -195,6 +195,8 @@ def create_sc_region_plot(
 
                     norm_by = "mean",
                     skip_clustermap = False,
+
+                    outtxtprefix = None,
                     
                     min_gene_len_to_plot:int = 0,
                     gene_models_height:float = 0.2,
@@ -278,6 +280,13 @@ def create_sc_region_plot(
     qf = counts.loc[:, [(c,p) for c,p in counts if c==contig and p>=start and p<=end] ].sort_index()
     qf = qf.sort_index(1).sort_index(0)
     qf = qf.loc[order]
+
+    # write output file matrix
+    if outtxtprefix is not None:
+        outmat = '.'.join([outtxtprefix, "mat.txt"])
+        qf.to_csv(outmat)
+    
+
 
     # Additive
     qf += pd.DataFrame(gaussian_filter(qf, sigma=(sigma_cells,sigma),mode='reflect'), index=qf.index, columns=qf.columns)
@@ -389,6 +398,11 @@ def create_sc_region_plot(
             # print(subset.shape)
             # print(subset)
             pd.Series(trace_norm_function(bulk_track), index=bulk_track.index).plot(color=color,lw=bulk_lw,ax=ax)
+            if outtxtprefix is not None:
+                # write outpute bulk track
+                outbulk = '.'.join([outtxtprefix, group, "bulktrack.txt"])
+                bulk_track.to_csv(outbulk)
+
             
     
     # if not skip_clustermap:
@@ -512,6 +526,7 @@ def main():
     parser.add_argument('-norm_by', metavar = 'mean or colname', default="mean", help="Colname from metadata for normalizing. Default is mean, uses bam mean")
     parser.add_argument('-colorcname', metavar = 'colname', default="colorcode", help="Color code usually colorcode or clustercol")
     parser.add_argument('-outfiletype', metavar = 'ImageType', default="pdf", help="Either pdf or png")
+    parser.add_argument('-outtxtprefix', metavar = 'Output prefix', default=None, help="Path to write text files of input")
     parser.add_argument('-percentile', metavar='Percentile', type=float, default=99.5,
                         help='Perceentile. If too low background turns grey')
     parser.add_argument('-trace_sigma', metavar='trace_sigma', type=float, default=2,
@@ -692,6 +707,7 @@ def main():
                             skip_clustermap = args.skip_clustermap,
                             jfigsize = (args.width, args.height),
 
+                            outtxtprefix = args.outtxtprefix,
 
                             features=features,
                             gene_height=0.0001,

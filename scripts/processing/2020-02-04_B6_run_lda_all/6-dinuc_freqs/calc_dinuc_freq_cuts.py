@@ -30,8 +30,8 @@ def main():
     parser = argparse.ArgumentParser(description='Calculate dinuc frequency around the cut')
     parser.add_argument('-infile', metavar='INFILE',
                         help='Input bam file')
-    parser.add_argument('-outfile', metavar='OUTFILE',
-                        help='Output file of each cut and its dinuc frequency (R1 only)')
+    parser.add_argument('-outprefix', metavar='OUTPREFIX',
+                        help='Outprefix file of each cut and its dinuc frequency (R1 only). Make .txt and .png')
     parser.add_argument('-refpath', metavar='REFFILE',
                         help='Refernce file')
     parser.add_argument('-baseseq', metavar='AGCT sequence', default = 'AT',
@@ -75,16 +75,26 @@ def main():
     readsbadcigar = 0
     readskept = 0
 
-    # dinucfreq_global = [0] * (args.downstrm_extend + args.upstrm_extend)
-    # dinucfreq_global = np.array(dinucfreq_global)
-    # print('init')
-    # print(dinucfreq_global)
+    dinucfreq_global = [0] * (args.downstrm_extend + args.upstrm_extend)
+    dinucfreq_global = np.array(dinucfreq_global)
+    print('init')
+    print(dinucfreq_global)
 
-    with open(args.outfile, "w") as outfile:
+    outcsv = args.outprefix + ".csv"
+    outsum = args.outprefix + ".summary"
+    outfig = args.outprefix + ".png"
+
+    with open(outcsv, "w") as outfile:
         outwriter = csv.writer(outfile, delimiter = "\t")
 
         for read in inbam.fetch():
             readstotal += 1
+
+            # keep read1 onlyl
+            if not read.is_read1:
+                readsthrown += 1
+                continue
+
             if read.mapping_quality < args.mapqthres:
                 # print("Bad mapping quality, skipping")
                 readsthrown += 1
@@ -105,13 +115,22 @@ def main():
                 # print(len(seq))
                 # input("testing...")
             else:
+                # print("Is reverse:", read.is_reverse)
+                # print(chromo, ds, args.downstrm_extend, args.upstrm_extend)
+                # print(seq)
+
                 strand = "-"
                 seq = reference.fetch(chromo_nochr, ds - args.downstrm_extend, ds + args.upstrm_extend)
                 seq = reverse_complement(seq)
+
+                # print(seq)
+                # input("Debugging")
+
             # print("Is reverse:", read.is_reverse)
             # print(seq)
             seq = seq.upper()
             readskept += 1
+
             # # track dinuc freq
             # dinucfreq = []
             # for s in seq:
@@ -119,12 +138,24 @@ def main():
             #     dinucfreq.append(dinuc)
             # dinucfreq = np.array(dinucfreq)
             # dinucfreq_global = dinucfreq_global + dinucfreq
+
             coord = ':'.join([chromo, str(ds), strand])
             outrow = [coord, seq]
             outwriter.writerow(outrow)
-    cmd = ' '.join(["gzip", args.outfile])
+    cmd = ' '.join(["gzip", outcsv])
     print(cmd)
     os.system(cmd)
+
+    # write input to plot
+    # numpy.savetxt(outsummary, dinucfreq_global, delimiter=",")
+
+    # # make plots
+    # xvec = np.array(range(args.upstrm_extend + args.downstrm_extend))
+    # plt.plot(xvec, dinucfreq_global / float(readskept), c='r', label = 'output')
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.savefig(outfig)
+    # plt.close()
 
 
 if __name__ == '__main__':

@@ -14,8 +14,8 @@ jmem='32G'
 jtime='6:00:00'
 
 mapq=40
-stepsize=50000
-binsize=50000
+binsize=100000
+stepsize=${binsize}
 
 # # WRAP UP
 # while [[ `squeue -u jyeung | wc -l` > 1 ]]; do
