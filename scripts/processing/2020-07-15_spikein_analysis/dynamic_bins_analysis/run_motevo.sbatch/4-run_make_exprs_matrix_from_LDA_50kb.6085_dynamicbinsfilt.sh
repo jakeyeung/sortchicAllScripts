@@ -1,0 +1,53 @@
+#!/bin/sh
+# Jake Yeung
+# 4b-run_make_exprs_matrix_from_LDA_peaks.sh
+#  
+# 2020-08-25
+
+jmem='16G'
+jtime='1:00:00'
+
+rs="/home/hub_oudenaarden/jyeung/projects/scchic-functions/scripts/processing_scripts/make_merged_exprs_mat_for_MARA.args.R"
+
+keepNbins=0
+
+# jmarks="H3K4me1 H3K4me3 H3K27me3 H3K9me3"
+# jmarks="H3K27me3"
+jmarks="H3K9me3"
+# jmark="H3K4me1"
+
+for jmark in $jmarks; do
+    echo $jmark
+
+    # indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_H3K9me3_dynamic_bins/lda_outputs.count_mat_by_peaks.${jmark}.overlap_dynamic_k9_bins.K-30.binarize.FALSE"
+    # indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_H3K9me3_dynamic_bins/lda_outputs.count_mat_k9_dynamic_bins_50kb.${jmark}.2021-01-28.K-30.binarize.FALSE"
+    indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_demultiplexed/LDA_outputs_all_spikeins/ldaAnalysisBins_mouse_spikein_BM.varfilt.dynamic_bins_genes.top_6085/lda_outputs.count_tables_merged.${jmark}.DE_bins_all_marks_top_6085_dists_to_TSS.annot_table.${jmark}.2021-02-15.txt.K-30.binarize.FALSE"
+    # outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_BM-AllMerged3_Peaks/count_mats_peaks_k9dynamicbins"
+    outmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/mara_analysis_dynamic_bins_top_6085"
+    [[ ! -d $outmain ]] && echo "$outmain not found, exiting" && exit 1
+
+    # fname="ldaOut.count_mat_by_peaks.${jmark}.overlap_dynamic_k9_bins.K-30.Robj"
+    # fname="ldaOut.count_mat_top_6085_dynamic_bins_50kb.${jmark}.2021-02-15.K-30.Robj"
+    fname="ldaOut.count_tables_merged.${jmark}.DE_bins_all_marks_top_6085_dists_to_TSS.annot_table.${jmark}.2021-02-15.txt.K-30.Robj"
+    inf="${indir}/${fname}"
+    [[ ! -e $inf ]] && echo "$inf not found, exiting" && exit 1
+
+    bname=$(basename $inf)
+    bname=${bname%.*}
+
+    outdir="${outmain}/count_mats_50kb_bins"
+    [[ ! -d $outdir ]] && mkdir $outdir
+    outf="${outdir}"/${bname}.keepNbins_${keepNbins}.withchr2.txt
+    [[ -e $outf ]] && echo "$outf found, exiting" && exit 1
+
+    BNAME=${outdir}/${bname}.keepNbins_${keepNbins}.qsub
+    DBASE=$(dirname "${BNAME}")
+    [[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
+
+    # cmd=". /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; Rscript $rs $inf $outf -keepNbins $keepNbins --AddChr"
+    # sbatch --time=$jtime --mem-per-cpu=$jmem --output=${BNAME}_%j.log --ntasks=1 --nodes=1 --job-name=${bname} --wrap "$cmd"
+    . /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate R3.6; Rscript $rs $inf $outf -keepNbins $keepNbins --AddChr
+
+done
+
+
