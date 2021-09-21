@@ -26,8 +26,8 @@ jmarks <- c("H3K4me1", "H3K4me3", "H3K27me3", "H3K9me3"); names(jmarks) <- jmark
 
 outdir <- paste0("/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/pdfs_all/primetime2/K562_again")
 dir.create(outdir)
-outpdf <- file.path(outdir, paste0("K562_QC_plots.", Sys.Date(), ".add_fracnonzeros.pdf"))
-outtxt <- file.path(outdir, paste0("K562_QC_plots.", Sys.Date(), ".add_fracnonzeros.txt"))
+outpdf <- file.path(outdir, paste0("K562_QC_plots.", Sys.Date(), ".add_fracnonzeros.fix_yaxis.pdf"))
+outtxt <- file.path(outdir, paste0("K562_QC_plots.", Sys.Date(), ".add_fracnonzeros.fix_yaxis.txt"))
 
 pdf(outpdf, useDingbats = FALSE)
 
@@ -165,13 +165,13 @@ dat.lh <- left_join(dat.lh, subset(dat.fracnonzeros, select = -mark), by = c("sa
 print(dim(dat.lh))
 
 
-
 for (jmark in jmarks){
   m.points <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log2(chromocounts / spikeincounts), y = TA.frac, color = is.good2)) + 
     geom_point_rast(alpha = 0.25) + 
     geom_vline(xintercept = log2fcmin, linetype = "dotted") + 
     geom_hline(yintercept = fracmin, linetype = "dotted") + 
     xlab("log2(cuts in genome/spikein cuts)") + ylab("Fraction of cuts starting with TA") + 
+    ylim(c(0, 1)) + 
     ggtitle(jmark) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   print(m.points)
@@ -181,6 +181,7 @@ for (jmark in jmarks){
     geom_vline(xintercept = log2fcmin, linetype = "dotted") + 
     geom_hline(yintercept = jthres.frac.lst[[jmark]], linetype = "dotted") + 
     xlab("log2(cuts in genome/spikein cuts)") + ylab("Fraction of bins with nonzero number of cuts") + 
+    ylim(c(0, 1)) + 
     ggtitle(jmark) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   print(m.points.test)
@@ -190,6 +191,7 @@ for (jmark in jmarks){
     geom_vline(xintercept = log2fcmin, linetype = "dotted") + 
     geom_hline(yintercept = fracmin, linetype = "dotted") + 
     xlab("log2(cuts in genome/spikein cuts)") + ylab("Fraction of cuts starting with TA") + 
+    ylim(c(0, 1)) + 
     scale_color_viridis_c() + 
     ggtitle(jmark) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
@@ -203,11 +205,13 @@ for (jmark in jmarks){
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   print(m.density)
   
+  chromocountmin.thres <- log10(chromocountmin[[jmark]])
   m.points2 <- ggplot(dat.lh %>% filter(mark == jmark), aes(x = log10(chromocounts), y = TA.frac, color = is.good2)) + 
-    geom_point_rast(alpha = 0.25) + 
-    geom_vline(xintercept = log2fcmin, linetype = "dotted") + 
+    geom_point_rast(alpha = 0.25, size = 4) + 
+    geom_vline(xintercept = chromocountmin.thres, linetype = "dotted") + 
     geom_hline(yintercept = fracmin, linetype = "dotted") + 
     xlab("log10(cuts in genome)") + ylab("Fraction of cuts starting with TA") + 
+    ylim(c(0, 1)) + 
     ggtitle(jmark) + 
     theme_bw() + theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
   print(m.points2)
