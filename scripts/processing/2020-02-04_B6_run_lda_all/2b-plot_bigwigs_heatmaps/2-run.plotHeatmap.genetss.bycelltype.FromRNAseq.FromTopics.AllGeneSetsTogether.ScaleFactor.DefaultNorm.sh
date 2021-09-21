@@ -1,0 +1,48 @@
+#!/bin/sh
+# Jake Yeung
+# 4-run.plotHeatmap.sh
+#  
+# 2020-02-24
+
+# WRAP UP
+while [[ `qstat | grep compMatrix | wc -l` > 0 ]]; do
+        echo "sleep for 60 seconds"
+        sleep 60
+done
+
+jmem='4G'
+jtime='0:30:00'
+
+markprefix="FromRNAseq"
+jsuffix="FromRNAseq"
+
+bsize="bsize_100"
+# jsuffix="FromTopics.${markprefix}.2000"
+dirsuffix=""
+dirsuffix3=".DefaultNorm"
+
+dirsuffix2s=".MillionTSSCuts .MillionBinCuts"
+
+for dirsuffix2 in $dirsuffix2s; do
+        indir="/hpc/hub_oudenaarden/jyeung/data/scChiC/bigwig_outputs/r1onlyFewerClusters/merged_bams.deeptools_outputs.tss.OneDirPretty.AllGsets.2020-06-17.offset.${jsuffix}.r1only${dirsuffix}${dirsuffix2}${dirsuffix3}.${markprefix}"
+        [[ ! -d $indir ]] && echo "$indir not found, exiting" && exit 1
+        outdir=${indir}
+
+        for inf in `ls -d $indir/*.tab.gz`; do
+            bname=$(basename $inf)
+            bname=${bname%.*}
+            jstr=$(echo $bname | cut -d"." -f2,3)
+            BNAME=${outdir}/plotHeatmap.${bname}.qsub
+            DBASE=$(dirname "${BNAME}")
+            [[ ! -d $DBASE ]] && echo "$DBASE not found, exiting" && exit 1
+
+            outf=${outdir}/plotHeatmap.${bname}.mean${dirsuffix}.${markprefix}.png
+            # [[ -e $outf ]] && echo "$outf found, continuing" && continue
+            echo $jstr
+
+            cmd=". /hpc/hub_oudenaarden/jyeung/software/anaconda3/etc/profile.d/conda.sh; conda activate py3; plotHeatmap -m $inf -out $outf --colorMap YlGnBu --heatmapHeight 15 --sortRegions descend --sortUsingSamples 1 --averageTypeSummaryPlot mean --regionsLabel HSPCsSpec BcellsSpec GranuSpec ErythSpec --samplesLabel HSPCs Bcells Granu Eryth --legendLocation best --yAxisLabel CountsPer${dirsuffix2} --plotTitle ${jstr}" 
+            sbatch --time=$jtime --mem-per-cpu=$jmem --output=${BNAME}_%j.log --ntasks=1 --cpus-per-task=1 --nodes=1 --ntasks-per-node=1 --ntasks-per-socket=1 --job-name=${bname} --wrap "$cmd"
+        done
+done
+
+

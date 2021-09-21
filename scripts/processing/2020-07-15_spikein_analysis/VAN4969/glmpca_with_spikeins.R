@@ -51,6 +51,16 @@ parser$add_argument('-K', metavar='Dimensions', type = 'integer', default = 30,
                     help='Number of dimensions')
 parser$add_argument('-penalty', metavar='Penalization term', type = 'double', default = 1.0,
                     help='Penalty (numeric)')
+parser$add_argument('-maxIter', metavar='maxIter', type = 'integer', default = 1000,
+                    help='Max iterations. Default 1000')
+parser$add_argument('-minibatch', metavar='minibatch', default = 'none',
+                    help='Minibatch: c("none", "stochastic", "memoized") default none')
+parser$add_argument('-optimizer', metavar='optimizer', default = 'fisher',
+                    help='Optimizer: c("avagrad", "fisher") default none')
+parser$add_argument('-tol', metavar='tolerance', default = 1e-4, type = 'double',
+                    help='Tolerance default 1e-4')
+parser$add_argument('-topndevgenes', metavar='TopNGenesByDeviance', default = 0, type = 'integer',
+                    help='Filter genes by top, default 0 takes all genes')
 parser$add_argument("--by_plate", action="store_true",
                     help="Add design matrix by platement")
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
@@ -84,7 +94,20 @@ assertthat::assert_that(!file.exists(args$outfile))
 # inspike <- "/home/jyeung/hub_oudenaarden/jyeung/data/scChiC/from_rstudioserver/quality_control_spikeins_K562/spikein_counts/spikein_counts_all.RData"
 # save(dat.spikeins.mat, file = inspike)
 
-load(args$inspike, verbose=TRUE)
+if (endsWith(x = args$inspike, suffix = ".RData")){
+  load(args$inspike, verbose=TRUE)  # dat.spikeins.mat
+} else if (endsWith(x = args$inspike, suffix = ".rds")){
+  dat.spikeins.mat <- readRDS(args$inspike)
+  print("Loading from rds rownames shoudl be samp names")
+  print(head(rownames(dat.spikeins.mat)))
+} else if (endsWith(x = args$inspike, suffix = ".txt")){
+  dat.spikeins.mat <- as.data.frame(fread(args$inspike))
+  rownames(dat.spikeins.mat) <- dat.spikeins.mat$samp
+  print("Peeking in dat spikeins mat")
+  print(head(dat.spikeins.mat))
+} else {
+  stop("Not RData, rds of txt")
+}
 
 # Load data ---------------------------------------------------------------
 
@@ -97,6 +120,8 @@ load(args$inspike, verbose=TRUE)
 # })
 
 mat <- readRDS(args$infile)
+
+
 Y <- as.matrix(mat)
 # Y <- as.matrix(mats.lst$H3K4me3)
 # remove rows that are all zeros
@@ -111,6 +136,33 @@ spikeincounts.sub <- dat.spikeins.mat[colnames(Y), ]
 spikeincounts <- spikeincounts.sub$spikeincounts; names(spikeincounts) <- spikeincounts.sub$samp
 
 assertthat::assert_that(ncol(Y) == length(spikeincounts))
+
+print("Range:")
+print(range(spikeincounts))
+print(head(spikeincounts))
+
+if (args$topndevgenes > nrow(Y)){
+  print(paste("topnevgenes > nrow(Y), skipping deviance filter"))
+  args$topndevgenes <- 0
+}
+
+print("Dim of Y before:")
+print(dim(Y))
+if (args$topndevgenes > 0){
+  print(paste("Filtering topn genes by deviance:", args$topndevgenes))
+  
+  nvec <- spikeincounts.sub$spikeincounts 
+  gdevs <- apply(mat, 1, function(xvec){
+    scchicFuncs::binomial_deviance(x = xvec, p = sum(xvec) / sum(nvec), n = nvec)
+  })
+  genes.keep.vec <- sort(gdevs, decreasing = TRUE)[1:args$topndevgenes]
+  genes.keep <- names(genes.keep.vec)
+  Y <- Y[genes.keep, ]
+} else {
+  print("Taking all genes for glmpca")
+}
+print("Dim of Y after:")
+print(dim(Y))
 
 if (args$by_plate){
     if (!"plate" %in% colnames(spikeincounts.sub)){
@@ -133,7 +185,8 @@ print("Dimension of X")
 print(dim(X))
 
 system.time(
-  glmpcaout <- glmpca::glmpca(Y = Y, L = args$K, fam = "poi", penalty = args$penalty, sz = spikeincounts, X = X)
+  glmpcaout <- glmpca::glmpca(Y = Y, L = args$K, fam = "poi", sz = spikeincounts, X = X, minibatch = args$minibatch, optimizer = args$optimizer, 
+                              ctl = list(penalty = args$penalty, maxIter = args$maxIter, tol = args$tol))
 )
 
 save(glmpcaout, Y, spikeincounts, file = args$outfile)

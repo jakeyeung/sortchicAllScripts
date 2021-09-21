@@ -14,8 +14,9 @@ jmem='32G'
 jtime='6:00:00'
 
 mapq=40
-stepsize=50000
-binsize=50000
+binsize=20000
+stepsize=$binsize
+# stepsize=50000
 
 bl="/hpc/hub_oudenaarden/jyeung/data/databases/blacklists/mm10.blacklist.copy.sorted.merged.SpikeIns.bed"
 

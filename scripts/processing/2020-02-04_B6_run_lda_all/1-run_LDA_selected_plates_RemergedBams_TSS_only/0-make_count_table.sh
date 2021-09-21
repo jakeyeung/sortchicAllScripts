@@ -19,14 +19,14 @@ inmain="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawData_B6_All_Me
 [[ ! -d $inmain ]] && echo "$inmain not found, exiting" && exit 1
 
 # inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/nochr/gene_tss_winsize.${dist}.bed"
-# inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/first_transcript_tss/gene_tss_winsize.${dist}.first_transcript.bed"
-inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/first_transcript_tss/gene_tss_winsize.${dist}${outsuffix}"
+inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/first_transcript_tss/gene_tss_winsize.${dist}.first_transcript.bed"
+# inbed="/hpc/hub_oudenaarden/jyeung/data/databases/gene_tss/first_transcript_tss/gene_tss_winsize.${dist}${outsuffix}"
 [[ ! -e $inbed ]] && echo "$inbed not found, exiting" && exit 1
 
 bl="/hpc/hub_oudenaarden/jyeung/data/databases/blacklists/mm10.blacklist.copy.bed"
 [[ ! -e $bl ]] && echo "$bl not found, exiting" && exit 1
 
-outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawData_B6_All_MergedByMarks_final.count_tables_TSS${outsuffix}"
+outdir="/hpc/hub_oudenaarden/jyeung/data/scChiC/raw_data/ZellerRawData_B6_All_MergedByMarks_final.count_tables_TSS.noR2${outsuffix}"
 [[ ! -d $outdir ]] && mkdir $outdir
 
 for prefix in $prefixs; do

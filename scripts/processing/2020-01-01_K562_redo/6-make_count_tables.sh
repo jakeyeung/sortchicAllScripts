@@ -13,8 +13,8 @@ jmem='64G'
 jtime='6:00:00'
 
 mapq=40
-stepsize=20000
-binsize=100000
+stepsize=0
+binsize=50000
 
 for inbam in `ls -d $inmain/*.tagged.bam`; do
     bname=$(basename $inbam)
