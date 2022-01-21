@@ -5,7 +5,7 @@
 # 2021-11-21
 
 jmem='16G'
-jtime='72:00:00'
+jtime='96:00:00'
 
 rs="/home/hub_oudenaarden/jyeung/projects/scChIX/utils/run_LDA_model2.R"
 [[ ! -e $rs ]] && echo "$rs not found, exiting" && exit 1
