@@ -1,0 +1,96 @@
+# Jake Yeung
+# Date of Creation: 2022-04-13
+# File: ~/projects/scchic/scripts/revision_scripts/revisions_from_istbea/7-annotate_celltypes_from_reference_dynamic_bins_repressed_cleaned_k27me3_update_ctypes_keep_eryths.R
+# 
+
+rm(list=ls())
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(data.table)
+library(Matrix)
+library(scchicFuncs)
+library(topicmodels)
+library(AnnotateCelltypes)
+library(parallel)
+
+jmarks <- c("k27me3"); names(jmarks) <- jmarks
+jmark <- jmarks[[1]]
+
+jsuffix <- "dynamicbins"
+outdir <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/multinom_celltyping_update_ctypes"
+# dir.create(outdir)
+# for (jmark in jmarks){
+
+ctypes.to.annotate <- c("Basophils", "Bcells", "CMP", "DCs", "Eryths", "Granulocytes", "HSCs", "MEP", "Monocytes", "MPPs", "NKs", "pDCs", "LT", "ST")
+
+names(ctypes.to.annotate) <- ctypes.to.annotate
+LL.all.lst <- lapply(jmarks, function(jmark){
+  print(jmark)
+  
+  outrds <- file.path(outdir, paste0("LLmat_", jsuffix, "_", jmark, ".", Sys.Date(), ".rds"))
+  
+  # Load metadata -----------------------------------------------------------
+  
+  indir.meta <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/celltyping/repressive_cleaned"
+  inf.meta <- file.path(indir.meta, paste0("metadata_celltyping_", jmark, ".dynamicbins.2022-02-18.txt"))
+  dat.meta <- fread(inf.meta)
+  
+  print(unique(sort(dat.meta$ctype)))
+  
+  print(table(subset(dat.meta, batch == "New")$ctype))
+  
+  # reclassify celltypes for AllCells, HSPCs, IL7RLinNeg, LinNeg, LSK
+  
+  
+  # Load rawcounts ----------------------------------------------------------
+  
+  # indir.ldaout <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/LDA_outputs_varfilt_final/ldaAnalysis_fripfilt_varfilt_binfilt/lda_outputs.count_mat_varfilt2_dynamicbins.", jmark, "/ldaOut.count_mat_varfilt2_dynamicbins.", jmark, ".Robj")
+  inf.ldaout <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/LDA_outputs_repressive_cleaned_from_jupyter/ldaAnalysis_fripfilt_varfilt_binfilt/lda_outputs.count_mat_cleaned_dynbins.", jmark, ".2022-02-16/ldaOut.count_mat_cleaned_dynbins.", jmark, ".2022-02-16.Robj")
+  # inf.ldaout <- file.path(indir.ldaout, paste0("ldaOut.count_mat_var_filt_", jsuffix, ".out_dynamic_bins_new_only.varcutoff.", jmark, ".2022-01-28.Robj"))
+  load(inf.ldaout, v=T)
+  
+  assertthat::assert_that(ncol(count.mat) == nrow(dat.meta))
+  
+  
+  # Annotate celltypes ------------------------------------------------------
+  
+  
+  dat.meta.ctype.filt <- subset(dat.meta, ctype %in% ctypes.to.annotate)
+  dat.meta.testset <- subset(dat.meta, !ctype %in% ctypes.to.annotate)
+  cluster.ids <- lapply(split(dat.meta.ctype.filt, f = dat.meta.ctype.filt$ctype), function(x) x$cell)
+  
+  
+  count.mat.pbulk <- SumAcrossClusters(count.mat = count.mat, cnames.keep.lst = cluster.ids)
+  count.mat.pbulk <- do.call(cbind, count.mat.pbulk)
+  
+  
+  #' zero counts are problematic when calculating likelihoods, add pseudocount to compensate
+  mats.keep.pseudobulk.pcount <- count.mat.pbulk + 1
+  mats.keep.pseudobulk.pcount.frac <- sweep(mats.keep.pseudobulk.pcount, MARGIN = 2, STATS = colSums(mats.keep.pseudobulk.pcount), FUN = "/")
+  
+  # Estimate from multionomials  --------------------------------------------
+  
+  # (cellname <- dat.meta.testset$cell[[1]])
+  # jcell <- count.mat[, cellname]
+  # 
+  # #' note the input here is unnormalized counts. No need for log-transform or scaling rows or columns.
+  # #' should be robust to downsampling too.
+  # LL <- AnnotateCelltypes::CalculateMultinomLL(jcell, mats.keep.pseudobulk.pcount.frac)
+  
+  # run on all
+  LL.all <- apply(count.mat, 2, function(jcell){
+    LL <- AnnotateCelltypes::CalculateMultinomLL(jcell, mats.keep.pseudobulk.pcount.frac)
+  })
+  rownames(LL.all) <- colnames(mats.keep.pseudobulk.pcount.frac)
+  saveRDS(LL.all, file = outrds)
+  print(paste("Done for", jmark))
+  return(LL.all)
+  # }
+})
+  
+  
+  
+
+
