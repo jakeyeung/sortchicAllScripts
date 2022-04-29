@@ -25,10 +25,16 @@ for (jmark in jmarks){
   
   # Load metas --------------------------------------------------------------
   
-  indir.meta <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/multinom_celltyping/rename"
-  dat.meta <- fread(file.path(indir.meta, paste0("metadata_", jmark, ".txt")))
-  
-  cells.keep <- dat.meta$cell
+  # indir.meta <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/multinom_celltyping/rename"
+  # dat.meta <- fread(file.path(indir.meta, paste0("metadata_", jmark, ".txt")))
+  # indir.meta <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/raw_data/count_tables/filtered_count_tables_for_LDA_no_frip_filter_on_eryths/BM_k27me3"
+  # dat.meta <- fread(file.path(indir.meta, paste0("qc_metadata_new_only.", jmark, ".2022-04-12.txt"))) %>%
+  #   filter(is.good)
+  # 
+  # # load old mat
+  # cells.keep.new <- dat.meta$cell
+  mat.with.good.cells <- readRDS("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/raw_data/count_tables/filtered_count_tables_for_LDA_no_frip_filter_on_eryths/BM_k27me3/count_mat_merged_with_old_dynbins.k27me3.2022-04-12.rds")
+  cells.keep <- colnames(mat.with.good.cells)
   
   # Load mats from new ------------------------------------------------------
   

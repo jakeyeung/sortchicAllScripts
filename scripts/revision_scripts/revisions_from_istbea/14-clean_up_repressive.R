@@ -49,6 +49,7 @@ ggplot(dat.meta.lst$k27me3, aes(x = umap1, y = umap2, color = colcode)) +
   geom_point() + 
   theme_bw() + 
   ggtitle("k27me3") + 
+  facet_wrap(~batch) + 
   scale_color_identity() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 

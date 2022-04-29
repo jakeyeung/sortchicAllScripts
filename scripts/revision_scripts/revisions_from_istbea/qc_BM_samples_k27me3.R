@@ -169,6 +169,11 @@ ggplot(dat.rz.annot, aes(x = total.count, y = TA.frac, color = is.good)) +
   scale_x_log10() + 
   theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
+ggplot(dat.rz.annot, aes(x = frac.count.in.peak, fill = is.good)) + 
+  geom_density(alpha = 1) + 
+  theme_bw() + 
+  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
 ggplot(dat.rz.annot, aes(x = total.count, y = TA.frac, color = is.good)) + 
   geom_point() + 
   facet_wrap(~plate) + 

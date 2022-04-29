@@ -104,7 +104,7 @@ jsuffix <- "dynamicbins"
 jmarksnew <- c("k27me3", "k9me3"); names(jmarksnew) <- jmarksnew
 jmarksold <- c("H3K27me3", "H3K9me3"); names(jmarksold) <- jmarksnew
 
-outdir <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/celltyping/repressive_cleaned"
+outdir <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/celltyping/repressive_cleaned_check_eryths"
 dir.create(outdir)
 
 for (jmark in jmarksnew){

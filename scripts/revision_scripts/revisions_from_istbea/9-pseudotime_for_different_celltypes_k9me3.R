@@ -16,7 +16,10 @@ jmark <- "k9me3"
 # Load metadata -----------------------------------------------------------
 
 # inf.meta <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/multinom_celltyping/metadata_reannotate_from_LLmat_dynamicbins.", jmark, ".2022-02-02.txt")
-inf.meta <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/multinom_celltyping/metadata_reannotate_from_LLmat_dynamicbins.", jmark, ".2022-02-06.txt")
+# inf.meta <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/multinom_celltyping/metadata_reannotate_from_LLmat_dynamicbins.", jmark, ".2022-02-06.txt")
+
+# dat.meta.LL <- fread(inf.meta)
+inf.meta <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/multinom_celltyping_update_ctypes_from_LDA_k4me3_cleaned_k27me3_eryths/metadata_reannotate_from_LLmat_fix_ctypes_by_batch_dynamicbins.", jmark, ".2022-04-15.txt")
 dat.meta.LL <- fread(inf.meta)
 
 
