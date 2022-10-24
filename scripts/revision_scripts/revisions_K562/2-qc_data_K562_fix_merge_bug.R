@@ -12,6 +12,8 @@ library(ggplot2)
 library(data.table)
 library(Matrix)
 
+outpdf <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_cluster/K562_new/plots/qc_plots_K562_with_frip.", Sys.Date(), ".pdf")
+outrds <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_cluster/K562_new/plots/qc_plots_K562_with_frip.", Sys.Date(), ".rds")
 
 
 # Load QC data  -----------------------------------------------------------
@@ -40,8 +42,6 @@ m.lst <- lapply(jmarks, function(jmark){
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom")
 })
 
-outpdf <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_cluster/K562_new/plots/qc_plots_K562_with_frip.", Sys.Date(), ".pdf")
-outrds <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_cluster/K562_new/plots/qc_plots_K562_with_frip.", Sys.Date(), ".rds")
 pdf(outpdf, useDingbats = FALSE)
 
 print(JFuncs::multiplot(m.lst[[1]], m.lst[[2]], m.lst[[4]], m.lst[[3]], cols = 4))
@@ -115,5 +115,29 @@ dev.off()
 
 
 
+# Calculate fraction of cells that are "good" ------------------------------
 
+dat.meta.merge <- do.call(rbind, dat.meta.lst)
 
+dat.is.good.frac.mark <- dat.meta.merge %>%
+  group_by(is.good, mark) %>%
+  summarise(ncells = length(samp)) %>%
+  group_by(mark) %>%
+  mutate(nfrac = ncells / sum(ncells))
+
+dat.is.good.frac <- dat.meta.merge %>%
+  group_by(is.good) %>%
+  summarise(ncells = length(samp)) %>%
+  ungroup() %>%
+  mutate(nfrac = ncells / sum(ncells))
+
+dat.meta.merge.good <- dat.meta.merge %>%
+  filter(is.good)
+
+plot(density(log10(dat.meta.merge.good$total.count.from.mat)))
+mean(dat.meta.merge.good$total.count.from.mat)
+mean(dat.meta.merge.good$total.count)
+median(dat.meta.merge.good$total.count.from.mat)
+median(dat.meta.merge.good$total.count)
+
+median(dat.meta.merge.good$frac.count.in.peak)
