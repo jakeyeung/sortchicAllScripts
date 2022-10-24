@@ -21,18 +21,25 @@ jmarksold <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarksold) <- jmarks
 
 # Load new colors ---------------------------------------------------------
 
-
+inf.colors.fixed <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/primetime_plots/ctypes_on_umap_batch_corrected_colors_fixed/dat_colors_DC_monocyte_fixed.2022-05-17.txt"
+dat.colors.fixed <- fread(inf.colors.fixed)
 
 
 # Load meta ----------------------------------------------------------------
 
 dat.meta.lst <- lapply(jmarks, function(jmark){
   inf.meta <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/primetime_plots/umaps_pcas_with_batch_corrections/umap_metadata_primetime.", jmark, ".2022-04-21.txt")
-  dat.meta <- fread(inf.meta)
+  dat.meta <- fread(inf.meta) %>%
+    left_join(., dat.colors.fixed) %>%
+    rowwise() %>%
+    mutate(colcode = colcodenew)
+  # replace colcode with colcodenew
 })
 
 dat.meta.colors <- subset(dat.meta.lst$k4me1, select = c(ctype.from.LL, colcode))
 ctype2col <- hash::hash(dat.meta.colors$ctype.from.LL, dat.meta.colors$colcode)
+
+
 
 
 
@@ -84,8 +91,8 @@ jctypetest <- "Granulocytes"
 outdir <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/primetime_plots/umap_and_trajs/k27me3_batch_corrected_fewer_ctypes_TSS_genesets"
 dir.create(outdir)
 
-jctypes <- c("Granulocytes", "Bcells", "Eryths")
-# jctypes <- c("Granulocytes")
+# jctypes <- c("Granulocytes", "Bcells", "Eryths")
+jctypes <- c("Granulocytes")
 names(jctypes) <- jctypes
 
 # jrname <- grep("Cd72", rows.keep, value = TRUE)
@@ -100,12 +107,12 @@ parallel::mclapply(jmarks, function(jmark){
   for (jctype in jctypes){
     
     # pdfout <- file.path(outdir, paste0("umap_on_trajs_fix_color_TSS_common_root_fewer_plots_no_alpha.", jmark, ".", jctype, ".", Sys.Date(), ".pdf"))
-    pdfout <- file.path(outdir, paste0("umap_on_trajs_fix_color_TSS_common_root_fewer_plots.", jmark, ".", jctype, ".", Sys.Date(), ".pdf"))
+    pdfout <- file.path(outdir, paste0("umap_on_trajs_fix_color_TSS_common_root_fewer_plots_colors_fixed_HSPCs.", jmark, ".", jctype, ".", Sys.Date(), ".pdf"))
     pdf(pdfout, useDingbats = FALSE)
     print(jctype)
     
-    rnames.markers <- unique(subset(dat.markers, jset == jctype)$gene)
-    # rnames.markers <- unique(subset(dat.markers, jset == "HSPCs")$gene)
+    # rnames.markers <- unique(subset(dat.markers, jset == jctype)$gene)
+    rnames.markers <- unique(subset(dat.markers, jset == "HSPCs")$gene)
     
     rows.keep.i <- which(rownames(dat.impute.lst[[jmark]]) %in% rnames.markers)
     print(length(rows.keep.i))
@@ -159,8 +166,8 @@ parallel::mclapply(jmarks, function(jmark){
       dat.trajs.long <- dat.trajs.long %>%
         arrange(traj == jctype) %>%
         rowwise() %>%
-        mutate(jalpha = ifelse(traj == jctype, 0.9, 0.5),
-        # mutate(jalpha = ifelse(traj == jctype, 0.9, 0.9), 
+        # mutate(jalpha = ifelse(traj == jctype, 0.9, 0.5),
+        mutate(jalpha = ifelse(traj == jctype, 0.9, 0.9),
                colcodetraj = ctype2col[[traj]])
       
       m.traj <- ggplot(dat.trajs.long, aes(x = ptime, y = signal, color = colcode, alpha = jalpha)) + 

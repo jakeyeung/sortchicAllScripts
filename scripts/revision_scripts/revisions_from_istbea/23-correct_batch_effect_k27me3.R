@@ -16,6 +16,8 @@ library(scchicFuncs)
 jstart <- Sys.time() 
 
 outrds <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/batch_effect_corrections/mat_wide_k27me3_batch_corrected.", Sys.Date(), ".rds")
+outrds <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/batch_effect_corrections/mat_wide_k27me3_batch_corrected.", Sys.Date(), ".rds")
+outrds.lst <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/batch_effect_corrections/mat_wide_k27me3_batch_corrected_long.", Sys.Date(), ".rds")
 outrdsraw <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/batch_effect_corrections/mat_wide_k27me3_raw_counts.", Sys.Date(), ".rds")
 
 AssignEffect2 <- function(batch, cluster, jeffects, jtype = c("plate", "cluster"), plateprefix = "jrep2", clusterprefix = "cluster"){
@@ -189,6 +191,7 @@ jmat.wide.adj.lst <- parallel::mclapply(jmat.long.lst, function(jmat.long){
 }, mc.cores = 16) %>%
   bind_rows()
 
+saveRDS(jmat.wide.adj.lst, file = outrds.lst)
 # jmat.wide.adj.lst <- readRDS("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/batch_effect_corrections/mat_long_k27me3_batch_corrected.2022-04-19.rds")
 
 jmat.wide <- jmat.wide.adj.lst %>%

@@ -20,6 +20,14 @@ jmarks <- c("k4me1", "k4me3", "k27me3", "k9me3"); names(jmarks) <- jmarks
 # jmarkold <- "H3K4me1"
 
 
+# Load new colors ---------------------------------------------------------
+
+inf.colors.fixed <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/primetime_plots/ctypes_on_umap_batch_corrected_colors_fixed/dat_colors_DC_monocyte_fixed.2022-05-17.txt"
+dat.colors.fixed <- fread(inf.colors.fixed)
+
+
+
+
 # Load meta ----------------------------------------------------------------
 
 
@@ -27,15 +35,16 @@ dat.meta.lst <- lapply(jmarks, function(jmark){
   # inf.meta <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/multinom_celltyping_update_ctypes_from_LDA_k4me3_cleaned_k27me3_eryths2/metadata_reannotate_from_LLmat_fix_ctypes_by_batch_dynamicbins.", jmark, ".txt")
   inf.meta <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/primetime_plots/umaps_pcas_with_batch_corrections/umap_metadata_primetime.", jmark, ".2022-04-21.txt") 
   dat.meta <- fread(inf.meta) %>%
-    rowwise()
-    mutate(colcode = gsub("#d8ce40", "#95D641", colcode))
+    rowwise() %>%
+    mutate(colcode = gsub("#d8ce40", "#95D641", colcode)) %>%
+      left_join(., dat.colors.fixed)
 })
 
-dat.meta.colors <- subset(dat.meta.lst$k4me1, select = c(ctype.from.LL, colcode))
-dat.meta.colors.add <- data.frame(ctype.from.LL = c("GMP", "Tcells"), colcode = c("#d88543", "#04A804"))
+dat.meta.colors <- subset(dat.meta.lst$k4me1, select = c(ctype.from.LL, colcodenew))
+dat.meta.colors.add <- data.frame(ctype.from.LL = c("GMP", "Tcells"), colcodenew = c("#d88543", "#04A804"))
 dat.meta.colors <- rbind(dat.meta.colors, dat.meta.colors.add)
 
-ctype2col <- hash::hash(dat.meta.colors$ctype.from.LL, dat.meta.colors$colcode)
+ctype2col <- hash::hash(dat.meta.colors$ctype.from.LL, dat.meta.colors$colcodenew)
 
 
 
@@ -66,7 +75,7 @@ for (jmark in jmarks){
     rowwise() %>%
     mutate(ctype = ifelse(ctype == "GMP", "CMP", ctype))
   
-  m <- ggplot(dat.meta.sub, aes(x = umap1, y = umap2, color = colcode)) +
+  m <- ggplot(dat.meta.sub, aes(x = umap1, y = umap2, color = colcodenew)) +
     geom_point(alpha = 1) + 
     scale_color_identity( labels = dat.meta.colors$ctype.from.LL, breaks = dat.meta.colors$colcode,
                           guide = "legend") + 
@@ -74,7 +83,7 @@ for (jmark in jmarks){
     ggtitle(jmark) + 
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
   
-  outpdf <- file.path(outdir, paste0("ctypes_on_umap_groups.", jmark, ".", Sys.Date(), ".pdf"))
+  outpdf <- file.path(outdir, paste0("ctypes_on_umap_groups_fix_colors.", jmark, ".", Sys.Date(), ".pdf"))
   
   pdf(outpdf, useDingbats = FALSE)
   
@@ -86,7 +95,7 @@ for (jmark in jmarks){
            is.cell = cell == jcell) %>%
     arrange(desc(colcode))
   
-  m.ex <- ggplot(dat.meta.sub.example, aes(x = umap1, y = umap2, color = colcode, size = is.cell)) +
+  m.ex <- ggplot(dat.meta.sub.example, aes(x = umap1, y = umap2, color = colcodenew, size = is.cell)) +
     geom_point(alpha = 1) + 
     scale_color_identity( labels = dat.meta.colors$ctype.from.LL, breaks = dat.meta.colors$colcode,
                           guide = "legend") + 
@@ -106,7 +115,7 @@ for (jmark in jmarks){
     dat.meta.sub.label <- dat.meta.sub %>%
       rowwise() %>% 
       mutate(highlight.ctype = ctype %in% jctype.vec & batch == "New",
-             col.highlight = ifelse(highlight.ctype, colcode, "gray75"), 
+             col.highlight = ifelse(highlight.ctype, colcodenew, "gray75"), 
              col.byctype = ifelse(highlight.ctype, ctype2col[[ctype]], "gray75"),
              jalpha = ifelse(highlight.ctype, 1, 0.5)) %>%
       arrange(highlight.ctype)

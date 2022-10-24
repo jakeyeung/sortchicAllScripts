@@ -100,8 +100,16 @@ jcheck.dup.lst <- lapply(jmarks, function(jmark){
   
   jcheck.dup <- jcheck[!duplicated(jcheck), ]
 })
-
 jcheck.dup.lst
+
+# how many SL3, SL4, SL5 plates? 
+dat.filt.long <- lapply(dat.annot.lst, function(jdat){
+  subset(jdat, grepl("SL3|SL4|SL5", cell)) %>%
+    rowwise() %>%
+    mutate(experi2 = ClipLast(experi, jsep = "-"))
+}) %>%
+  bind_rows()
+table(dat.filt.long$experi2)
 
 
 
@@ -139,7 +147,16 @@ jmark <- "k4me1"
 
 for (jmark in jmarks){
   
-  m <- ggplot(dat.annot.lst[[jmark]] %>% arrange(desc(is.na(Sca_1_PeCy7_log2))) %>%
+  jsub <- dat.annot.lst[[jmark]] %>% arrange(desc(is.na(Sca_1_PeCy7_log2))) %>%
+    mutate(has.sca1 = !is.na(Sca_1_PeCy7_log2), 
+           has.kit = !is.na(C_kit_BB700_log2),
+           has.lin = !is.na(lin_PE_log2))
+  # how many cells have Sca1 staining? 
+  print(table(subset(jsub, select = c(has.sca1, has.kit, has.lin))))
+  
+  jsub.filt <- subset(jsub, has.sca1 | has.kit | has.lin)
+  
+  m <- ggplot(jsub %>%
            filter(batch == "New"), 
          aes(x = umap1, y = umap2, color = Sca_1_PeCy7_log2)) + 
     geom_point() + 
@@ -195,7 +212,7 @@ for (jmark in jmarks){
          aes(x = umap1, y = umap2, color = lin_PE_log2)) + 
     geom_point() + 
     ggtitle(jmark) + 
-    facet_wrap(~experi) + 
+    # facet_wrap(~experi) + 
     scale_color_viridis_c(na.value = "grey85") + 
     theme_bw() + 
     theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
@@ -453,34 +470,74 @@ dat.sub.impute.knn.lst <- lapply(jmarks, function(jmark){
 
 
 jmark <- "k4me1"
-ggplot(dat.sub.impute.knn.lst[[jmark]] %>% arrange(desc(is.na(sca1_knn_impute))) %>%
-         filter(batch == "New"), 
-       aes(x = umap1, y = umap2, color = sca1_f_impute)) + 
-  geom_point() + 
-  scale_color_viridis_c(na.value = "grey85") + 
-  theme_bw() + 
-  facet_wrap(~experi) +
-  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-
-ggplot(dat.sub.impute.knn.lst[[jmark]] %>% arrange(desc(is.na(ckit_impute))) %>%
-         filter(batch == "New"), 
-       aes(x = umap1, y = umap2, color = ckit_f_impute)) + 
-  geom_point() + 
-  scale_color_viridis_c(na.value = "grey85") + 
-  facet_wrap(~experi) + 
-  theme_bw() + 
-  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
-
-ggplot(dat.sub.impute.knn.lst[[jmark]] %>% arrange(desc(is.na(lin_impute))) %>%
-         filter(batch == "New"), 
-       aes(x = umap1, y = umap2, color = lin_f_impute)) + 
-  geom_point() + 
-  facet_wrap(~experi) + 
-  scale_color_viridis_c(na.value = "grey85") + 
-  theme_bw() + 
-  theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+for (jmark in jmarks){
+  
+  m <- ggplot(dat.sub.impute.knn.lst[[jmark]] %>% arrange(desc(is.na(sca1_knn_impute))) %>%
+           filter(batch == "New"), 
+         aes(x = umap1, y = umap2, color = sca1_f_impute)) + 
+    geom_point() + 
+    scale_color_viridis_c(na.value = "grey85") + 
+    theme_bw() + 
+    ggtitle(jmark) + 
+    facet_wrap(~experi) +
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+ 
+  m <- ggplot(dat.sub.impute.knn.lst[[jmark]] %>% arrange(desc(is.na(sca1_knn_impute))) %>%
+                filter(batch == "New"), 
+              aes(x = umap1, y = umap2, color = sca1_f_impute)) + 
+    geom_point() + 
+    scale_color_viridis_c(na.value = "grey85") + 
+    theme_bw() + 
+    ggtitle(jmark) + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
+  
+  m <- ggplot(dat.sub.impute.knn.lst[[jmark]] %>% arrange(desc(is.na(ckit_impute))) %>%
+           filter(batch == "New"), 
+         aes(x = umap1, y = umap2, color = ckit_f_impute)) + 
+    geom_point() + 
+    scale_color_viridis_c(na.value = "grey85") + 
+    facet_wrap(~experi) + 
+    ggtitle(jmark) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  print(m)
+  
+  m <- ggplot(dat.sub.impute.knn.lst[[jmark]] %>% arrange(desc(is.na(ckit_impute))) %>%
+                filter(batch == "New"), 
+              aes(x = umap1, y = umap2, color = ckit_f_impute)) + 
+    geom_point() + 
+    scale_color_viridis_c(na.value = "grey85") + 
+    ggtitle(jmark) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  print(m)
+  
+  
+  m <- ggplot(dat.sub.impute.knn.lst[[jmark]] %>% arrange(desc(is.na(lin_impute))) %>%
+           filter(batch == "New"), 
+         aes(x = umap1, y = umap2, color = lin_f_impute)) + 
+    geom_point() + 
+    facet_wrap(~experi) + 
+    scale_color_viridis_c(na.value = "grey85") + 
+    ggtitle(jmark) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  print(m)
+  
+  
+  m <- ggplot(dat.sub.impute.knn.lst[[jmark]] %>% arrange(desc(is.na(lin_impute))) %>%
+                filter(batch == "New"), 
+              aes(x = umap1, y = umap2, color = lin_f_impute)) + 
+    geom_point() + 
+    scale_color_viridis_c(na.value = "grey85") + 
+    ggtitle(jmark) + 
+    theme_bw() + 
+    theme(aspect.ratio=1, panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  print(m)
+  
+}
 
 
 

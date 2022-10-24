@@ -1,7 +1,7 @@
 # Jake Yeung
-# Date of Creation: 2022-04-27
-# File: ~/projects/scchic/scripts/revision_scripts/revisions_from_istbea/20-plot_dynamic_bins_across_pseudotimes_four_marks_cleaned_batch_corrected_fewer_ctypes_TSS_marker_genes_genesets.R
-# =
+# Date of Creation: 2022-05-21
+# File: ~/projects/scchic/scripts/revision_scripts/revisions_from_istbea/20-plot_dynamic_bins_across_pseudotimes_four_marks_cleaned_batch_corrected_fewer_ctypes_TSS_marker_genes_genesets_color_fix_same_geneset.R
+# k
 
 rm(list=ls())
 
@@ -21,18 +21,25 @@ jmarksold <- c("H3K4me1", "H3K4me3", "H3K27me3"); names(jmarksold) <- jmarks
 
 # Load new colors ---------------------------------------------------------
 
-
+inf.colors.fixed <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/primetime_plots/ctypes_on_umap_batch_corrected_colors_fixed/dat_colors_DC_monocyte_fixed.2022-05-17.txt"
+dat.colors.fixed <- fread(inf.colors.fixed)
 
 
 # Load meta ----------------------------------------------------------------
 
 dat.meta.lst <- lapply(jmarks, function(jmark){
   inf.meta <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/primetime_plots/umaps_pcas_with_batch_corrections/umap_metadata_primetime.", jmark, ".2022-04-21.txt")
-  dat.meta <- fread(inf.meta)
+  dat.meta <- fread(inf.meta) %>%
+    left_join(., dat.colors.fixed) %>%
+    rowwise() %>%
+    mutate(colcode = colcodenew)
+  # replace colcode with colcodenew
 })
 
 dat.meta.colors <- subset(dat.meta.lst$k4me1, select = c(ctype.from.LL, colcode))
 ctype2col <- hash::hash(dat.meta.colors$ctype.from.LL, dat.meta.colors$colcode)
+
+
 
 
 
@@ -53,26 +60,24 @@ dat.trajs <- lapply(jmarks, function(jmark){
     inf.trajs <- paste0("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/trajs/cleaned2_batch_corrected_eryth_fix/trajs_outputs_batch_corrected.k27me3.2022-04-21.rds")
   }
   print(inf.trajs)
-  readRDS(inf.trajs)
+  dat.traj <- readRDS(inf.trajs)
+  # remove Basophil from Granulocyte trajectory
+  dat.traj$Granulocytes <- dat.traj$Granulocytes %>%
+    rowwise() %>%
+    mutate(is.ctype = ifelse(ctype.from.LL == "Basophils", FALSE, is.ctype))
+  return(dat.traj)
 })
 
 
 
 # Get marker genes --------------------------------------------------------
 
-dat.markers <- fread("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/first_submission_data/genesets/geneset_on_umap.binskeep_0.niter_500.2020-12-09.from_LDA_topics.condensed.heatmap.famousgenes.keepn_400.refmark_H3K4me3.2020-12-09.txt")
+# dat.markers <- fread("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/first_submission_data/genesets/geneset_on_umap.binskeep_0.niter_500.2020-12-09.from_LDA_topics.condensed.heatmap.famousgenes.keepn_400.refmark_H3K4me3.2020-12-09.txt")
+dat.markers <- readRDS("/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/first_submission_data/genesets/dat_genes_sub_join_from_orig.rds")
 
 print(unique(dat.markers$jset))
 
 jsets <- c("Bcells", "Eryths", "Granulocytes"); names(jsets) <- jsets
-# jsets <- c("HSPCs"); names(jsets) <- jsets
-
-# markergenes <- c("Ly6c2", "Ly6g", "S100a8", "S100a2", "Chil3", "Sox6", "Tal1", "Gata1", "Ebf1", "Cd79a", "Cd79b", "Hoxa9", "Meis1", "Runx2", "Kit", "Hlf", "Erg", "Cd34", "Stat4", "Tcf7", "Cebpe", "Pax5", "Cd180", "Cd72", "Blnk")
-# markergenes.grep <- paste(markergenes, collapse = "$|")
-
-# rnames <- rownames(dat.impute.lst$k4me1)
-# rnames.markers <- rnames[grepl(markergenes.grep, rnames)]
-
 
 
 # check 
@@ -100,7 +105,7 @@ parallel::mclapply(jmarks, function(jmark){
   for (jctype in jctypes){
     
     # pdfout <- file.path(outdir, paste0("umap_on_trajs_fix_color_TSS_common_root_fewer_plots_no_alpha.", jmark, ".", jctype, ".", Sys.Date(), ".pdf"))
-    pdfout <- file.path(outdir, paste0("umap_on_trajs_fix_color_TSS_common_root_fewer_plots.", jmark, ".", jctype, ".", Sys.Date(), ".pdf"))
+    pdfout <- file.path(outdir, paste0("umap_on_trajs_fix_color_TSS_common_root_fewer_plots_colors_fixed_top_150_same_as_fig2.", jmark, ".", jctype, ".", Sys.Date(), ".pdf"))
     pdf(pdfout, useDingbats = FALSE)
     print(jctype)
     

@@ -20,7 +20,7 @@ jalpha <- 0.5
 
 # Load fixed colors -------------------------------------------------------
 
-inf.colors <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/primetime_plots/ctypes_on_umap_batch_corrected_colors_fixed/dat_colors_DC_monocyte_fixed.2022-05-15.txt"
+inf.colors <- "/nfs/scistore12/hpcgrp/jyeung/data_from_Hubrecht/hpc_hub_oudenaarden/scChiC/new_experiments/from_jupyterhub/primetime_plots/ctypes_on_umap_batch_corrected_colors_fixed/dat_colors_DC_monocyte_fixed.2022-05-17.txt"
 dat.colors <- fread(inf.colors)
 ctype2cols.fixed <- hash::hash(dat.colors$ctype.from.LL, dat.colors$colcodenew)
 
